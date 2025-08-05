@@ -1,42 +1,84 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
+/* Styles for navigation and layout */
+.nav {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  background: var(--bg-color);
+  border-bottom: 1px solid rgba(75, 58, 47, 0.2);
+  z-index: 1000;
+}
+
+.nav ul {
+  list-style: none;
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin: 0;
+  padding: 1rem 0;
+}
+
+.nav a {
+  text-decoration: none;
+  color: var(--text-color);
+  font-weight: 600;
+}
+
+.nav a:hover {
+  color: var(--accent-color);
+}
+
+/* Offset main content for fixed nav height */
+main {
+  margin-top: 60px;
+}
+
+section {
+  padding: 4rem 1rem;
+}
+
+/* Hero section styles */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
   text-align: center;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+.hero .tagline {
+  font-size: 1.25rem;
+  color: var(--accent-color);
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+/* About section styles */
+.about {
+  max-width: 800px;
+  margin: 0 auto;
+  text-align: center;
+  line-height: 1.6;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+/* Contact section styles */
+.contact {
+  text-align: center;
 }
 
-.card {
-  padding: 2em;
+/* Generic card styling for portfolio and blog cards */
+.portfolio-card, .blog-card {
+  border: 1px solid rgba(75, 58, 47, 0.2);
+  padding: 1.5rem;
+  background-color: var(--bg-color);
+  border-radius: 4px;
 }
 
-.read-the-docs {
-  color: #888;
+.portfolio-grid, .blog-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.portfolio-card a, .blog-card a, .contact a {
+  color: var(--accent-color);
 }
