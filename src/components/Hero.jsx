@@ -1,9 +1,14 @@
 // Hero section with name and tagline
-// Update the text below to make it yours
 const Hero = () => (
   <section id="hero" className="hero">
-    <h1>Madalyn Schmitt</h1>
-    <p className="tagline">Content marketer and creative storyteller</p>
+    <div className="hero-content">
+      <h1>Alex Benson</h1>
+      <p className="tagline">Content Marketer & Digital Storyteller</p>
+      <p className="hero-description">
+        Crafting meaningful connections through strategic content and authentic storytelling
+      </p>
+      <a href="#portfolio" className="hero-cta">View My Work</a>
+    </div>
   </section>
 );
 
