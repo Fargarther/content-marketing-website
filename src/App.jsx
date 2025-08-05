@@ -5,9 +5,26 @@ import './App.css'
 
 function App() {
   const [count, setCount] = useState(0)
+  const [menuOpen, setMenuOpen] = useState(false)
 
   return (
     <>
+      <nav className="navbar">
+        <button
+          className="hamburger"
+          aria-label="Toggle navigation menu"
+          aria-controls="primary-navigation"
+          aria-expanded={menuOpen}
+          onClick={() => setMenuOpen((open) => !open)}
+        >
+          &#9776;
+        </button>
+        <ul id="primary-navigation" className={menuOpen ? 'open' : ''}>
+          <li><a href="#home">Home</a></li>
+          <li><a href="#about">About</a></li>
+          <li><a href="#contact">Contact</a></li>
+        </ul>
+      </nav>
       <div>
         <a href="https://vite.dev" target="_blank">
           <img src={viteLogo} className="logo" alt="Vite logo" />

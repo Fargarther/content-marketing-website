@@ -40,3 +40,39 @@
 .read-the-docs {
   color: #888;
 }
+/* Navigation styles */
+.navbar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.navbar ul {
+  list-style: none;
+  display: flex;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+}
+
+.hamburger {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 2rem;
+  cursor: pointer;
+}
+
+@media (max-width: 600px) {
+  .navbar ul {
+    display: none;
+  }
+  .navbar ul.open {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .hamburger {
+    display: block;
+  }
+}
