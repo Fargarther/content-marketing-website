@@ -1,17 +1,24 @@
 import React from 'react';
 import Carousel from './Carousel';
-import Headshot from './Headshot';
 
 const HeroSection = () => {
   return (
-    <section className="hero-section">
-      <div className="hero-text">
-        <h1>Welcome to My Rustic Homepage</h1>
-        <p>A short introduction or tagline goes here.</p>
+    <main className="main-content">
+      <div className="left-section">
+        <Carousel />
       </div>
-      <Carousel />
-      <Headshot />
-    </section>
+      
+      <div className="right-section">
+        <div className="headshot">AB</div>
+        
+        <div className="content-area">
+          <div className="section-content">
+            <h1>Alex Benson</h1>
+            <p>Content Marketer & Digital Storyteller crafting meaningful connections</p>
+          </div>
+        </div>
+      </div>
+    </main>
   );
 };
 

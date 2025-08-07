@@ -1,5 +1,5 @@
-/* Clean Carousel Styles - No Arrows or Hint Text */
-.carousel-clean-container {
+/* Carousel Container */
+.carousel-container {
   width: 100%;
   height: 500px;
   position: relative;
@@ -11,18 +11,53 @@
   perspective: 1200px;
 }
 
-.carousel-clean-wheel {
+/* Wheel Guide - Visual ring path */
+.wheel-guide {
+  position: absolute;
+  width: 500px;
+  height: 500px;
+  border-radius: 50%;
+  pointer-events: none;
+  transform: translateX(-100px);
+  background: radial-gradient(
+    circle at 75% 50%,
+    rgba(85, 107, 47, 0.05),
+    transparent 40%
+  );
+  border: 1px dashed rgba(85, 107, 47, 0.08);
+}
+
+/* Focus Area - Right side indicator */
+.focus-area {
+  position: absolute;
+  right: 80px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2px;
+  height: 160px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(85, 107, 47, 0.3) 50%,
+    transparent
+  );
+  opacity: 0.5;
+  z-index: 1;
+}
+
+/* Carousel Wheel */
+.carousel-wheel {
   position: relative;
   width: 500px;
   height: 500px;
   display: flex;
   align-items: center;
   justify-content: center;
-  /* Shift left to make right side the focus */
   transform: translateX(-100px);
 }
 
-.carousel-clean-item {
+/* Carousel Item */
+.carousel-item {
   position: absolute;
   width: 300px;
   height: 160px;
@@ -34,68 +69,65 @@
   transform-origin: center center;
 }
 
-.carousel-clean-card {
+/* Carousel Card */
+.carousel-card {
   width: 100%;
   height: 100%;
   border-radius: 12px;
   box-shadow: 
-    0 10px 40px rgba(0, 0, 0, 0.25),
-    0 2px 10px rgba(0, 0, 0, 0.12);
+    0 8px 32px rgba(0, 0, 0, 0.2),
+    0 2px 8px rgba(0, 0, 0, 0.1);
   position: relative;
   color: white;
   overflow: hidden;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
   cursor: pointer;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.carousel-clean-card:hover {
+.carousel-card:hover {
   transform: scale(1.05);
   box-shadow: 
-    0 15px 50px rgba(0, 0, 0, 0.3),
-    0 5px 15px rgba(0, 0, 0, 0.15);
+    0 12px 40px rgba(0, 0, 0, 0.25),
+    0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-.card-inner {
-  padding: 1.5rem;
-  position: relative;
-  z-index: 2;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-
+/* Project Badge */
 .project-badge {
   position: absolute;
   top: 1rem;
   right: 1rem;
   font-size: 2.5rem;
   font-weight: bold;
-  opacity: 0.12;
+  opacity: 0.15;
   font-family: 'Georgia', serif;
 }
 
-.carousel-clean-card h3 {
-  font-size: 1.6rem;
-  margin-bottom: 0.5rem;
+/* Card Content */
+.carousel-card h3 {
+  font-size: 1.5rem;
+  margin-bottom: 0.25rem;
   font-weight: 700;
-  text-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  text-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
-.carousel-clean-card p {
-  font-size: 0.95rem;
+.carousel-card p {
+  font-size: 0.9rem;
   opacity: 0.9;
   line-height: 1.4;
-  margin-bottom: 1rem;
 }
 
+/* Card Action Button */
 .card-action {
   background: rgba(255, 255, 255, 0.15);
   border: 2px solid rgba(255, 255, 255, 0.25);
   color: white;
-  padding: 0.5rem 1.2rem;
+  padding: 0.5rem 1rem;
   border-radius: 8px;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -108,48 +140,11 @@
 .card-action:hover {
   background: rgba(255, 255, 255, 0.25);
   border-color: rgba(255, 255, 255, 0.4);
-  transform: translateX(5px);
-  letter-spacing: 1px;
-}
-
-.card-shine {
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.3),
-    transparent
-  );
-  transition: left 0.6s ease;
-}
-
-.carousel-clean-card:hover .card-shine {
-  left: 100%;
-}
-
-/* Visual guide - subtle wheel path indicator */
-.wheel-guide {
-  position: absolute;
-  width: 500px;
-  height: 500px;
-  border-radius: 50%;
-  pointer-events: none;
-  transform: translateX(-100px);
-  /* Very subtle guide */
-  background: radial-gradient(
-    circle at 75% 50%,
-    rgba(85, 107, 47, 0.05),
-    transparent 40%
-  );
-  border: 1px dashed rgba(85, 107, 47, 0.08);
+  transform: translateX(3px);
 }
 
 /* Fade overlay on left side */
-.carousel-clean-container::before {
+.carousel-container::before {
   content: '';
   position: absolute;
   left: 0;
@@ -167,27 +162,8 @@
   z-index: 500;
 }
 
-/* Focus indicator on right - subtle */
-.carousel-clean-container::after {
-  content: '';
-  position: absolute;
-  right: 30px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 2px;
-  height: 160px;
-  background: linear-gradient(
-    to bottom,
-    transparent,
-    rgba(85, 107, 47, 0.3) 50%,
-    transparent
-  );
-  opacity: 0.5;
-  z-index: 1;
-}
-
-/* Indicators only - positioned at bottom center */
-.carousel-indicators {
+/* Indicators */
+.indicators {
   position: absolute;
   bottom: 30px;
   display: flex;
@@ -218,36 +194,42 @@
 
 /* Mobile Responsive */
 @media (max-width: 768px) {
-  .carousel-clean-container {
+  .carousel-container {
     height: 400px;
   }
   
-  .carousel-clean-wheel {
+  .carousel-wheel {
     width: 400px;
     height: 400px;
     transform: translateX(-80px);
   }
   
-  .carousel-clean-item {
+  .wheel-guide {
+    width: 400px;
+    height: 400px;
+    transform: translateX(-80px);
+  }
+  
+  .carousel-item {
     width: 240px;
     height: 130px;
     margin-left: -120px;
     margin-top: -65px;
   }
   
-  .card-inner {
+  .carousel-card {
     padding: 1rem;
   }
   
-  .carousel-clean-card h3 {
-    font-size: 1.3rem;
+  .carousel-card h3 {
+    font-size: 1.2rem;
   }
   
-  .carousel-clean-card p {
-    font-size: 0.85rem;
+  .carousel-card p {
+    font-size: 0.8rem;
   }
   
-  .carousel-indicators {
+  .indicators {
     bottom: 20px;
   }
   
@@ -257,18 +239,11 @@
   }
 }
 
-/* High performance mode */
-@media (prefers-reduced-motion: no-preference) {
-  .carousel-clean-item {
-    will-change: transform, opacity, filter;
-  }
-}
-
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
-  .carousel-clean-item,
-  .carousel-clean-card,
-  .card-shine {
+  .carousel-item,
+  .carousel-card,
+  .card-action {
     transition-duration: 0.01ms !important;
   }
 }

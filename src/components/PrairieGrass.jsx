@@ -7,7 +7,7 @@ const PrairieGrass = () => {
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
-    const W = canvas.parentElement.offsetWidth;
+    const W = window.innerWidth;
     const H = 120;
     const dpr = window.devicePixelRatio || 1;
     canvas.width = W * dpr;
