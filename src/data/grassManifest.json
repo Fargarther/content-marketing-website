@@ -1,0 +1,20 @@
+{
+  "blades": [
+    { "name": "blade_green_01", "palette": "green" },
+    { "name": "blade_green_02", "palette": "green" },
+    { "name": "blade_green_03", "palette": "green" },
+    { "name": "blade_green_left_01", "palette": "green" },
+    { "name": "blade_green_left_02", "palette": "green" },
+    { "name": "blade_green_straight_01", "palette": "green" },
+    { "name": "blade_green_straight_02", "palette": "green" },
+    { "name": "blade_green_straigh_03", "palette": "green" }
+  ],
+  "buds": [
+    { "name": "seed_head_01", "palette": "green" },
+    { "name": "seed_head_02", "palette": "green" }
+  ],
+  "clumps": [],
+  "path": "/src/assets/grass/",
+  "densitySuffix": "",
+  "ext": "png"
+}
