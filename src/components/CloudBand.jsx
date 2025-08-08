@@ -1,138 +1,68 @@
-import React from "react";
+import React from 'react';
+import './CloudBand.css';
 
-const CloudBand = ({
-  height = 280,
-  speedFront = 60,
-  speedMid = 95,
-  speedBack = 140,
-  opacityFront = 0.95,
-  opacityMid = 0.7,
-  opacityBack = 0.5,
-  idPrefix = "cloudband",
-  className = ""
-}) => {
-  const blurS = `${idPrefix}-blur-s`;
-  const blurM = `${idPrefix}-blur-m`;
-  const fadeY = `${idPrefix}-fade-y`;
-  const maskId = `${idPrefix}-mask`;
-  const drop = `${idPrefix}-drop`;
-
+const CloudBand = () => {
   return (
-    <div
-      className={className}
-      style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", zIndex: -1 }}
-      aria-hidden
-    >
-      {/* Inline styles so it works out-of-the-box in Vite */}
-      <style>{`
-        .cb-wrap { pointer-events:none; position:absolute; inset:0; overflow:hidden; z-index:0; 
-          background: linear-gradient(to bottom, #87CEEB 0%, #B0E0E6 60%, #E0F6FF 100%); }
-        .cb-svg { width:200%; height:100%; display:block; }
-        @keyframes cb-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-        @keyframes cb-bob1 { 0%,100%{ transform: translateY(0);} 50%{ transform: translateY(-6px);} }
-        @keyframes cb-bob2 { 0%,100%{ transform: translateY(0);} 50%{ transform: translateY(-10px);} }
-        @keyframes cb-breathe { 0%,100%{ transform: scale(1);} 50%{ transform: scale(1.02);} }
-        .cb-track { animation: cb-scroll ${speedFront}s linear infinite; }
-        .cb-track.mid { animation-duration: ${speedMid}s; filter: url(#${blurS}); }
-        .cb-track.back { animation-duration: ${speedBack}s; filter: url(#${blurM}); }
-        .cb-bob1 { animation: cb-bob1 9s ease-in-out infinite alternate; }
-        .cb-bob2 { animation: cb-bob2 12s ease-in-out infinite alternate; }
-        .cb-breathe { animation: cb-breathe 16s ease-in-out infinite; transform-origin:center; }
-        .cb-d1 { animation-delay:-2s; } .cb-d2 { animation-delay:-4s; } .cb-d3 { animation-delay:-6s; } .cb-d4 { animation-delay:-8s; }
-        @media (prefers-reduced-motion: reduce){ .cb-track,.cb-bob1,.cb-bob2,.cb-breathe{ animation:none!important; } }
-        @media (prefers-color-scheme: dark){ .cb-wrap{ background: linear-gradient(to bottom, #16243e, #1f3355 55%, #2a4365); } }
-      `}</style>
+    <div className="clouds-wrapper">
+      {/* BACK LAYER (soft + slow) */}
+      <svg className="clouds-svg" viewBox="0 0 2000 400" preserveAspectRatio="none" aria-hidden>
+        <defs>
+          <symbol id="cloud-a" viewBox="0 0 220 90">
+            <path d="M15 65c-8-20 12-40 35-28 10-22 35-30 58-15 8-12 28-18 45-8 18-5 38 8 42 28 16 2 30 12 30 28 0 18-16 30-38 30H45C28 100 20 85 15 65Z"/>
+          </symbol>
+          <symbol id="cloud-b" viewBox="0 0 260 110">
+            <path d="M30 80c-10-25 18-45 42-35 12-20 38-32 62-18 15-22 42-28 65-12 28-6 48 15 48 38 18 3 32 14 32 30 0 20-16 32-40 32H65C45 115 32 100 30 80Z"/>
+          </symbol>
+        </defs>
 
-      <div className="cb-wrap">
-        {/* Shared defs (filters, symbols, mask, drop shadow) */}
-        <svg width={0} height={0} aria-hidden focusable="false">
-          <defs>
-            <filter id={blurS}><feGaussianBlur stdDeviation="0.6"/></filter>
-            <filter id={blurM}><feGaussianBlur stdDeviation="1.2"/></filter>
-            {/* Soft vertical fade for top/bottom edges */}
-            <linearGradient id={fadeY} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#000" stopOpacity="0"/>
-              <stop offset="20%" stopColor="#000" stopOpacity="1"/>
-              <stop offset="80%" stopColor="#000" stopOpacity="1"/>
-              <stop offset="100%" stopColor="#000" stopOpacity="0"/>
-            </linearGradient>
-            <mask id={maskId}><rect width="100%" height="100%" fill={`url(#${fadeY})`} /></mask>
-            {/* Subtle drop shadow to ensure clouds pop on bright skies */}
-            <filter id={drop} x="-50%" y="-50%" width="200%" height="200%">
-              <feDropShadow dx="0" dy="1" stdDeviation="0.8" floodOpacity="0.18" />
-            </filter>
-            {/* Cloud shapes */}
-            <symbol id={`${idPrefix}-a`} viewBox="0 0 220 90">
-              <path d="M25 70c-6-22 15-38 38-30 8-17 31-26 52-12 10-15 33-21 51-7 22-3 40 12 40 32 14 1 26 10 26 25 0 16-14 27-34 27H55C41 105 31 92 25 70Z"/>
-            </symbol>
-            <symbol id={`${idPrefix}-b`} viewBox="0 0 180 70">
-              <path d="M18 55c-5-16 11-30 28-24 5-12 22-19 38-9 8-13 28-19 43-6 20-3 35 9 35 24 12 1 22 8 22 19 0 12-11 21-28 21H38C26 80 19 70 18 55Z"/>
-            </symbol>
-            <symbol id={`${idPrefix}-c`} viewBox="0 0 260 110">
-              <path d="M30 85c-7-26 17-45 46-36 9-20 36-31 62-14 12-19 40-28 62-10 27-4 48 13 48 37 16 1 30 11 30 29 0 18-16 31-39 31H58C42 122 32 106 30 85Z"/>
-            </symbol>
-            <symbol id={`${idPrefix}-d`} viewBox="0 0 200 80">
-              <path d="M22 60c-5-20 12-35 32-28 6-14 25-22 43-10 9-15 30-21 46-7 21-3 37 10 37 29 13 1 24 9 24 22 0 14-12 24-30 24H44C31 90 23 79 22 60Z"/>
-            </symbol>
-            <symbol id={`${idPrefix}-e`} viewBox="0 0 210 90">
-              <path d="M24 68c-6-21 13-37 36-29 7-16 28-25 48-12 9-15 31-22 49-7 23-3 40 11 40 31 14 1 26 9 26 24 0 15-13 26-32 26H48C34 101 26 89 24 68Z"/>
-            </symbol>
-            <symbol id={`${idPrefix}-f`} viewBox="0 0 240 100">
-              <path d="M35 74c-6-22 13-42 39-33 8-18 30-28 53-13 11-18 36-26 56-9 25-4 44 12 44 34 15 1 28 10 28 26 0 17-14 29-35 29H58C43 108 35 95 35 74Z"/>
-            </symbol>
-          </defs>
-        </svg>
+        <g className="track back" fill="#fff" fillOpacity="var(--op-back)">
+          {/* Track A */}
+          <g className="bob-1 d1"><use href="#cloud-a" x="60"  y="40"  width="280" height="115"/></g>
+          <g className="bob-2 d2"><use href="#cloud-b" x="380" y="65"  width="400" height="165"/></g>
+          <g className="bob-1 d3"><use href="#cloud-a" x="850" y="30"  width="320" height="130"/></g>
+          <g className="bob-2 d4"><use href="#cloud-b" x="1200" y="55" width="380" height="155"/></g>
+          <g className="bob-1 d2"><use href="#cloud-a" x="1620" y="35" width="300" height="125"/></g>
+          {/* Track B (offset by 2000) */}
+          <g className="bob-2 d3"><use href="#cloud-b" x="2060" y="45"  width="390" height="160"/></g>
+          <g className="bob-1 d4"><use href="#cloud-a" x="2480" y="60"  width="310" height="125"/></g>
+          <g className="bob-2 d1"><use href="#cloud-b" x="2820" y="30"  width="370" height="150"/></g>
+        </g>
+      </svg>
 
-        {/* BACK LAYER */}
-        <svg className="cb-svg" viewBox="0 0 2000 400" preserveAspectRatio="none" mask={`url(#${maskId})`}>
-          <g className="cb-track back" fill="#ffffff" fillOpacity={opacityBack}>
-            <g className="cb-bob1 cb-d1"><use href={`#${idPrefix}-c`} x={40} y={40} width={340} height={144} /></g>
-            <g className="cb-bob2 cb-d2"><use href={`#${idPrefix}-f`} x={420} y={55} width={380} height={158} /></g>
-            <g className="cb-bob1 cb-d3"><use href={`#${idPrefix}-e`} x={860} y={30} width={320} height={140} /></g>
-            <g className="cb-bob2 cb-d4"><use href={`#${idPrefix}-c`} x={1220} y={50} width={360} height={152} /></g>
-            <g className="cb-bob1 cb-d2"><use href={`#${idPrefix}-f`} x={1620} y={35} width={400} height={168} /></g>
-            {/* Track B */}
-            <g className="cb-bob2 cb-d3"><use href={`#${idPrefix}-c`} x={2040} y={40} width={340} height={144} /></g>
-            <g className="cb-bob1 cb-d4"><use href={`#${idPrefix}-f`} x={2420} y={55} width={380} height={158} /></g>
-            <g className="cb-bob2 cb-d1"><use href={`#${idPrefix}-e`} x={2860} y={30} width={320} height={140} /></g>
-          </g>
-        </svg>
+      {/* FRONT LAYER (crisper + faster) */}
+      <svg className="clouds-svg" viewBox="0 0 2000 400" preserveAspectRatio="none" aria-hidden>
+        <defs>
+          <symbol id="cloud-c" viewBox="0 0 200 85">
+            <path d="M20 60c-7-18 14-35 32-25 7-15 25-22 42-12 10-14 30-20 48-10 15-4 32 6 38 22 14 2 25 11 25 24 0 15-13 25-32 25H42C30 84 22 72 20 60Z"/>
+          </symbol>
+          <symbol id="cloud-d" viewBox="0 0 240 95">
+            <path d="M22 75c-8-24 20-42 45-32 10-18 34-28 56-14 12-16 35-22 54-8 24-4 42 14 42 35 15 2 28 12 28 27 0 18-15 29-36 29H50C35 112 28 98 22 75Z"/>
+          </symbol>
+          <symbol id="cloud-e" viewBox="0 0 190 75">
+            <path d="M25 58c-6-15 10-28 26-22 6-13 20-18 35-10 9-12 26-17 40-8 18-2 33 10 33 25 10 1 20 7 20 17 0 11-10 19-25 19H40C29 79 24 68 25 58Z"/>
+          </symbol>
+          <symbol id="cloud-f" viewBox="0 0 210 88">
+            <path d="M28 68c-5-20 16-36 36-28 9-16 30-24 50-11 11-14 32-19 50-6 20-3 38 11 38 30 13 1 24 9 24 23 0 15-13 25-32 25H52C39 101 32 88 28 68Z"/>
+          </symbol>
+        </defs>
 
-        {/* MID LAYER */}
-        <svg className="cb-svg" viewBox="0 0 2000 400" preserveAspectRatio="none" mask={`url(#${maskId})`}>
-          <g className="cb-track mid" fill="#ffffff" fillOpacity={opacityMid}>
-            <g className="cb-bob2 cb-d1 cb-breathe"><use href={`#${idPrefix}-a`} x={0} y={95} width={260} height={110} /></g>
-            <g className="cb-bob1 cb-d2 cb-breathe"><use href={`#${idPrefix}-d`} x={270} y={120} width={220} height={94} /></g>
-            <g className="cb-bob2 cb-d3 cb-breathe"><use href={`#${idPrefix}-b`} x={520} y={105} width={230} height={92} /></g>
-            <g className="cb-bob1 cb-d4 cb-breathe"><use href={`#${idPrefix}-e`} x={780} y={115} width={260} height={110} /></g>
-            <g className="cb-bob2 cb-d1 cb-breathe"><use href={`#${idPrefix}-a`} x={1060} y={100} width={260} height={110} /></g>
-            <g className="cb-bob1 cb-d2 cb-breathe"><use href={`#${idPrefix}-d`} x={1340} y={125} width={220} height={94} /></g>
-            <g className="cb-bob2 cb-d3 cb-breathe"><use href={`#${idPrefix}-b`} x={1600} y={110} width={230} height={92} /></g>
-            {/* Track B */}
-            <g className="cb-bob1 cb-d4 cb-breathe"><use href={`#${idPrefix}-e`} x={2000} y={115} width={260} height={110} /></g>
-            <g className="cb-bob2 cb-d1 cb-breathe"><use href={`#${idPrefix}-a`} x={2280} y={100} width={260} height={110} /></g>
-            <g className="cb-bob1 cb-d2 cb-breathe"><use href={`#${idPrefix}-d`} x={2560} y={125} width={220} height={94} /></g>
-          </g>
-        </svg>
-
-        {/* FRONT LAYER */}
-        <svg className="cb-svg" viewBox="0 0 2000 400" preserveAspectRatio="none" mask={`url(#${maskId})`}>
-          <g className="cb-track" fill="#ffffff" fillOpacity={opacityFront} filter={`url(#${drop})`}>
-            <g className="cb-bob1 cb-d1 cb-breathe"><use href={`#${idPrefix}-b`} x={20} y={160} width={180} height={70} /></g>
-            <g className="cb-bob2 cb-d2 cb-breathe"><use href={`#${idPrefix}-a`} x={220} y={140} width={200} height={80} /></g>
-            <g className="cb-bob1 cb-d3 cb-breathe"><use href={`#${idPrefix}-d`} x={440} y={155} width={210} height={82} /></g>
-            <g className="cb-bob2 cb-d4 cb-breathe"><use href={`#${idPrefix}-b`} x={680} y={165} width={180} height={70} /></g>
-            <g className="cb-bob1 cb-d1 cb-breathe"><use href={`#${idPrefix}-a`} x={900} y={150} width={200} height={80} /></g>
-            <g className="cb-bob2 cb-d2 cb-breathe"><use href={`#${idPrefix}-d`} x={1120} y={160} width={210} height={82} /></g>
-            <g className="cb-bob1 cb-d3 cb-breathe"><use href={`#${idPrefix}-b`} x={1360} y={170} width={180} height={70} /></g>
-            <g className="cb-bob2 cb-d4 cb-breathe"><use href={`#${idPrefix}-a`} x={1560} y={145} width={200} height={80} /></g>
-            {/* Track B */}
-            <g className="cb-bob1 cb-d2 cb-breathe"><use href={`#${idPrefix}-d`} x={2000} y={160} width={210} height={82} /></g>
-            <g className="cb-bob2 cb-d3 cb-breathe"><use href={`#${idPrefix}-b`} x={2240} y={170} width={180} height={70} /></g>
-            <g className="cb-bob1 cb-d4 cb-breathe"><use href={`#${idPrefix}-a`} x={2440} y={145} width={200} height={80} /></g>
-          </g>
-        </svg>
-      </div>
+        <g className="track" fill="#fff" fillOpacity="var(--op-front)">
+          {/* Track A */}
+          <g className="bob-1 d1"><use href="#cloud-c" x="10"   y="150" width="220" height="85"/></g>
+          <g className="bob-2 d2"><use href="#cloud-e" x="260"  y="125" width="190" height="75"/></g>
+          <g className="bob-1 d3"><use href="#cloud-d" x="480"  y="160" width="260" height="100"/></g>
+          <g className="bob-2 d4"><use href="#cloud-f" x="770"  y="135" width="210" height="88"/></g>
+          <g className="bob-1 d1"><use href="#cloud-c" x="1020" y="155" width="200" height="85"/></g>
+          <g className="bob-2 d2"><use href="#cloud-d" x="1280" y="130" width="240" height="95"/></g>
+          <g className="bob-1 d3"><use href="#cloud-e" x="1560" y="160" width="180" height="72"/></g>
+          <g className="bob-2 d4"><use href="#cloud-f" x="1780" y="140" width="220" height="90"/></g>
+          {/* Track B */}
+          <g className="bob-1 d1"><use href="#cloud-d" x="2030" y="135" width="250" height="98"/></g>
+          <g className="bob-2 d2"><use href="#cloud-c" x="2320" y="155" width="210" height="85"/></g>
+          <g className="bob-1 d3"><use href="#cloud-e" x="2560" y="145" width="195" height="78"/></g>
+          <g className="bob-2 d4"><use href="#cloud-f" x="2790" y="130" width="230" height="92"/></g>
+        </g>
+      </svg>
     </div>
   );
 };

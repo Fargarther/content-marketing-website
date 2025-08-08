@@ -1,0 +1,111 @@
+.clouds-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 1; /* Behind carousel but visible */
+  background: linear-gradient(to bottom, #87CEEB 0%, #E0F6FF 50%, #FDFCF5 100%);
+  --op-back: 0.4;
+  --op-front: 0.6;
+}
+
+.clouds-svg {
+  position: absolute;
+  width: 200%;
+  height: 100%;
+  top: 0;
+  left: 0;
+}
+
+/* Back layer (slower) */
+.clouds-wrapper > .clouds-svg:first-child .track {
+  animation: cloudscroll-back 240s linear infinite;
+}
+
+/* Front layer (faster) */
+.clouds-wrapper > .clouds-svg:last-child .track {
+  animation: cloudscroll-front 180s linear infinite;
+}
+
+/* Cloud scroll animations */
+@keyframes cloudscroll-back {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-2000px);
+  }
+}
+
+@keyframes cloudscroll-front {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-2000px);
+  }
+}
+
+/* Gentle bobbing animations */
+.bob-1 {
+  animation: bob1 8s ease-in-out infinite;
+}
+
+.bob-2 {
+  animation: bob2 10s ease-in-out infinite;
+}
+
+@keyframes bob1 {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes bob2 {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+/* Animation delays for variety */
+.d1 {
+  animation-delay: 0s;
+}
+
+.d2 {
+  animation-delay: 2s;
+}
+
+.d3 {
+  animation-delay: 4s;
+}
+
+.d4 {
+  animation-delay: 6s;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .clouds-wrapper {
+    --op-back: 0.1;
+    --op-front: 0.2;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .track,
+  .bob-1,
+  .bob-2 {
+    animation: none !important;
+  }
+}
