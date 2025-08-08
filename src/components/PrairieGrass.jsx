@@ -63,7 +63,6 @@ const PrairieGrass = () => {
     if (!canvas) return;
     
     const ctx = canvas.getContext('2d');
-<<<<<<< HEAD
     const updateCanvasSize = () => {
       const W = window.innerWidth;
       const H = 150;
@@ -73,55 +72,13 @@ const PrairieGrass = () => {
       canvas.height = H * dpr;
       canvas.style.width = `${W}px`;
       canvas.style.height = `${H}px`;
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.scale(dpr, dpr);
       
       return { W, H };
     };
 
     let { W, H } = updateCanvasSize();
-=======
-
-    const blades = [];
-    let W;
-    let H;
-
-    const updateCanvasSize = () => {
-      W = window.innerWidth;
-      H = 180; // match CSS height
-      const dpr = window.devicePixelRatio || 1;
-      canvas.width = W * dpr;
-      canvas.height = H * dpr;
-      canvas.style.width = `${W}px`;
-      canvas.style.height = `${H}px`;
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.scale(dpr, dpr);
-    };
-
-    const initBlades = () => {
-      blades.length = 0;
-      const bladeCount = Math.floor(W / 15);
-      for (let i = 0; i < bladeCount; i++) {
-        const x = (i / (bladeCount - 1 || 1)) * W;
-        const height = H * (0.4 + Math.random() * 0.6);
-        blades.push({
-          x,
-          height,
-          angle: 0,
-          velocity: 0,
-          naturalLean: (Math.random() - 0.5) * 0.1,
-          baseY: H + (Math.random() * 6 - 3)
-        });
-      }
-    };
-
-    const resize = () => {
-      updateCanvasSize();
-      initBlades();
-    };
-
-    resize();
-    window.addEventListener('resize', resize);
->>>>>>> 7dec5dd9dc8ddd841dadf6701b22e514ebcf519a
 
     // Create grass instances with sprites
     const initializeGrass = (width) => {
@@ -131,9 +88,9 @@ const PrairieGrass = () => {
       
       // Create multiple layers for depth
       const layers = [
-        { density: 15, scale: [0.4, 0.6], opacity: 0.6, zIndex: 0 }, // Back
-        { density: 12, scale: [0.6, 0.8], opacity: 0.8, zIndex: 1 }, // Mid
-        { density: 10, scale: [0.8, 1.0], opacity: 1.0, zIndex: 2 }  // Front
+        { density: 15, scale: [0.4, 0.55], opacity: 0.6, zIndex: 0 }, // Back
+        { density: 12, scale: [0.55, 0.7], opacity: 0.8, zIndex: 1 }, // Mid
+        { density: 10, scale: [0.7, 0.9], opacity: 1.0, zIndex: 2 }  // Front
       ];
 
       layers.forEach((layer) => {
@@ -143,9 +100,10 @@ const PrairieGrass = () => {
           const scale = layer.scale[0] + Math.random() * (layer.scale[1] - layer.scale[0]);
           const hasBud = Math.random() > 0.7;
           
+          const baseJitter = (Math.random() - 0.5) * 6; // ±3px jitter
           blades.push({
             x,
-            baseY: H,
+            baseY: H + baseJitter,
             scale,
             angle: 0,
             velocity: 0,
@@ -176,7 +134,6 @@ const PrairieGrass = () => {
       }
 
       ctx.clearRect(0, 0, W, H);
-<<<<<<< HEAD
       
       timeRef.current += 0.015;
       const windBase = Math.sin(timeRef.current) * 0.012 + 
@@ -188,10 +145,6 @@ const PrairieGrass = () => {
         
         // Mouse/touch interaction
         blade.targetAngle = 0;
-=======
-      blades.forEach(blade => {
-        let targetAngle = blade.naturalLean;
->>>>>>> 7dec5dd9dc8ddd841dadf6701b22e514ebcf519a
         const px = pointerRef.current.x;
         const py = pointerRef.current.y;
         
@@ -203,14 +156,8 @@ const PrairieGrass = () => {
           
           if (distance < influence) {
             const direction = dx > 0 ? 1 : -1;
-<<<<<<< HEAD
             const factor = Math.pow((influence - distance) / influence, 2);
             blade.targetAngle = direction * 0.4 * factor * blade.scale;
-=======
-            const factor = (influence - distance) / influence;
-            const maxAngle = 0.7;
-            targetAngle += direction * maxAngle * factor;
->>>>>>> 7dec5dd9dc8ddd841dadf6701b22e514ebcf519a
           }
         }
         
@@ -223,19 +170,24 @@ const PrairieGrass = () => {
         // Draw blade
         ctx.save();
         ctx.translate(blade.x, blade.baseY);
-<<<<<<< HEAD
         ctx.rotate(blade.angle + blade.naturalLean + windEffect);
         ctx.globalAlpha = blade.opacity;
         
         if (blade.bladeImage && blade.bladeImage.complete) {
-          const height = blade.bladeImage.height * blade.scale;
-          const width = blade.bladeImage.width * blade.scale;
-          ctx.drawImage(blade.bladeImage, -width / 2, -height, width, height);
+          // Normalize blade height to canvas height
+          const bladeHeight = Math.min(H * blade.scale, H * 0.98); // Clamp below 0.98*H
+          const aspectRatio = blade.bladeImage.width / blade.bladeImage.height;
+          const bladeWidth = bladeHeight * aspectRatio;
+          
+          ctx.drawImage(blade.bladeImage, -bladeWidth / 2, -bladeHeight, bladeWidth, bladeHeight);
           
           if (blade.budImage && blade.budImage.complete) {
-            const budHeight = blade.budImage.height * blade.scale * 0.8;
-            const budWidth = blade.budImage.width * blade.scale * 0.8;
-            ctx.drawImage(blade.budImage, -budWidth / 2, -height - budHeight * 0.7, budWidth, budHeight);
+            // Bud at 30% of blade height
+            const budHeight = bladeHeight * 0.3;
+            const budAspectRatio = blade.budImage.width / blade.budImage.height;
+            const budWidth = budHeight * budAspectRatio;
+            // Position bud at the top of the blade
+            ctx.drawImage(blade.budImage, -budWidth / 2, -bladeHeight, budWidth, budHeight);
           }
         } else {
           // Fallback rendering
@@ -244,19 +196,11 @@ const PrairieGrass = () => {
           ctx.lineCap = 'round';
           ctx.beginPath();
           ctx.moveTo(0, 0);
-          ctx.lineTo(0, -60 * blade.scale);
+          const fallbackHeight = Math.min(H * blade.scale * 0.6, H * 0.98);
+          ctx.lineTo(0, -fallbackHeight);
           ctx.stroke();
         }
         
-=======
-        ctx.rotate(blade.angle);
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.lineTo(0, -blade.height);
-        ctx.strokeStyle = '#556B2F';
-        ctx.lineWidth = 2;
-        ctx.stroke();
->>>>>>> 7dec5dd9dc8ddd841dadf6701b22e514ebcf519a
         ctx.restore();
       });
 
@@ -285,7 +229,6 @@ const PrairieGrass = () => {
     } else {
       // Draw static grass
       ctx.clearRect(0, 0, W, H);
-<<<<<<< HEAD
       bladesRef.current.forEach(blade => {
         ctx.save();
         ctx.translate(blade.x, blade.baseY);
@@ -293,9 +236,11 @@ const PrairieGrass = () => {
         ctx.globalAlpha = blade.opacity;
         
         if (blade.bladeImage && blade.bladeImage.complete) {
-          const height = blade.bladeImage.height * blade.scale;
-          const width = blade.bladeImage.width * blade.scale;
-          ctx.drawImage(blade.bladeImage, -width / 2, -height, width, height);
+          // Normalize blade height to canvas height for static rendering
+          const bladeHeight = Math.min(H * blade.scale, H * 0.98);
+          const aspectRatio = blade.bladeImage.width / blade.bladeImage.height;
+          const bladeWidth = bladeHeight * aspectRatio;
+          ctx.drawImage(blade.bladeImage, -bladeWidth / 2, -bladeHeight, bladeWidth, bladeHeight);
         }
         
         ctx.restore();
@@ -307,21 +252,6 @@ const PrairieGrass = () => {
       W = newSize.W;
       H = newSize.H;
       bladesRef.current = initializeGrass(W);
-=======
-      ctx.strokeStyle = '#556B2F';
-      ctx.lineWidth = 2;
-      blades.forEach(blade => {
-        ctx.beginPath();
-        ctx.moveTo(blade.x, blade.baseY);
-        ctx.lineTo(blade.x, blade.baseY - blade.height);
-        ctx.stroke();
-      });
-    }
-
-    return () => {
-      if (animationId) cancelAnimationFrame(animationId);
-      window.removeEventListener('resize', resize);
->>>>>>> 7dec5dd9dc8ddd841dadf6701b22e514ebcf519a
     };
 
     window.addEventListener('resize', handleResize);
