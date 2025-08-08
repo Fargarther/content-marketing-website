@@ -6,7 +6,7 @@
 
 html, body {
   height: 100%;
-  overflow-x: hidden;
+  overflow: hidden; /* No scrolling */
 }
 
 body {
@@ -19,7 +19,8 @@ body {
 }
 
 .app {
-  min-height: 100vh;
+  height: 100%;
+  overflow: hidden; /* No scrolling */
   position: relative;
   background: #FDFCF5;
 }

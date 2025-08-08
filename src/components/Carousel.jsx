@@ -25,9 +25,6 @@ const Carousel = () => {
       const x = Math.cos(angle) * radius;
       const y = Math.sin(angle) * radius;
       
-      // Stack offset for depth
-      const stackOffset = index * 8;
-      
       // Normalize x for effects (-1 to 1, where 1 is rightmost)
       const normalizedX = x / radius;
       
@@ -53,7 +50,7 @@ const Carousel = () => {
       // Apply transforms
       item.style.transform = `
         translateX(${x * 0.7}px)
-        translateY(${y * 0.5 + stackOffset}px)
+        translateY(${y * 0.5}px)
         scale(${scale})
         rotateY(${rotateY}deg)
       `;
