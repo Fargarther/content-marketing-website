@@ -45,7 +45,8 @@
 
 .carousel-wrapper {
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start;
+  overflow: hidden;
 }
 
 .headshot-wrapper {
@@ -81,7 +82,7 @@
   }
   
   .carousel-wrapper {
-    justify-content: center;
+    justify-content: flex-start;
   }
   
   .headshot-wrapper {

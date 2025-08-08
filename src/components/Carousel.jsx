@@ -120,11 +120,12 @@ const Carousel = () => {
     const handleWheel = (e) => {
       e.preventDefault();
       if (isTransitioning) return;
-      
+
+      // Match card movement to scroll direction
       if (e.deltaY > 0) {
-        rotateWheel(1);
-      } else {
         rotateWheel(-1);
+      } else {
+        rotateWheel(1);
       }
     };
 
