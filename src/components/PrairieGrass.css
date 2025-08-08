@@ -3,9 +3,9 @@
   bottom: 60px;
   left: 0;
   right: 0;
-  height: 150px;
+  height: 180px;
   pointer-events: none;
-  z-index: 999;
+  z-index: 1001;
 }
 
 .prairie-grass {

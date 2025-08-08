@@ -65,7 +65,7 @@ const PrairieGrass = () => {
     const ctx = canvas.getContext('2d');
     const updateCanvasSize = () => {
       const W = window.innerWidth;
-      const H = 150;
+      const H = 180; // Increased height to prevent seed head cutoff
       const dpr = window.devicePixelRatio || 1;
       
       canvas.width = W * dpr;
@@ -86,21 +86,73 @@ const PrairieGrass = () => {
       const bladeImages = grassManifest.blades.map(b => window.grassImageCache[`blade_${b.name}`]);
       const budImages = grassManifest.buds.map(b => window.grassImageCache[`bud_${b.name}`]);
       
-      // Create multiple layers for depth
+      // Define blade type categories with distributions
+      const bladeTypes = {
+        short: { 
+          probability: 0.40, // 40%
+          scaleRange: [0.2, 0.35], // Reduced to make seed heads more dominant
+          leanRange: [-0.05, 0.05],
+          canHaveBud: false // Never on shortest blades
+        },
+        medium: { 
+          probability: 0.35, // 35%
+          scaleRange: [0.35, 0.5], // Reduced to make seed heads more dominant
+          leanRange: [-0.08, 0.08],
+          canHaveBud: true
+        },
+        tall: { 
+          probability: 0.25, // 25%
+          scaleRange: [0.5, 0.6], // Reduced to make seed heads more dominant
+          leanRange: [-0.1, 0.1],
+          canHaveBud: true
+        }
+      };
+      
+      // Helper to select blade type based on probability
+      const selectBladeType = () => {
+        const rand = Math.random();
+        if (rand < bladeTypes.short.probability) return bladeTypes.short;
+        if (rand < bladeTypes.short.probability + bladeTypes.medium.probability) return bladeTypes.medium;
+        return bladeTypes.tall;
+      };
+      
+      // Create multiple layers for depth - increased density for sparser initial grass
       const layers = [
-        { density: 15, scale: [0.4, 0.55], opacity: 0.6, zIndex: 0 }, // Back
-        { density: 12, scale: [0.55, 0.7], opacity: 0.8, zIndex: 1 }, // Mid
-        { density: 10, scale: [0.7, 0.9], opacity: 1.0, zIndex: 2 }  // Front
+        { density: 20, opacity: 0.6, zIndex: 0 }, // Back - sparser
+        { density: 16, opacity: 0.8, zIndex: 1 }, // Mid - sparser
+        { density: 13, opacity: 1.0, zIndex: 2 }  // Front - sparser
       ];
+
+      let totalBladesCreated = 0;
+      let budBladesCreated = 0;
 
       layers.forEach((layer) => {
         const count = Math.floor(width / layer.density);
         for (let i = 0; i < count; i++) {
           const x = (i / count) * width + (Math.random() - 0.5) * layer.density;
-          const scale = layer.scale[0] + Math.random() * (layer.scale[1] - layer.scale[0]);
-          const hasBud = Math.random() > 0.7;
+          const bladeType = selectBladeType();
+          
+          // Random scale within the blade type's range
+          const scale = bladeType.scaleRange[0] + 
+                       Math.random() * (bladeType.scaleRange[1] - bladeType.scaleRange[0]);
+          
+          // Determine if this blade should have a bud (maintain ~20% overall)
+          let hasBud = false;
+          if (bladeType.canHaveBud) {
+            const targetBudRatio = 0.2; // 1 in 5 blades
+            const currentBudRatio = totalBladesCreated > 0 ? budBladesCreated / totalBladesCreated : 0;
+            // Increase chance if we're below target ratio
+            const budProbability = currentBudRatio < targetBudRatio ? 0.3 : 0.15;
+            hasBud = Math.random() < budProbability;
+          }
+          
+          if (hasBud) budBladesCreated++;
+          totalBladesCreated++;
           
           const baseJitter = (Math.random() - 0.5) * 6; // ±3px jitter
+          const naturalLean = bladeType.leanRange[0] + 
+                             Math.random() * (bladeType.leanRange[1] - bladeType.leanRange[0]);
+          
           blades.push({
             x,
             baseY: H + baseJitter,
@@ -108,13 +160,15 @@ const PrairieGrass = () => {
             angle: 0,
             velocity: 0,
             targetAngle: 0,
-            naturalLean: (Math.random() - 0.5) * 0.05,
+            naturalLean,
             swayOffset: Math.random() * Math.PI * 2,
             opacity: layer.opacity,
             zIndex: layer.zIndex,
             bladeImage: bladeImages[Math.floor(Math.random() * bladeImages.length)],
             budImage: hasBud ? budImages[Math.floor(Math.random() * budImages.length)] : null,
-            swayIntensity: 0.8 + Math.random() * 0.4
+            swayIntensity: 0.8 + Math.random() * 0.4,
+            bladeType: bladeType === bladeTypes.short ? 'short' : 
+                      (bladeType === bladeTypes.medium ? 'medium' : 'tall')
           });
         }
       });
@@ -141,51 +195,71 @@ const PrairieGrass = () => {
                       Math.sin(timeRef.current * 1.3) * 0.005;
 
       bladesRef.current.forEach(blade => {
-        const windEffect = windBase + Math.sin(timeRef.current + blade.swayOffset) * 0.01 * blade.swayIntensity;
-        
-        // Mouse/touch interaction
-        blade.targetAngle = 0;
-        const px = pointerRef.current.x;
-        const py = pointerRef.current.y;
-        
-        if (px !== null && py !== null) {
-          const dx = blade.x - px;
-          const dy = blade.baseY - py;
-          const distance = Math.sqrt(dx * dx + dy * dy);
-          const influence = 100;
+        // Only apply wind and interaction to non-seed blades
+        if (!blade.budImage) {
+          const windEffect = windBase + Math.sin(timeRef.current + blade.swayOffset) * 0.01 * blade.swayIntensity;
           
-          if (distance < influence) {
-            const direction = dx > 0 ? 1 : -1;
-            const factor = Math.pow((influence - distance) / influence, 2);
-            blade.targetAngle = direction * 0.4 * factor * blade.scale;
+          // Mouse/touch interaction
+          blade.targetAngle = windEffect * 0.5; // Apply wind effect as target
+          const px = pointerRef.current.x;
+          const py = pointerRef.current.y;
+          
+          if (px !== null && py !== null) {
+            const dx = blade.x - px;
+            const dy = blade.baseY - py;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const influence = 100;
+            
+            if (distance < influence) {
+              const direction = dx > 0 ? 1 : -1;
+              const factor = Math.pow((influence - distance) / influence, 2);
+              blade.targetAngle = direction * 0.4 * factor * blade.scale + windEffect * 0.5;
+            }
           }
+        } else {
+          // Seed pod blades remain static
+          blade.targetAngle = 0;
         }
         
-        // Spring physics
-        const accel = stiffness * (blade.targetAngle - blade.angle);
-        blade.velocity += accel;
-        blade.velocity *= damping;
-        blade.angle += blade.velocity;
+        // Spring physics - only for non-seed blades
+        if (!blade.budImage) {
+          const accel = stiffness * (blade.targetAngle - blade.angle);
+          blade.velocity += accel;
+          blade.velocity *= damping;
+          blade.angle += blade.velocity;
+        } else {
+          // Keep seed blades static
+          blade.angle = 0;
+          blade.velocity = 0;
+        }
         
         // Draw blade
         ctx.save();
         ctx.translate(blade.x, blade.baseY);
-        ctx.rotate(blade.angle + blade.naturalLean + windEffect);
+        // Only rotate non-seed blades with wind; seed blades only get natural lean
+        if (!blade.budImage) {
+          const windEffect = windBase + Math.sin(timeRef.current + blade.swayOffset) * 0.01 * blade.swayIntensity;
+          ctx.rotate(blade.angle + blade.naturalLean + windEffect);
+        } else {
+          ctx.rotate(blade.naturalLean); // Seed blades only have static lean
+        }
         ctx.globalAlpha = blade.opacity;
         
         if (blade.bladeImage && blade.bladeImage.complete) {
           // Normalize blade height to canvas height
-          const bladeHeight = Math.min(H * blade.scale, H * 0.98); // Clamp below 0.98*H
+          // Account for much larger seed heads when clamping height
+          const maxBladeHeight = blade.budImage ? H * 0.2 : H * 0.6; // Lower both to make seed heads more dominant
+          const bladeHeight = Math.min(H * blade.scale, maxBladeHeight);
           const aspectRatio = blade.bladeImage.width / blade.bladeImage.height;
           const bladeWidth = bladeHeight * aspectRatio;
           
           ctx.drawImage(blade.bladeImage, -bladeWidth / 2, -bladeHeight, bladeWidth, bladeHeight);
           
           if (blade.budImage && blade.budImage.complete) {
-            // Bud at 30% of blade height
-            const budHeight = bladeHeight * 0.3;
+            // Make seed heads visually dominant - much larger than blades
+            const budHeight = H * 1.5; // Seed heads at 150% of canvas height for dominance
             const budAspectRatio = blade.budImage.width / blade.budImage.height;
-            const budWidth = budHeight * budAspectRatio;
+            const budWidth = budHeight * budAspectRatio * 1.5; // Also wider for more presence
             // Position bud at the top of the blade
             ctx.drawImage(blade.budImage, -budWidth / 2, -bladeHeight, budWidth, budHeight);
           }
@@ -237,10 +311,20 @@ const PrairieGrass = () => {
         
         if (blade.bladeImage && blade.bladeImage.complete) {
           // Normalize blade height to canvas height for static rendering
-          const bladeHeight = Math.min(H * blade.scale, H * 0.98);
+          const maxBladeHeight = blade.budImage ? H * 0.2 : H * 0.6; // Lower both to make seed heads more dominant
+          const bladeHeight = Math.min(H * blade.scale, maxBladeHeight);
           const aspectRatio = blade.bladeImage.width / blade.bladeImage.height;
           const bladeWidth = bladeHeight * aspectRatio;
           ctx.drawImage(blade.bladeImage, -bladeWidth / 2, -bladeHeight, bladeWidth, bladeHeight);
+          
+          // Draw bud if present (static rendering)
+          if (blade.budImage && blade.budImage.complete) {
+            // Make seed heads visually dominant
+            const budHeight = H * 1.5; // Much larger for visual dominance
+            const budAspectRatio = blade.budImage.width / blade.budImage.height;
+            const budWidth = budHeight * budAspectRatio * 1.5; // Wider too
+            ctx.drawImage(blade.budImage, -budWidth / 2, -bladeHeight, budWidth, budHeight);
+          }
         }
         
         ctx.restore();
