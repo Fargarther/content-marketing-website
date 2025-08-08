@@ -95,19 +95,19 @@ const PrairieGrass = () => {
         short: { 
           probability: 0.40, // 40%
           scaleRange: [NONPOD_MIN, NONPOD_MIN + 0.15], // 40-55% of H
-          leanRange: [-0.05, 0.05],
+          leanRange: [-0.25, 0.25], // Harsh angles for weathered look
           canHaveBud: false // Never on shortest blades
         },
         medium: { 
           probability: 0.35, // 35%
           scaleRange: [NONPOD_MIN + 0.15, NONPOD_MAX - 0.1], // 55-62% of H
-          leanRange: [-0.08, 0.08],
+          leanRange: [-0.28, 0.28], // Even harsher angles
           canHaveBud: true
         },
         tall: { 
           probability: 0.25, // 25%
           scaleRange: [NONPOD_MAX - 0.1, NONPOD_MAX], // 62-72% of H
-          leanRange: [-0.1, 0.1],
+          leanRange: [-0.3, 0.3], // Most aggressive angles
           canHaveBud: true
         }
       };
@@ -120,29 +120,37 @@ const PrairieGrass = () => {
         return bladeTypes.tall;
       };
       
-      // Create multiple layers for depth - increased density for sparser initial grass
+      // Create multiple layers for depth - moderately sparse grass
       const layers = [
-        { density: 20, opacity: 0.6, zIndex: 0 }, // Back - sparser
-        { density: 16, opacity: 0.8, zIndex: 1 }, // Mid - sparser
-        { density: 13, opacity: 1.0, zIndex: 2 }  // Front - sparser
+        { density: 38, opacity: 0.6, zIndex: 0 }, // Back - moderately sparse
+        { density: 30, opacity: 0.8, zIndex: 1 }, // Mid - moderately sparse
+        { density: 24, opacity: 1.0, zIndex: 2 }  // Front - moderately sparse
       ];
 
       let totalBladesCreated = 0;
       let budBladesCreated = 0;
 
+      // Store pod blade positions for clustering
+      const podPositions = [];
+      
       layers.forEach((layer) => {
         const count = Math.floor(width / layer.density);
         for (let i = 0; i < count; i++) {
-          const x = (i / count) * width + (Math.random() - 0.5) * layer.density;
+          // Skip placing blade 15% of the time for natural gaps
+          if (Math.random() < 0.15) continue;
+          
+          // Heavy jitter for irregular spacing
+          const baseX = (i / count) * width;
+          const x = baseX + (Math.random() - 0.5) * layer.density * 0.8;
           const bladeType = selectBladeType();
           
-          // Determine if this blade should have a bud (maintain ~20% overall)
+          // Determine if this blade should have a bud (reduced to ~10% overall)
           let hasBud = false;
           if (bladeType.canHaveBud) {
-            const targetBudRatio = 0.2; // 1 in 5 blades
+            const targetBudRatio = 0.1; // 1 in 10 blades
             const currentBudRatio = totalBladesCreated > 0 ? budBladesCreated / totalBladesCreated : 0;
             // Increase chance if we're below target ratio
-            const budProbability = currentBudRatio < targetBudRatio ? 0.3 : 0.15;
+            const budProbability = currentBudRatio < targetBudRatio ? 0.15 : 0.08;
             hasBud = Math.random() < budProbability;
           }
           
@@ -156,15 +164,19 @@ const PrairieGrass = () => {
                    Math.random() * (bladeType.scaleRange[1] - bladeType.scaleRange[0]);
           }
           
-          if (hasBud) budBladesCreated++;
+          if (hasBud) {
+            budBladesCreated++;
+            podPositions.push(x); // Remember pod position for clustering
+          }
           totalBladesCreated++;
           
-          const baseJitter = (Math.random() - 0.5) * 6; // keep for subtle x jitter only
-          const naturalLean = bladeType.leanRange[0] + 
-                             Math.random() * (bladeType.leanRange[1] - bladeType.leanRange[0]);
+          // Pod blades get less harsh lean
+          const naturalLean = hasBud ? 
+            (Math.random() - 0.5) * 0.3 : // ±0.15 radians for pods
+            bladeType.leanRange[0] + Math.random() * (bladeType.leanRange[1] - bladeType.leanRange[0]);
           
           blades.push({
-            x: x + baseJitter * 0.3, // apply jitter to x position only
+            x: x,
             baseY: H, // lock to baseline so nothing floats above bottom
             scale,
             angle: 0,
@@ -180,10 +192,93 @@ const PrairieGrass = () => {
             bladeType: bladeType === bladeTypes.short ? 'short' : 
                       (bladeType === bladeTypes.medium ? 'medium' : 'tall')
           });
+          
+          // Create pronounced tufts/clumps around seed pods
+          if (hasBud) {
+            const clusterCount = 4 + Math.floor(Math.random() * 4); // 4-7 blades for fuller tufts
+            
+            for (let j = 0; j < clusterCount; j++) {
+              // Create concentric rings of blades around the pod
+              const angle = (j / clusterCount) * Math.PI * 2; // Distribute around pod
+              const distance = 5 + Math.random() * 20; // Distance from pod center (5-25px)
+              const clusterX = x + Math.cos(angle) * distance;
+              
+              // Varied heights within tuft - some medium, some short
+              const heightVariation = Math.random();
+              let clusterScale;
+              if (heightVariation < 0.3) {
+                clusterScale = 0.25 + Math.random() * 0.15; // Very short (25-40%)
+              } else if (heightVariation < 0.7) {
+                clusterScale = 0.4 + Math.random() * 0.2; // Medium (40-60%)
+              } else {
+                clusterScale = 0.6 + Math.random() * 0.15; // Taller (60-75%)
+              }
+              
+              // Blades lean outward from pod center slightly
+              const outwardLean = Math.cos(angle) * 0.1; // Subtle outward lean
+              const clusterLean = outwardLean + (Math.random() - 0.5) * 0.3;
+              
+              blades.push({
+                x: clusterX,
+                baseY: H,
+                scale: clusterScale,
+                angle: 0,
+                velocity: 0,
+                targetAngle: 0,
+                naturalLean: clusterLean,
+                swayOffset: Math.random() * Math.PI * 2, // Different sway phase
+                opacity: layer.opacity * (0.85 + Math.random() * 0.15), // Varied opacity
+                zIndex: layer.zIndex,
+                bladeImage: bladeImages[Math.floor(Math.random() * bladeImages.length)],
+                budImage: null, // Cluster blades never have buds
+                swayIntensity: 0.7 + Math.random() * 0.4, // Varied sway intensity
+                bladeType: 'cluster'
+              });
+            }
+            
+            // Add a few very close, short blades for density at base
+            const baseBladesCount = 2 + Math.floor(Math.random() * 2); // 2-3 base blades
+            for (let k = 0; k < baseBladesCount; k++) {
+              const baseAngle = Math.random() * Math.PI * 2;
+              const baseDistance = 3 + Math.random() * 5; // Very close (3-8px)
+              const baseX = x + Math.cos(baseAngle) * baseDistance;
+              
+              blades.push({
+                x: baseX,
+                baseY: H,
+                scale: 0.2 + Math.random() * 0.15, // Very short for base
+                angle: 0,
+                velocity: 0,
+                targetAngle: 0,
+                naturalLean: (Math.random() - 0.5) * 0.4, // Random harsh angles
+                swayOffset: Math.random() * Math.PI * 2,
+                opacity: layer.opacity * 0.8,
+                zIndex: layer.zIndex + 0.1, // Slightly in front
+                bladeImage: bladeImages[Math.floor(Math.random() * bladeImages.length)],
+                budImage: null,
+                swayIntensity: 0.6 + Math.random() * 0.3,
+                bladeType: 'base'
+              });
+            }
+          }
         }
       });
 
-      return blades.sort((a, b) => a.zIndex - b.zIndex);
+      // Sort blades - buds in back, then by height
+      return blades.sort((a, b) => {
+        // First sort by zIndex layer
+        if (a.zIndex !== b.zIndex) {
+          return a.zIndex - b.zIndex;
+        }
+        
+        // Within same layer:
+        // Put buds in back (draw first)
+        if (a.budImage && !b.budImage) return -1;
+        if (!a.budImage && b.budImage) return 1;
+        
+        // Then sort by height (taller in back)
+        return b.scale - a.scale;
+      });
     };
 
     bladesRef.current = initializeGrass(W);
