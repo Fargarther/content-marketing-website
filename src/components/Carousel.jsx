@@ -6,8 +6,6 @@ const Carousel = () => {
   const [rotation, setRotation] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const wheelRef = useRef(null);
-  const autoplayRef = useRef(null);
-  const [isPaused, setIsPaused] = useState(false);
 
   const itemCount = projects.length;
   const angleStep = 360 / itemCount;
@@ -100,20 +98,6 @@ const Carousel = () => {
     }, 600);
   };
 
-  // Auto-rotation
-  useEffect(() => {
-    if (!isPaused) {
-      autoplayRef.current = setInterval(() => {
-        rotateWheel(1);
-      }, 4000);
-    }
-    
-    return () => {
-      if (autoplayRef.current) {
-        clearInterval(autoplayRef.current);
-      }
-    };
-  }, [isPaused, rotateWheel]);
 
   // Mouse wheel control
   useEffect(() => {
@@ -121,11 +105,11 @@ const Carousel = () => {
       e.preventDefault();
       if (isTransitioning) return;
 
-      // Match card movement to scroll direction
+      // Rotate counter-clockwise on upward scroll, clockwise on downward scroll
       if (e.deltaY > 0) {
-        rotateWheel(-1);
+        rotateWheel(1);  // Downward scroll = clockwise
       } else {
-        rotateWheel(1);
+        rotateWheel(-1); // Upward scroll = counter-clockwise
       }
     };
 
@@ -177,8 +161,6 @@ const Carousel = () => {
   return (
     <div 
       className="carousel-container"
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}

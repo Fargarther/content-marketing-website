@@ -25,14 +25,18 @@
 }
 
 .main-content {
-  min-height: calc(100vh - 360px);
+  min-height: calc(100vh - 240px);
   padding: 2rem 2rem 200px;
   background: #FDFCF5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .hero-section {
   max-width: 1200px;
   margin: 0 auto;
+  width: 100%;
 }
 
 .hero-grid {
@@ -40,7 +44,7 @@
   grid-template-columns: 1.2fr 0.8fr;
   gap: 4rem;
   align-items: center;
-  margin-top: 3rem;
+  margin-top: 0;
 }
 
 .carousel-wrapper {
