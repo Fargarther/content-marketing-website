@@ -87,22 +87,26 @@ const PrairieGrass = () => {
       const budImages = grassManifest.buds.map(b => window.grassImageCache[`bud_${b.name}`]);
       
       // Define blade type categories with distributions
+      // Constrain heights so non-pod blades never match pod heights
+      const NONPOD_MIN = 0.40, NONPOD_MAX = 0.72; // leaves max at ~72% of H
+      const POD_LEAF_MIN = 0.35, POD_LEAF_MAX = 0.55; // pod leaves shorter
+      
       const bladeTypes = {
         short: { 
           probability: 0.40, // 40%
-          scaleRange: [0.2, 0.35], // Reduced to make seed heads more dominant
+          scaleRange: [NONPOD_MIN, NONPOD_MIN + 0.15], // 40-55% of H
           leanRange: [-0.05, 0.05],
           canHaveBud: false // Never on shortest blades
         },
         medium: { 
           probability: 0.35, // 35%
-          scaleRange: [0.35, 0.5], // Reduced to make seed heads more dominant
+          scaleRange: [NONPOD_MIN + 0.15, NONPOD_MAX - 0.1], // 55-62% of H
           leanRange: [-0.08, 0.08],
           canHaveBud: true
         },
         tall: { 
           probability: 0.25, // 25%
-          scaleRange: [0.5, 0.6], // Reduced to make seed heads more dominant
+          scaleRange: [NONPOD_MAX - 0.1, NONPOD_MAX], // 62-72% of H
           leanRange: [-0.1, 0.1],
           canHaveBud: true
         }
@@ -132,10 +136,6 @@ const PrairieGrass = () => {
           const x = (i / count) * width + (Math.random() - 0.5) * layer.density;
           const bladeType = selectBladeType();
           
-          // Random scale within the blade type's range
-          const scale = bladeType.scaleRange[0] + 
-                       Math.random() * (bladeType.scaleRange[1] - bladeType.scaleRange[0]);
-          
           // Determine if this blade should have a bud (maintain ~20% overall)
           let hasBud = false;
           if (bladeType.canHaveBud) {
@@ -146,16 +146,26 @@ const PrairieGrass = () => {
             hasBud = Math.random() < budProbability;
           }
           
+          // Random scale within the blade type's range
+          // If has bud, use shorter pod leaf range
+          let scale;
+          if (hasBud && bladeType.canHaveBud) {
+            scale = POD_LEAF_MIN + Math.random() * (POD_LEAF_MAX - POD_LEAF_MIN);
+          } else {
+            scale = bladeType.scaleRange[0] + 
+                   Math.random() * (bladeType.scaleRange[1] - bladeType.scaleRange[0]);
+          }
+          
           if (hasBud) budBladesCreated++;
           totalBladesCreated++;
           
-          const baseJitter = (Math.random() - 0.5) * 6; // ±3px jitter
+          const baseJitter = (Math.random() - 0.5) * 6; // keep for subtle x jitter only
           const naturalLean = bladeType.leanRange[0] + 
                              Math.random() * (bladeType.leanRange[1] - bladeType.leanRange[0]);
           
           blades.push({
-            x,
-            baseY: H + baseJitter,
+            x: x + baseJitter * 0.3, // apply jitter to x position only
+            baseY: H, // lock to baseline so nothing floats above bottom
             scale,
             angle: 0,
             velocity: 0,
@@ -246,22 +256,31 @@ const PrairieGrass = () => {
         ctx.globalAlpha = blade.opacity;
         
         if (blade.bladeImage && blade.bladeImage.complete) {
-          // Normalize blade height to canvas height
-          // Account for much larger seed heads when clamping height
-          const maxBladeHeight = blade.budImage ? H * 0.2 : H * 0.6; // Lower both to make seed heads more dominant
-          const bladeHeight = Math.min(H * blade.scale, maxBladeHeight);
-          const aspectRatio = blade.bladeImage.width / blade.bladeImage.height;
-          const bladeWidth = bladeHeight * aspectRatio;
+          // Draw leaf blade
+          const bladeH = Math.min(H * blade.scale, H * 0.98);
+          const bladeAspect = blade.bladeImage.width / blade.bladeImage.height;
+          const bladeW = Math.max(6, bladeH * bladeAspect);
           
-          ctx.drawImage(blade.bladeImage, -bladeWidth / 2, -bladeHeight, bladeWidth, bladeHeight);
+          // Draw blade (anchored bottom-center)
+          ctx.drawImage(blade.bladeImage, -bladeW / 2, -bladeH, bladeW, bladeH);
           
+          // Draw bud from baseline and make it taller than any leaf
           if (blade.budImage && blade.budImage.complete) {
-            // Make seed heads visually dominant - much larger than blades
-            const budHeight = H * 1.5; // Seed heads at 150% of canvas height for dominance
-            const budAspectRatio = blade.budImage.width / blade.budImage.height;
-            const budWidth = budHeight * budAspectRatio * 1.5; // Also wider for more presence
-            // Position bud at the top of the blade
-            ctx.drawImage(blade.budImage, -budWidth / 2, -bladeHeight, budWidth, budHeight);
+            // Target: at least 1.78x the leaf OR ≥ 92% of canvas height (whichever is bigger)
+            // but never clip top
+            const targetBudH = Math.max(bladeH * 1.78, H * 0.92);
+            const budH = Math.min(Math.round(targetBudH), Math.floor(H - 2)); // 2px safety
+            const budAspect = blade.budImage.width / blade.budImage.height;
+            const budW = Math.max(6, budH * budAspect);
+            
+            // baseline-anchored (so no floating)
+            ctx.drawImage(
+              blade.budImage,
+              -budW / 2,   // center horizontally
+              -budH,       // bottom anchored at baseline
+              budW,
+              budH
+            );
           }
         } else {
           // Fallback rendering
@@ -310,20 +329,30 @@ const PrairieGrass = () => {
         ctx.globalAlpha = blade.opacity;
         
         if (blade.bladeImage && blade.bladeImage.complete) {
-          // Normalize blade height to canvas height for static rendering
-          const maxBladeHeight = blade.budImage ? H * 0.2 : H * 0.6; // Lower both to make seed heads more dominant
-          const bladeHeight = Math.min(H * blade.scale, maxBladeHeight);
-          const aspectRatio = blade.bladeImage.width / blade.bladeImage.height;
-          const bladeWidth = bladeHeight * aspectRatio;
-          ctx.drawImage(blade.bladeImage, -bladeWidth / 2, -bladeHeight, bladeWidth, bladeHeight);
+          // Draw leaf blade (static rendering)
+          const bladeH = Math.min(H * blade.scale, H * 0.98);
+          const bladeAspect = blade.bladeImage.width / blade.bladeImage.height;
+          const bladeW = Math.max(6, bladeH * bladeAspect);
           
-          // Draw bud if present (static rendering)
+          // Draw blade (anchored bottom-center)
+          ctx.drawImage(blade.bladeImage, -bladeW / 2, -bladeH, bladeW, bladeH);
+          
+          // Draw bud (static rendering)
           if (blade.budImage && blade.budImage.complete) {
-            // Make seed heads visually dominant
-            const budHeight = H * 1.5; // Much larger for visual dominance
-            const budAspectRatio = blade.budImage.width / blade.budImage.height;
-            const budWidth = budHeight * budAspectRatio * 1.5; // Wider too
-            ctx.drawImage(blade.budImage, -budWidth / 2, -bladeHeight, budWidth, budHeight);
+            // Force to minimum 92% of canvas height
+            const targetBudH = Math.max(bladeH * 1.78, H * 0.92);
+            const budH = Math.min(Math.round(targetBudH), Math.floor(H - 2));
+            const budAspect = blade.budImage.width / blade.budImage.height;
+            const budW = Math.max(6, budH * budAspect);
+            
+            // baseline-anchored
+            ctx.drawImage(
+              blade.budImage,
+              -budW / 2,
+              -budH,
+              budW,
+              budH
+            );
           }
         }
         

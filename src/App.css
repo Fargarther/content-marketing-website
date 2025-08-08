@@ -34,49 +34,8 @@ p {
   color: #666;
 }
 
-<<<<<<< HEAD
 a {
   color: inherit;
-=======
-/* Prairie Grass */
-.prairie-grass {
-  position: fixed;
-  bottom: 60px;
-  left: 0;
-  width: 100%;
-  height: 180px;
-  z-index: 999;
-}
-
-/* Navigation */
-.navbar {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: #000;
-  z-index: 1000;
-  height: 60px;
-}
-
-.navbar ul {
-  list-style: none;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
-  gap: 3rem;
-}
-
-.navbar a {
-  background: none;
-  border: none;
-  color: #fff;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  padding: 0.5rem 1rem;
->>>>>>> 7dec5dd9dc8ddd841dadf6701b22e514ebcf519a
   text-decoration: none;
 }
 
