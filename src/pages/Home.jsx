@@ -1,5 +1,5 @@
 import React from 'react';
-import NavBar from '../components/NavBar';
+import GroundNav from '../components/GroundNav';
 import PrairieGrass from '../components/PrairieGrass';
 import Carousel from '../components/Carousel';
 import Headshot from '../components/Headshot';
@@ -33,7 +33,7 @@ const Home = () => {
       </main>
 
       <PrairieGrass />
-      <NavBar />
+      <GroundNav />
     </>
   );
 };
