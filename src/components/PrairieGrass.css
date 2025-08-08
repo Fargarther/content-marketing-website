@@ -1,6 +1,6 @@
 .prairie-grass-container {
   position: fixed;
-  bottom: 80px;
+  bottom: 120px;  /* Changed from 80px to match the 120px GroundNav height */
   left: 0;
   right: 0;
   height: 180px;

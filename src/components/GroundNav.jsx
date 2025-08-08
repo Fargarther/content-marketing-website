@@ -163,10 +163,17 @@ export default function GroundNav() {
 
   return (
     <nav className="ground-nav">
-      {/* Uneven top ridge that overlaps the grass */}
-      <svg className="ground-ridge" viewBox="0 0 1200 80" preserveAspectRatio="none" aria-hidden>
+      {/* Enhanced uneven top ridge with more dramatic variations */}
+      <svg className="ground-ridge" viewBox="0 0 1200 80" preserveAspectRatio="none" aria-hidden="true">
         <path
-          d="M0,60 C120,40 240,70 360,45 C480,20 600,65 720,40 C840,15 960,55 1080,30 C1140,20 1200,30 1200,30 L1200,0 L0,0 Z"
+          d="M0,55 
+             C80,35 120,25 200,45 
+             C280,65 320,20 400,35 
+             C480,50 520,15 600,40 
+             C680,65 720,25 800,30 
+             C880,35 920,55 1000,25 
+             C1080,10 1140,35 1200,40 
+             L1200,80 L0,80 Z"
           fill="var(--ground-color)"
         />
       </svg>

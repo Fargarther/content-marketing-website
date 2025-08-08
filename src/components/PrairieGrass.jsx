@@ -177,7 +177,7 @@ const PrairieGrass = () => {
           
           blades.push({
             x: x,
-            baseY: H, // lock to baseline so nothing floats above bottom
+            baseY: H - 1, // Adjusted to ensure blades sit right at the bottom edge
             scale,
             angle: 0,
             velocity: 0,
@@ -220,7 +220,7 @@ const PrairieGrass = () => {
               
               blades.push({
                 x: clusterX,
-                baseY: H,
+                baseY: H - 1,  // Adjusted to ensure proper grounding
                 scale: clusterScale,
                 angle: 0,
                 velocity: 0,
@@ -245,7 +245,7 @@ const PrairieGrass = () => {
               
               blades.push({
                 x: baseX,
-                baseY: H,
+                baseY: H - 1,  // Adjusted to ensure proper grounding
                 scale: 0.2 + Math.random() * 0.15, // Very short for base
                 angle: 0,
                 velocity: 0,
@@ -351,13 +351,20 @@ const PrairieGrass = () => {
         ctx.globalAlpha = blade.opacity;
         
         if (blade.bladeImage && blade.bladeImage.complete) {
-          // Draw leaf blade
+          // Draw leaf blade - ensure it's anchored at the bottom
           const bladeH = Math.min(H * blade.scale, H * 0.98);
           const bladeAspect = blade.bladeImage.width / blade.bladeImage.height;
           const bladeW = Math.max(6, bladeH * bladeAspect);
           
-          // Draw blade (anchored bottom-center)
-          ctx.drawImage(blade.bladeImage, -bladeW / 2, -bladeH, bladeW, bladeH);
+          // IMPORTANT: Draw blade anchored at bottom with overlap into ground
+          // Adding 3px overlap to ensure no floating
+          ctx.drawImage(
+            blade.bladeImage, 
+            -bladeW / 2,     // center horizontally
+            -bladeH + 3,     // draw from ground up with 3px overlap into ground
+            bladeW, 
+            bladeH
+          );
           
           // Draw bud from baseline and make it taller than any leaf
           if (blade.budImage && blade.budImage.complete) {
@@ -368,11 +375,11 @@ const PrairieGrass = () => {
             const budAspect = blade.budImage.width / blade.budImage.height;
             const budW = Math.max(6, budH * budAspect);
             
-            // baseline-anchored (so no floating)
+            // baseline-anchored with overlap
             ctx.drawImage(
               blade.budImage,
-              -budW / 2,   // center horizontally
-              -budH,       // bottom anchored at baseline
+              -budW / 2,      // center horizontally
+              -budH + 3,      // bottom anchored with 3px overlap into ground
               budW,
               budH
             );
@@ -424,13 +431,19 @@ const PrairieGrass = () => {
         ctx.globalAlpha = blade.opacity;
         
         if (blade.bladeImage && blade.bladeImage.complete) {
-          // Draw leaf blade (static rendering)
+          // Draw leaf blade (static rendering) - ensure anchored at bottom
           const bladeH = Math.min(H * blade.scale, H * 0.98);
           const bladeAspect = blade.bladeImage.width / blade.bladeImage.height;
           const bladeW = Math.max(6, bladeH * bladeAspect);
           
-          // Draw blade (anchored bottom-center)
-          ctx.drawImage(blade.bladeImage, -bladeW / 2, -bladeH, bladeW, bladeH);
+          // Draw blade anchored at bottom with overlap
+          ctx.drawImage(
+            blade.bladeImage, 
+            -bladeW / 2, 
+            -bladeH + 3,  // 3px overlap into ground
+            bladeW, 
+            bladeH
+          );
           
           // Draw bud (static rendering)
           if (blade.budImage && blade.budImage.complete) {
@@ -440,11 +453,11 @@ const PrairieGrass = () => {
             const budAspect = blade.budImage.width / blade.budImage.height;
             const budW = Math.max(6, budH * budAspect);
             
-            // baseline-anchored
+            // baseline-anchored with overlap
             ctx.drawImage(
               blade.budImage,
               -budW / 2,
-              -budH,
+              -budH + 3,  // 3px overlap into ground
               budW,
               budH
             );
