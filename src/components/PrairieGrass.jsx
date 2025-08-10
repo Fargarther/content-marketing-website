@@ -66,7 +66,7 @@ const PrairieGrass = () => {
     const updateCanvasSize = () => {
       const W = window.innerWidth;
       const H = 180; // Increased height to prevent seed head cutoff
-      const dpr = window.devicePixelRatio || 1;
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.5); // Cap DPR for performance
       
       canvas.width = W * dpr;
       canvas.height = H * dpr;
@@ -120,11 +120,14 @@ const PrairieGrass = () => {
         return bladeTypes.tall;
       };
       
+      // Cap blade counts for ultra-wide screens
+      const screenWidthFactor = Math.min(width / 1920, 1.5);
+      
       // Create multiple layers for depth - moderately sparse grass
       const layers = [
-        { density: 38, opacity: 0.6, zIndex: 0 }, // Back - moderately sparse
-        { density: 30, opacity: 0.8, zIndex: 1 }, // Mid - moderately sparse
-        { density: 24, opacity: 1.0, zIndex: 2 }  // Front - moderately sparse
+        { density: Math.floor(38 * screenWidthFactor), opacity: 0.6, zIndex: 0 }, // Back - moderately sparse
+        { density: Math.floor(30 * screenWidthFactor), opacity: 0.8, zIndex: 1 }, // Mid - moderately sparse
+        { density: Math.floor(24 * screenWidthFactor), opacity: 1.0, zIndex: 2 }  // Front - moderately sparse
       ];
 
       let totalBladesCreated = 0;
@@ -175,6 +178,11 @@ const PrairieGrass = () => {
             (Math.random() - 0.5) * 0.3 : // ±0.15 radians for pods
             bladeType.leanRange[0] + Math.random() * (bladeType.leanRange[1] - bladeType.leanRange[0]);
           
+          // Reaction factor by height (0.9–1.35), pods reduced
+          const normH = Math.min(1, Math.max(0, scale)); // 0..1
+          let heightReact = 0.9 + 0.45 * normH;              // 0.9..1.35
+          if (hasBud) heightReact *= 0.75;       // pods calmer
+          
           blades.push({
             x: x,
             baseY: H - 1, // Adjusted to ensure blades sit right at the bottom edge
@@ -190,7 +198,16 @@ const PrairieGrass = () => {
             budImage: hasBud ? budImages[Math.floor(Math.random() * budImages.length)] : null,
             swayIntensity: 0.8 + Math.random() * 0.4,
             bladeType: bladeType === bladeTypes.short ? 'short' : 
-                      (bladeType === bladeTypes.medium ? 'medium' : 'tall')
+                      (bladeType === bladeTypes.medium ? 'medium' : 'tall'),
+            // Per-blade variation for natural motion
+            seed: Math.random(),                 // stable random for this blade
+            variability: 0.85 + Math.random()*0.3,  // 0.85–1.15
+            stiffnessVar: 0.08 + Math.random()*0.06, // per-blade spring (0.08–0.14)
+            decayGustAngle: 0.90 + Math.random()*0.06, // 0.90–0.96
+            decaySwayBoost: 0.92 + Math.random()*0.05, // 0.92–0.97
+            gustAngle: 0,                        // additive gust channel
+            swayBoost: 0,                        // additive intensity boost
+            heightReact: heightReact              // height reaction factor
           });
           
           // Create pronounced tufts/clumps around seed pods
@@ -218,6 +235,10 @@ const PrairieGrass = () => {
               const outwardLean = Math.cos(angle) * 0.1; // Subtle outward lean
               const clusterLean = outwardLean + (Math.random() - 0.5) * 0.3;
               
+              // Reaction factor for cluster blades
+              const clusterNormH = Math.min(1, Math.max(0, clusterScale));
+              const clusterHeightReact = 0.9 + 0.45 * clusterNormH;
+              
               blades.push({
                 x: clusterX,
                 baseY: H - 1,  // Adjusted to ensure proper grounding
@@ -232,7 +253,16 @@ const PrairieGrass = () => {
                 bladeImage: bladeImages[Math.floor(Math.random() * bladeImages.length)],
                 budImage: null, // Cluster blades never have buds
                 swayIntensity: 0.7 + Math.random() * 0.4, // Varied sway intensity
-                bladeType: 'cluster'
+                bladeType: 'cluster',
+                // Per-blade variation for natural motion
+                seed: Math.random(),
+                variability: 0.85 + Math.random()*0.3,
+                stiffnessVar: 0.08 + Math.random()*0.06,
+                decayGustAngle: 0.90 + Math.random()*0.06,
+                decaySwayBoost: 0.92 + Math.random()*0.05,
+                gustAngle: 0,
+                swayBoost: 0,
+                heightReact: clusterHeightReact
               });
             }
             
@@ -243,10 +273,14 @@ const PrairieGrass = () => {
               const baseDistance = 3 + Math.random() * 5; // Very close (3-8px)
               const baseX = x + Math.cos(baseAngle) * baseDistance;
               
+              const baseScale = 0.2 + Math.random() * 0.15;
+              const baseNormH = Math.min(1, Math.max(0, baseScale));
+              const baseHeightReact = 0.9 + 0.45 * baseNormH;
+              
               blades.push({
                 x: baseX,
                 baseY: H - 1,  // Adjusted to ensure proper grounding
-                scale: 0.2 + Math.random() * 0.15, // Very short for base
+                scale: baseScale, // Very short for base
                 angle: 0,
                 velocity: 0,
                 targetAngle: 0,
@@ -257,7 +291,16 @@ const PrairieGrass = () => {
                 bladeImage: bladeImages[Math.floor(Math.random() * bladeImages.length)],
                 budImage: null,
                 swayIntensity: 0.6 + Math.random() * 0.3,
-                bladeType: 'base'
+                bladeType: 'base',
+                // Per-blade variation for natural motion
+                seed: Math.random(),
+                variability: 0.85 + Math.random()*0.3,
+                stiffnessVar: 0.08 + Math.random()*0.06,
+                decayGustAngle: 0.90 + Math.random()*0.06,
+                decaySwayBoost: 0.92 + Math.random()*0.05,
+                gustAngle: 0,
+                swayBoost: 0,
+                heightReact: baseHeightReact
               });
             }
           }
@@ -283,8 +326,8 @@ const PrairieGrass = () => {
 
     bladesRef.current = initializeGrass(W);
 
-    const stiffness = 0.15;
-    const damping = 0.88;
+    // Keep damping global
+    const damping = 0.90;    // was 0.88 - slower response
 
     const drawFrame = () => {
       if (!isVisibleRef.current) {
@@ -295,17 +338,53 @@ const PrairieGrass = () => {
       ctx.clearRect(0, 0, W, H);
       
       timeRef.current += 0.015;
-      const windBase = Math.sin(timeRef.current) * 0.012 + 
-                      Math.sin(timeRef.current * 0.7) * 0.008 +
-                      Math.sin(timeRef.current * 1.3) * 0.005;
+      // Stronger base sway + slow drift from right to left
+      const drift = -0.006 * Math.sin(timeRef.current * 0.05); // slow oscillation, negative = right→left
+      const windBase = drift +
+                      Math.sin(timeRef.current) * 0.014 +
+                      Math.sin(timeRef.current * 0.7) * 0.009 +
+                      Math.sin(timeRef.current * 1.3) * 0.007;
 
-      bladesRef.current.forEach(blade => {
+      // Skip offscreen blades for performance
+      const viewportPadding = 100;
+      const visibleBlades = bladesRef.current.filter(blade => 
+        blade.x >= -viewportPadding && blade.x <= W + viewportPadding
+      );
+      
+      const t = timeRef.current; // reuse for efficiency
+      
+      visibleBlades.forEach(blade => {
         // Only apply wind and interaction to non-seed blades
         if (!blade.budImage) {
-          const windEffect = windBase + Math.sin(timeRef.current + blade.swayOffset) * 0.01 * blade.swayIntensity;
+          // Natural variation: low-frequency spatial/temporal noise per blade
+          const nx = blade.x * 0.004 + blade.seed * 3.1;
+          const localNoise =
+            0.6 * Math.sin(nx + t * 0.25 + blade.swayOffset*0.5) +
+            0.4 * Math.sin(nx * 1.7 - t * 0.18 + blade.seed * 5.7);
+          const noiseTerm = localNoise * 0.009 * blade.variability; // increased from 0.006
           
-          // Mouse/touch interaction
-          blade.targetAngle = windEffect * 0.5; // Apply wind effect as target
+          // Subtle left→right gradient so motion travels across width
+          const horiz = ((blade.x / W) - 0.5) * 0.010;
+          
+          // Use effective intensity (with gust boost) and your tuned base + noise
+          const maxIntensity = 1.35;
+          blade.swayBoost *= blade.decaySwayBoost; // per-blade decay
+          const effectiveIntensity = Math.min(
+            blade.swayIntensity * (1 + Math.max(0, blade.swayBoost)),
+            maxIntensity
+          );
+          
+          const windEffect =
+            windBase
+            + Math.sin(t + blade.swayOffset) * 0.01 * effectiveIntensity
+            + horiz
+            + noiseTerm;
+          
+          // Per-blade gust decay and target angle
+          blade.gustAngle *= blade.decayGustAngle; // per-blade decay
+          
+          const baseTarget = windEffect * 0.50;     // strengthened for visible passive sway
+          blade.targetAngle = baseTarget + blade.gustAngle;
           const px = pointerRef.current.x;
           const py = pointerRef.current.y;
           
@@ -313,12 +392,15 @@ const PrairieGrass = () => {
             const dx = blade.x - px;
             const dy = blade.baseY - py;
             const distance = Math.sqrt(dx * dx + dy * dy);
-            const influence = 100;
+            const influence = 120; // radius
             
             if (distance < influence) {
               const direction = dx > 0 ? 1 : -1;
               const factor = Math.pow((influence - distance) / influence, 2);
-              blade.targetAngle = direction * 0.4 * factor * blade.scale + windEffect * 0.5;
+              
+              // A bit stronger than last pass, scaled by heightReact & variability
+              const hoverPush = 0.46 * factor * blade.scale * blade.heightReact * blade.variability;
+              blade.targetAngle = direction * hoverPush + windEffect * 0.35;
             }
           }
         } else {
@@ -326,9 +408,9 @@ const PrairieGrass = () => {
           blade.targetAngle = 0;
         }
         
-        // Spring physics - only for non-seed blades
+        // Spring physics with per-blade stiffness - only for non-seed blades
         if (!blade.budImage) {
-          const accel = stiffness * (blade.targetAngle - blade.angle);
+          const accel = blade.stiffnessVar * (blade.targetAngle - blade.angle);
           blade.velocity += accel;
           blade.velocity *= damping;
           blade.angle += blade.velocity;
@@ -341,13 +423,8 @@ const PrairieGrass = () => {
         // Draw blade
         ctx.save();
         ctx.translate(blade.x, blade.baseY);
-        // Only rotate non-seed blades with wind; seed blades only get natural lean
-        if (!blade.budImage) {
-          const windEffect = windBase + Math.sin(timeRef.current + blade.swayOffset) * 0.01 * blade.swayIntensity;
-          ctx.rotate(blade.angle + blade.naturalLean + windEffect);
-        } else {
-          ctx.rotate(blade.naturalLean); // Seed blades only have static lean
-        }
+        // Rotate based on computed angle + natural lean
+        ctx.rotate(blade.angle + blade.naturalLean);
         ctx.globalAlpha = blade.opacity;
         
         if (blade.bladeImage && blade.bladeImage.complete) {
@@ -477,10 +554,39 @@ const PrairieGrass = () => {
 
     window.addEventListener('resize', handleResize);
 
+    // Listen for carousel wind gust - simplified to use channels
+    const handleCarouselGust = (e) => {
+      const focusX = e.detail?.x ?? window.innerWidth / 2;
+      const s = e.detail?.strength ?? 1;      // from Carousel
+      const dir = e.detail?.direction ?? 1;   // +1 = right, -1 = left
+      const radius = Math.min(320, window.innerWidth * 0.22); // wider, smoother
+      const sigma = radius * 0.65; // slightly smoother falloff
+
+      bladesRef.current.forEach(blade => {
+        if (blade.budImage) return;
+
+        const dx = blade.x - focusX;
+        const weight = Math.exp(-(dx*dx) / (2 * sigma * sigma)); // 0..1
+
+        // Per-blade randomizer so not all blades move equally
+        const rand = 0.9 + (blade.seed * 0.2); // narrower range (0.9-1.1)
+
+        // Height and variability scaling
+        const scaleFactor = blade.heightReact * blade.variability;
+
+        // Much softer gust that blends with natural sway
+        blade.swayBoost += 0.18 * s * weight * rand * scaleFactor;  // was 0.30
+        blade.gustAngle += dir * 0.15 * weight * rand * scaleFactor; // was 0.26
+      });
+    };
+    
+    window.addEventListener('carousel-gust', handleCarouselGust);
+
     return () => {
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
       if (observerRef.current && canvas) observerRef.current.unobserve(canvas);
       window.removeEventListener('resize', handleResize);
+      window.removeEventListener('carousel-gust', handleCarouselGust);
     };
   }, [imagesLoaded]);
 

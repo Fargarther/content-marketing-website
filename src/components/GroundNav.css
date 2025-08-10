@@ -9,17 +9,15 @@
   right: 0;
   bottom: 0;                     /* sits at the very bottom */
   height: 120px;                 /* increased height */
-  z-index: 1105;                 /* ABOVE the grass (z-index: 1001) */
+  z-index: 1105;                 /* ABOVE the grass (yours was 1001) */
   pointer-events: none;          /* overall container lets clicks through */
 }
 
 .ground-ridge {
   position: absolute;
   top: -48px;                    /* overlaps prairie: covers blade bottoms */
-  left: 0; 
-  right: 0;
-  width: 100%; 
-  height: 80px;
+  left: 0; right: 0;
+  width: 100%; height: 80px;
   pointer-events: none;
   filter: drop-shadow(0 2px 3px rgba(0,0,0,0.15));
 }
@@ -32,28 +30,46 @@
     radial-gradient(1px 1px at 70% 60%, rgba(0,0,0,0.10) 0 45%, transparent 46%) repeat,
     linear-gradient(to bottom, var(--ground-color), var(--ground-dark));
   background-size: 180px 120px, 220px 150px, 100% 100%;
-  /* Removed border-top line */
   display: flex;
   align-items: center;
-  gap: 28px;
-  padding: 0 24px;
+  justify-content: center;
+  padding: 0 40px;
   pointer-events: auto;          /* links + rocks are interactive */
 }
 
-.ground-inner a {
+.nav-list {
+  display: flex;
+  align-items: center;
+  justify-content: space-evenly;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  max-width: 800px;
   position: relative;
   z-index: 2;                    /* above rocks canvas */
+}
+
+.nav-list li {
+  margin: 0;
+  padding: 0;
+}
+
+.ground-inner a {
+  display: inline-block;
   text-decoration: none;
   color: #3a3a32;
   font-weight: 600;
-  padding: 6px 10px;
+  font-size: 1.25rem;             /* Larger text */
+  padding: 10px 20px;             /* More padding */
   border-radius: 8px;
   backdrop-filter: blur(1px);
-  transition: background-color 0.3s ease;
+  transition: all 0.3s ease;
 }
 
 .ground-inner a:hover {
   background: rgba(255,255,255,0.35);
+  transform: translateY(-2px);
 }
 
 .ground-inner a:focus {
@@ -65,5 +81,4 @@
   position: absolute;
   inset: 0;
   z-index: 1;                    /* behind links */
-  pointer-events: none;
 }

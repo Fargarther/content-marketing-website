@@ -5,6 +5,7 @@ import './Carousel.css';
 const Carousel = () => {
   const [rotation, setRotation] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [counterKey, setCounterKey] = useState(0);
   const wheelRef = useRef(null);
 
   const itemCount = projects.length;
@@ -73,26 +74,65 @@ const Carousel = () => {
     updateWheel();
   }, [rotation, updateWheel]);
 
+  const triggerGust = useCallback((direction = 1) => {
+    const wheel = wheelRef.current;
+    const active = wheel?.querySelector('.carousel-item[style*="pointer-events: auto"]');
+    let focusX = window.innerWidth / 2;
+    if (active) {
+      const r = active.getBoundingClientRect();
+      focusX = r.left + r.width / 2;
+    }
+    window.dispatchEvent(new CustomEvent('carousel-gust', {
+      detail: { 
+        x: focusX, 
+        strength: 1.8,  // Reduced for softer gust
+        direction: direction 
+      }
+    }));
+  }, []);
+
   const rotateWheel = useCallback((direction) => {
     if (isTransitioning) return;
     
     setIsTransitioning(true);
     setRotation(prev => prev + (direction * angleStep));
+    setCounterKey(prev => prev + 1); // Trigger tick animation
+    
+    // Store rotation direction for gust
+    window.lastCarouselDirection = direction;
+    
+    // Trigger wind gust with focus position and direction
+    setTimeout(() => triggerGust(direction), 100); // Small delay to let DOM update
     
     setTimeout(() => {
       setIsTransitioning(false);
     }, 600);
-  }, [angleStep, isTransitioning]);
+  }, [angleStep, isTransitioning, triggerGust]);
 
   const goToSlide = (index) => {
     if (isTransitioning) return;
-    
+
     setIsTransitioning(true);
+
+    // Determine current index before we jump
+    const currentIndex = Math.round((-rotation % 360) / angleStep + itemCount) % itemCount;
+
+    // Compute shortest-path direction on the circle
+    const rawDelta = ((index - currentIndex) % itemCount + itemCount) % itemCount; // 0..itemCount-1
+    const altDelta = rawDelta - itemCount; // negative alternative
+    const chosenDelta = Math.abs(rawDelta) <= Math.abs(altDelta) ? rawDelta : altDelta;
+    const direction = chosenDelta >= 0 ? 1 : -1;
+
     setRotation(-index * angleStep);
-    
-    setTimeout(() => {
-      setIsTransitioning(false);
-    }, 600);
+    setCounterKey(prev => prev + 1);
+
+    // Make it available for any legacy code using window.lastCarouselDirection
+    window.lastCarouselDirection = direction;
+
+    // Fire gust with explicit direction after DOM updates
+    setTimeout(() => triggerGust(direction), 100);
+
+    setTimeout(() => setIsTransitioning(false), 600);
   };
 
 
@@ -203,18 +243,32 @@ const Carousel = () => {
         })}
       </div>
       
-      <div className="indicators" role="tablist">
-        {projects.map((_, index) => (
-          <button
-            key={index}
-            className={`indicator-dot ${currentIndex === index ? 'active' : ''}`}
-            onClick={() => goToSlide(index)}
-            role="tab"
-            aria-selected={currentIndex === index}
-            aria-label={`Go to slide ${index + 1}`}
-            tabIndex={currentIndex === index ? 0 : -1}
+      {/* Vertical indicator rail */}
+      <div className="indicator-rail" role="tablist">
+        <div className="indicator-counter" key={counterKey}>
+          <span className="current">{String(currentIndex + 1).padStart(2, '0')}</span>
+          <span className="separator">/</span>
+          <span className="total">{String(projects.length).padStart(2, '0')}</span>
+        </div>
+        <div className="indicator-track">
+          {projects.map((_, index) => (
+            <button
+              key={index}
+              className={`indicator-mark ${currentIndex === index ? 'active' : ''}`}
+              onClick={() => goToSlide(index)}
+              role="tab"
+              aria-selected={currentIndex === index}
+              aria-label={`Go to slide ${index + 1}`}
+              tabIndex={currentIndex === index ? 0 : -1}
+            />
+          ))}
+          <div 
+            className="indicator-slider" 
+            style={{ 
+              transform: `translateY(${currentIndex * (100 / projects.length)}%)` 
+            }}
           />
-        ))}
+        </div>
       </div>
     </div>
   );
