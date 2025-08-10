@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
+import { spriteUrl, getBladeSprites, getBudSprites, preloadSprites, spriteKeys } from '../sprites/grass';
 import grassManifest from '../data/grassManifest.json';
 import './PrairieGrass.css';
 
@@ -15,38 +16,54 @@ const PrairieGrass = () => {
   useEffect(() => {
     const loadImages = async () => {
       const imageCache = {};
-      const loadPromises = [];
-
-      // Load blade images
-      grassManifest.blades.forEach(blade => {
-        const url = `${grassManifest.path}blades/${blade.name}${grassManifest.densitySuffix}.${grassManifest.ext}`;
-        const img = new Image();
-        const promise = new Promise((resolve, reject) => {
-          img.onload = () => resolve();
-          img.onerror = () => reject();
-        });
-        img.src = url;
-        imageCache[`blade_${blade.name}`] = img;
-        loadPromises.push(promise);
-      });
-
-      // Load bud images
-      grassManifest.buds.forEach(bud => {
-        const url = `${grassManifest.path}buds/${bud.name}${grassManifest.densitySuffix}.${grassManifest.ext}`;
-        const img = new Image();
-        const promise = new Promise((resolve, reject) => {
-          img.onload = () => resolve();
-          img.onerror = () => reject();
-        });
-        img.src = url;
-        imageCache[`bud_${bud.name}`] = img;
-        loadPromises.push(promise);
-      });
-
+      
       try {
-        await Promise.all(loadPromises);
+        // Get all sprite names from manifest
+        const bladeNames = grassManifest.blades.map(b => b.name);
+        const budNames = grassManifest.buds.map(b => b.name);
+        
+        // Preload all sprites using the new system
+        const allNames = [...bladeNames, ...budNames];
+        const loadedImages = await preloadSprites(allNames);
+        
+        // Build cache with expected keys
+        bladeNames.forEach(name => {
+          const img = loadedImages[name];
+          if (img) {
+            imageCache[`blade_${name}`] = img;
+          } else {
+            // Create image from URL if preload failed
+            const url = spriteUrl(name);
+            if (url) {
+              const fallbackImg = new Image();
+              fallbackImg.src = url;
+              imageCache[`blade_${name}`] = fallbackImg;
+            }
+          }
+        });
+        
+        budNames.forEach(name => {
+          const img = loadedImages[name];
+          if (img) {
+            imageCache[`bud_${name}`] = img;
+          } else {
+            // Create image from URL if preload failed
+            const url = spriteUrl(name);
+            if (url) {
+              const fallbackImg = new Image();
+              fallbackImg.src = url;
+              imageCache[`bud_${name}`] = fallbackImg;
+            }
+          }
+        });
+        
         window.grassImageCache = imageCache;
         setImagesLoaded(true);
+        
+        // Log available sprites in development
+        if (import.meta.env.DEV) {
+          console.log('[PrairieGrass] Loaded sprites:', Object.keys(imageCache));
+        }
       } catch (err) {
         console.error('Failed to load grass images:', err);
         setImagesLoaded(true); // Continue with fallback rendering
