@@ -15,7 +15,9 @@ const NOISE_AMP = 0.0125;      // Local noise amplitude for variation
 // Progressive rendering constants
 const INIT_BATCH_SIZE = 600;   // Blades to create per frame at startup
 const PLACEHOLDER_ALPHA = 0.55; // Opacity for vector fallback
-const PLACEHOLDER_GRADIENT = ['#114d2b', '#1a6b3a']; // Dark to mid green
+
+// Cached gradient for performance
+let phGrad = null;
 
 // Breeze intensity levels (scales amplitudes only, not desync)
 const BREEZE_LEVELS = {
@@ -26,21 +28,22 @@ const BREEZE_LEVELS = {
 
 // Helper: Draw vector placeholder for blades without loaded sprites
 function drawBladePlaceholder(ctx, blade) {
-  const { x, baseY, angle, scale, opacity = 1 } = blade;
-  const h = 60 * scale; // Simple height estimate
+  const { x, baseY, angle = 0, scale = 1, opacity = 1 } = blade;
+  const h = 60 * scale;
   const lean = Math.max(-0.8, Math.min(0.8, angle * 0.9));
 
-  // Create gradient from dark to mid green
-  const g = ctx.createLinearGradient(x, baseY - h, x, baseY);
-  g.addColorStop(0, PLACEHOLDER_GRADIENT[0]);
-  g.addColorStop(1, PLACEHOLDER_GRADIENT[1]);
+  // Create gradient once and reuse
+  if (!phGrad) {
+    phGrad = ctx.createLinearGradient(0, 0, 0, 100);
+    phGrad.addColorStop(0, '#114d2b');
+    phGrad.addColorStop(1, '#1a6b3a');
+  }
 
   ctx.save();
   ctx.globalAlpha = Math.min(1, opacity * PLACEHOLDER_ALPHA);
-  ctx.fillStyle = g;
+  ctx.fillStyle = phGrad;
   ctx.beginPath();
   ctx.moveTo(x, baseY);
-  // Draw S-curve blade shape
   ctx.quadraticCurveTo(
     x - h * 0.25 * (0.5 + lean), baseY - h * 0.55,
     x + h * 0.08 * lean, baseY - h
@@ -49,24 +52,17 @@ function drawBladePlaceholder(ctx, blade) {
     x + h * 0.16 * lean, baseY - h * 0.55,
     x, baseY
   );
-  ctx.closePath();
   ctx.fill();
   ctx.restore();
 }
 
 // Helper: Batch blade creation to avoid blocking main thread
-function buildBladesInBatches(makeBlade, targetArray, total, batch = INIT_BATCH_SIZE, onDone) {
+function buildBladesInBatches(makeBlade, out, total, batch = 600) {
   let i = 0;
   function step() {
     const end = Math.min(i + batch, total);
-    for (; i < end; i++) {
-      targetArray.push(makeBlade(i));
-    }
-    if (i < total) {
-      requestAnimationFrame(step);
-    } else {
-      onDone?.();
-    }
+    for (; i < end; i++) out.push(makeBlade(i));
+    if (i < total) requestAnimationFrame(step);
   }
   requestAnimationFrame(step);
 }
@@ -77,19 +73,17 @@ const PrairieGrass = ({ breeze = 'medium' } = {}) => {
   const timeRef = useRef(0);
   const animationRef = useRef(null);
   const bladesRef = useRef([]);
-  const [renderStarted, setRenderStarted] = useState(false);
+  // Start rendering immediately, no gating on image loads
+  const [renderStarted] = useState(true);
   const observerRef = useRef(null);
   const isVisibleRef = useRef(true);
   const spritesReadyCountRef = useRef(0);
 
   useEffect(() => {
-    // Start rendering immediately, load images progressively
+    // Load images asynchronously without blocking render
     const loadImagesProgressive = () => {
       const imageCache = {};
       window.grassImageCache = imageCache; // Make available immediately
-      
-      // Start animation loop right away
-      setRenderStarted(true);
       
       // Get all sprite names from manifest
       const bladeNames = grassManifest.blades.map(b => b.name);
@@ -102,13 +96,11 @@ const PrairieGrass = ({ breeze = 'medium' } = {}) => {
           const img = new Image();
           img.decoding = 'async';
           if ('fetchPriority' in img) img.fetchPriority = 'high';
-          
+          img.src = url; // Start request
           img.onload = () => {
             imageCache[`blade_${name}`] = img;
             spritesReadyCountRef.current++;
           };
-          
-          img.src = url;
           imageCache[`blade_${name}`] = img; // Add immediately (may not be complete)
         }
       });
@@ -119,13 +111,11 @@ const PrairieGrass = ({ breeze = 'medium' } = {}) => {
         if (url) {
           const img = new Image();
           img.decoding = 'async';
-          
+          img.src = url; // Start request
           img.onload = () => {
             imageCache[`bud_${name}`] = img;
             spritesReadyCountRef.current++;
           };
-          
-          img.src = url;
           imageCache[`bud_${name}`] = img; // Add immediately (may not be complete)
         }
       });
