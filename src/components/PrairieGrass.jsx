@@ -171,8 +171,10 @@ const PrairieGrass = ({ breeze = 'medium' } = {}) => {
     // Create grass instances with sprites
     const initializeGrass = (width) => {
       const blades = [];
-      const bladeImages = grassManifest.blades.map(b => window.grassImageCache[`blade_${b.name}`]);
-      const budImages = grassManifest.buds.map(b => window.grassImageCache[`bud_${b.name}`]);
+      // Safely access image cache, use empty array if not ready
+      const imageCache = window.grassImageCache || {};
+      const bladeImages = grassManifest.blades.map(b => imageCache[`blade_${b.name}`] || null);
+      const budImages = grassManifest.buds.map(b => imageCache[`bud_${b.name}`] || null);
       
       // Define blade type categories with distributions
       // Constrain heights so non-pod blades never match pod heights
@@ -282,8 +284,8 @@ const PrairieGrass = ({ breeze = 'medium' } = {}) => {
             swayOffset: Math.random() * Math.PI * 2,
             opacity: layer.opacity,
             zIndex: layer.zIndex,
-            bladeImage: bladeImages[Math.floor(Math.random() * bladeImages.length)],
-            budImage: hasBud ? budImages[Math.floor(Math.random() * budImages.length)] : null,
+            bladeImage: bladeImages.filter(img => img)[Math.floor(Math.random() * Math.max(1, bladeImages.filter(img => img).length))] || null,
+            budImage: hasBud ? (budImages.filter(img => img)[Math.floor(Math.random() * Math.max(1, budImages.filter(img => img).length))] || null) : null,
             swayIntensity: 0.8 + Math.random() * 0.4,
             bladeType: bladeType === bladeTypes.short ? 'short' : 
                       (bladeType === bladeTypes.medium ? 'medium' : 'tall'),
@@ -343,7 +345,7 @@ const PrairieGrass = ({ breeze = 'medium' } = {}) => {
                 swayOffset: Math.random() * Math.PI * 2, // Different sway phase
                 opacity: layer.opacity * (0.85 + Math.random() * 0.15), // Varied opacity
                 zIndex: layer.zIndex,
-                bladeImage: bladeImages[Math.floor(Math.random() * bladeImages.length)],
+                bladeImage: bladeImages.filter(img => img)[Math.floor(Math.random() * Math.max(1, bladeImages.filter(img => img).length))] || null,
                 budImage: null, // Cluster blades never have buds
                 swayIntensity: 0.7 + Math.random() * 0.4, // Varied sway intensity
                 bladeType: 'cluster',
@@ -386,7 +388,7 @@ const PrairieGrass = ({ breeze = 'medium' } = {}) => {
                 swayOffset: Math.random() * Math.PI * 2,
                 opacity: layer.opacity * 0.8,
                 zIndex: layer.zIndex + 0.1, // Slightly in front
-                bladeImage: bladeImages[Math.floor(Math.random() * bladeImages.length)],
+                bladeImage: bladeImages.filter(img => img)[Math.floor(Math.random() * Math.max(1, bladeImages.filter(img => img).length))] || null,
                 budImage: null,
                 swayIntensity: 0.6 + Math.random() * 0.3,
                 bladeType: 'base',
@@ -584,8 +586,10 @@ const PrairieGrass = ({ breeze = 'medium' } = {}) => {
           // Use vector placeholder for immediate rendering
           ctx.restore(); // Restore before calling placeholder
           drawBladePlaceholder(ctx, blade);
-          // Don't re-save/translate, will be handled by next iteration
-          return; // Skip rest of blade rendering
+          ctx.save(); // Re-save for proper restore at end
+          ctx.translate(blade.x, blade.baseY);
+          ctx.rotate(blade.angle + blade.naturalLean);
+          ctx.globalAlpha = blade.opacity;
         }
         
         ctx.restore();
