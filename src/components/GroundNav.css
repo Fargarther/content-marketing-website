@@ -77,6 +77,12 @@
   outline-offset: 2px;
 }
 
+.ground-inner a[aria-current="page"] {
+  background: rgba(255,255,255,0.45);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transform: translateY(-1px);
+}
+
 .ground-rocks {
   position: absolute;
   inset: 0;

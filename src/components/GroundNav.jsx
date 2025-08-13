@@ -10,6 +10,7 @@ export default function GroundNav() {
   const svgRef = useRef(null);
   const rafRef = useRef(null);
   const [rockPositions, setRockPositions] = useState([]);
+  const [currentHash, setCurrentHash] = useState(window.location.hash || '#home');
   const parallaxOffset = useRef({ x: 0, y: 0 });
   const gustDecay = useRef([]);
 
@@ -32,6 +33,16 @@ export default function GroundNav() {
     // The ridge SVG is 80px tall, positioned at top: -48px
     // We want rocks to sit near the top of the ridge curve
     return -48 + (point.y * scale) - 10; // Offset up by 10px to sit on ridge
+  }, []);
+
+  // Listen for hash changes
+  useEffect(() => {
+    const handleHashChange = () => {
+      setCurrentHash(window.location.hash || '#home');
+    };
+    
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
   // Initialize rock positions
@@ -248,7 +259,7 @@ export default function GroundNav() {
   }, [rockPositions, drawRocks]);
 
   return (
-    <nav className="ground-nav" aria-label="Main Navigation">
+    <div className="ground-nav">
       {/* Enhanced uneven top ridge with more dramatic variations */}
       <svg 
         ref={svgRef}
@@ -271,17 +282,27 @@ export default function GroundNav() {
       </svg>
 
       <div className="ground-inner">
-        <ul className="nav-list">
-          {navLinks.map((link, index) => (
-            <li key={index}>
-              <a href={link.href}>{link.label}</a>
-            </li>
-          ))}
-        </ul>
+        <nav aria-label="Main navigation">
+          <ul className="nav-list">
+            {navLinks.map((link, index) => {
+              const isCurrent = link.href === currentHash;
+              return (
+                <li key={index}>
+                  <a 
+                    href={link.href}
+                    aria-current={isCurrent ? "page" : undefined}
+                  >
+                    {link.label}
+                  </a>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
 
         {/* Rocks canvas sits behind links */}
-        <canvas ref={canvasRef} className="ground-rocks" />
+        <canvas ref={canvasRef} className="ground-rocks" aria-hidden="true" />
       </div>
-    </nav>
+    </div>
   );
 }

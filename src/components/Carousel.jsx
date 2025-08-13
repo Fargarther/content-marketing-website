@@ -7,6 +7,8 @@ const Carousel = () => {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [counterKey, setCounterKey] = useState(0);
   const wheelRef = useRef(null);
+  const wheelTimeoutRef = useRef(null);
+  const wheelAccumulatorRef = useRef(0);
 
   const itemCount = projects.length;
   const angleStep = 360 / itemCount;
@@ -136,17 +138,36 @@ const Carousel = () => {
   };
 
 
-  // Mouse wheel control
+  // Mouse wheel control with one-card-per-gesture
   useEffect(() => {
     const handleWheel = (e) => {
       e.preventDefault();
       if (isTransitioning) return;
 
-      // Rotate counter-clockwise on upward scroll, clockwise on downward scroll
-      if (e.deltaY > 0) {
-        rotateWheel(1);  // Downward scroll = clockwise
+      // Accumulate wheel delta
+      wheelAccumulatorRef.current += e.deltaY;
+      
+      // Clear existing timeout
+      if (wheelTimeoutRef.current) {
+        clearTimeout(wheelTimeoutRef.current);
+      }
+      
+      // Set threshold for triggering rotation (adjust as needed)
+      const threshold = 50;
+      
+      if (Math.abs(wheelAccumulatorRef.current) >= threshold) {
+        // Trigger rotation based on accumulated delta
+        if (wheelAccumulatorRef.current > 0) {
+          rotateWheel(1);  // Downward scroll = clockwise
+        } else {
+          rotateWheel(-1); // Upward scroll = counter-clockwise
+        }
+        wheelAccumulatorRef.current = 0; // Reset accumulator
       } else {
-        rotateWheel(-1); // Upward scroll = counter-clockwise
+        // Reset accumulator after a pause in scrolling
+        wheelTimeoutRef.current = setTimeout(() => {
+          wheelAccumulatorRef.current = 0;
+        }, 150);
       }
     };
 
@@ -156,6 +177,9 @@ const Carousel = () => {
       
       return () => {
         container.removeEventListener('wheel', handleWheel);
+        if (wheelTimeoutRef.current) {
+          clearTimeout(wheelTimeoutRef.current);
+        }
       };
     }
   }, [rotateWheel, isTransitioning]);
@@ -174,23 +198,50 @@ const Carousel = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [rotateWheel]);
 
-  // Touch controls
+  // Touch controls with one-card-per-swipe
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
+  const touchStartTime = useRef(0);
+  const hasSwiped = useRef(false);
 
   const handleTouchStart = (e) => {
     touchStartX.current = e.touches[0].clientX;
+    touchStartTime.current = Date.now();
+    hasSwiped.current = false;
   };
 
   const handleTouchEnd = () => {
+    if (hasSwiped.current) return;
+    
     const diff = touchStartX.current - touchEndX.current;
-    if (Math.abs(diff) > 50) {
-      rotateWheel(diff > 0 ? 1 : -1);
+    const timeDiff = Date.now() - touchStartTime.current;
+    
+    // Require minimum swipe distance and reasonable time
+    const minSwipeDistance = 30;
+    const maxSwipeTime = 500; // milliseconds
+    
+    if (Math.abs(diff) > minSwipeDistance) {
+      // Quick swipe or deliberate drag
+      if (timeDiff < maxSwipeTime || Math.abs(diff) > 100) {
+        rotateWheel(diff > 0 ? 1 : -1);
+        hasSwiped.current = true;
+      }
     }
   };
 
   const handleTouchMove = (e) => {
     touchEndX.current = e.touches[0].clientX;
+    
+    // If already swiped, prevent additional swipes in same gesture
+    if (!hasSwiped.current) {
+      const diff = touchStartX.current - touchEndX.current;
+      
+      // Trigger swipe early if threshold met during move
+      if (Math.abs(diff) > 80 && !isTransitioning) {
+        rotateWheel(diff > 0 ? 1 : -1);
+        hasSwiped.current = true;
+      }
+    }
   };
 
   const currentIndex = Math.round((-rotation % 360) / angleStep + itemCount) % itemCount;

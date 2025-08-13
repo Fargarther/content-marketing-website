@@ -3,7 +3,14 @@ import { spriteUrl, getBladeSprites, getBudSprites, preloadSprites, spriteKeys }
 import grassManifest from '../data/grassManifest.json';
 import './PrairieGrass.css';
 
-const PrairieGrass = () => {
+// Breeze intensity levels for different animation strengths
+const BREEZE_LEVELS = {
+  subtle: 1.3,
+  medium: 2.0,
+  lively: 2.5
+};
+
+const PrairieGrass = ({ breeze = 'medium' } = {}) => {
   const canvasRef = useRef(null);
   const pointerRef = useRef({ x: null, y: null });
   const timeRef = useRef(0);
@@ -224,7 +231,11 @@ const PrairieGrass = () => {
             decaySwayBoost: 0.92 + Math.random()*0.05, // 0.92–0.97
             gustAngle: 0,                        // additive gust channel
             swayBoost: 0,                        // additive intensity boost
-            heightReact: heightReact              // height reaction factor
+            heightReact: heightReact,             // height reaction factor
+            // Per-blade timing for natural desynchronized motion
+            timeScale: 0.85 + Math.random() * 0.4,   // 0.85-1.25 speed variation
+            phaseJitter: Math.random() * Math.PI * 2, // random phase offset
+            cohort: Math.floor(x / 200) % 3          // wide bands for regional variation
           });
           
           // Create pronounced tufts/clumps around seed pods
@@ -279,7 +290,11 @@ const PrairieGrass = () => {
                 decaySwayBoost: 0.92 + Math.random()*0.05,
                 gustAngle: 0,
                 swayBoost: 0,
-                heightReact: clusterHeightReact
+                heightReact: clusterHeightReact,
+                // Per-blade timing
+                timeScale: 0.85 + Math.random() * 0.4,
+                phaseJitter: Math.random() * Math.PI * 2,
+                cohort: Math.floor(clusterX / 200) % 3
               });
             }
             
@@ -317,7 +332,11 @@ const PrairieGrass = () => {
                 decaySwayBoost: 0.92 + Math.random()*0.05,
                 gustAngle: 0,
                 swayBoost: 0,
-                heightReact: baseHeightReact
+                heightReact: baseHeightReact,
+                // Per-blade timing
+                timeScale: 0.85 + Math.random() * 0.4,
+                phaseJitter: Math.random() * Math.PI * 2,
+                cohort: Math.floor(baseX / 200) % 3
               });
             }
           }
@@ -343,8 +362,9 @@ const PrairieGrass = () => {
 
     bladesRef.current = initializeGrass(W);
 
-    // Keep damping global
-    const damping = 0.90;    // was 0.88 - slower response
+    // Slightly looser damping for more visible motion
+    const damping = 0.87;
+    const BREEZE = BREEZE_LEVELS[breeze] ?? BREEZE_LEVELS.medium;
 
     const drawFrame = () => {
       if (!isVisibleRef.current) {
@@ -354,13 +374,16 @@ const PrairieGrass = () => {
 
       ctx.clearRect(0, 0, W, H);
       
-      timeRef.current += 0.015;
-      // Stronger base sway + slow drift from right to left
-      const drift = -0.006 * Math.sin(timeRef.current * 0.05); // slow oscillation, negative = right→left
-      const windBase = drift +
-                      Math.sin(timeRef.current) * 0.014 +
-                      Math.sin(timeRef.current * 0.7) * 0.009 +
-                      Math.sin(timeRef.current * 1.3) * 0.007;
+      // Faster animation tick for more fluid motion
+      timeRef.current += 0.022;
+      
+      // Multi-frequency wind with ultra-low "breathing" swell
+      const ultraLow = Math.sin(timeRef.current * 0.12) * 0.012 * BREEZE;
+      const drift = -0.008 * Math.sin(timeRef.current * 0.05) * BREEZE;
+      const windBase = ultraLow + drift +
+                      Math.sin(timeRef.current) * 0.018 * BREEZE +
+                      Math.sin(timeRef.current * 0.7) * 0.012 * BREEZE +
+                      Math.sin(timeRef.current * 1.35) * 0.010 * BREEZE;
 
       // Skip offscreen blades for performance
       const viewportPadding = 100;
@@ -371,36 +394,52 @@ const PrairieGrass = () => {
       const t = timeRef.current; // reuse for efficiency
       
       visibleBlades.forEach(blade => {
-        // Only apply wind and interaction to non-seed blades
-        if (!blade.budImage) {
+        // Apply wind to all blades, but less to seed heads
+        const isSeedHead = !!blade.budImage;
+        const seedReduction = isSeedHead ? 0.5 : 1.0; // Seed heads sway 50% as much
+        
+        if (true) {  // Apply to all blades now
           // Natural variation: low-frequency spatial/temporal noise per blade
           const nx = blade.x * 0.004 + blade.seed * 3.1;
-          const localNoise =
-            0.6 * Math.sin(nx + t * 0.25 + blade.swayOffset*0.5) +
-            0.4 * Math.sin(nx * 1.7 - t * 0.18 + blade.seed * 5.7);
-          const noiseTerm = localNoise * 0.009 * blade.variability; // increased from 0.006
           
-          // Subtle left→right gradient so motion travels across width
-          const horiz = ((blade.x / W) - 0.5) * 0.010;
+          // Per-blade local time - each blade runs at its own speed and phase
+          const tl = t * blade.timeScale + blade.phaseJitter + blade.x * 0.0015;
+          
+          // Space-time wind field for non-uniform waves across the meadow
+          const field =
+            Math.sin(blade.x * 0.008 - t * 0.18 + blade.cohort * 0.7) * 0.008 * BREEZE +
+            Math.sin(blade.x * 0.02 + t * 0.3 + blade.seed * 6.283) * 0.005 * BREEZE;
+          
+          // Local noise driven by per-blade time for desynchronized motion
+          const localNoise =
+            0.6 * Math.sin(nx + tl * 0.25 + blade.swayOffset * 0.55) +
+            0.4 * Math.sin(nx * 1.7 - tl * 0.18 + blade.seed * 5.7);
+          const noiseTerm = localNoise * 0.013 * blade.variability;
+          
+          // Reduced horizontal gradient for subtlety
+          const horiz = ((blade.x / W) - 0.5) * 0.01;
           
           // Use effective intensity (with gust boost) and your tuned base + noise
-          const maxIntensity = 1.35;
+          const maxIntensity = 1.5;
           blade.swayBoost *= blade.decaySwayBoost; // per-blade decay
           const effectiveIntensity = Math.min(
             blade.swayIntensity * (1 + Math.max(0, blade.swayBoost)),
             maxIntensity
           );
           
-          const windEffect =
+          const windEffect = (
             windBase
-            + Math.sin(t + blade.swayOffset) * 0.01 * effectiveIntensity
+            + field  // Add space-time field variation
+            + Math.sin(tl + blade.swayOffset) * 0.012 * effectiveIntensity  // Use local time
             + horiz
-            + noiseTerm;
+            + noiseTerm
+          ) * seedReduction;  // Apply reduction for seed heads
           
           // Per-blade gust decay and target angle
           blade.gustAngle *= blade.decayGustAngle; // per-blade decay
           
-          const baseTarget = windEffect * 0.50;     // strengthened for visible passive sway
+          // Much stronger passive sway for continuous motion
+          const baseTarget = windEffect * 0.85;
           blade.targetAngle = baseTarget + blade.gustAngle;
           const px = pointerRef.current.x;
           const py = pointerRef.current.y;
@@ -425,17 +464,11 @@ const PrairieGrass = () => {
           blade.targetAngle = 0;
         }
         
-        // Spring physics with per-blade stiffness - only for non-seed blades
-        if (!blade.budImage) {
-          const accel = blade.stiffnessVar * (blade.targetAngle - blade.angle);
-          blade.velocity += accel;
-          blade.velocity *= damping;
-          blade.angle += blade.velocity;
-        } else {
-          // Keep seed blades static
-          blade.angle = 0;
-          blade.velocity = 0;
-        }
+        // Spring physics with per-blade stiffness - now for all blades
+        const accel = blade.stiffnessVar * (blade.targetAngle - blade.angle);
+        blade.velocity += accel;
+        blade.velocity *= damping;
+        blade.angle += blade.velocity;
         
         // Draw blade
         ctx.save();
@@ -580,7 +613,8 @@ const PrairieGrass = () => {
       const sigma = radius * 0.65; // slightly smoother falloff
 
       bladesRef.current.forEach(blade => {
-        if (blade.budImage) return;
+        // Apply gust to all blades, but less to seed heads
+        const seedReduction = blade.budImage ? 0.5 : 1.0;
 
         const dx = blade.x - focusX;
         const weight = Math.exp(-(dx*dx) / (2 * sigma * sigma)); // 0..1
@@ -591,9 +625,9 @@ const PrairieGrass = () => {
         // Height and variability scaling
         const scaleFactor = blade.heightReact * blade.variability;
 
-        // Much softer gust that blends with natural sway
-        blade.swayBoost += 0.18 * s * weight * rand * scaleFactor;  // was 0.30
-        blade.gustAngle += dir * 0.15 * weight * rand * scaleFactor; // was 0.26
+        // Much softer gust that blends with natural sway (reduced for seed heads)
+        blade.swayBoost += 0.18 * s * weight * rand * scaleFactor * seedReduction;
+        blade.gustAngle += dir * 0.15 * weight * rand * scaleFactor * seedReduction;
       });
     };
     
