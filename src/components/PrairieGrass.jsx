@@ -1,9 +1,18 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { spriteUrl, getBladeSprites, getBudSprites, preloadSprites, spriteKeys } from '../sprites/grass';
+import { sampleWindFieldSines } from '../utils/valueNoise1D';
 import grassManifest from '../data/grassManifest.json';
 import './PrairieGrass.css';
 
-// Breeze intensity levels for different animation strengths
+// Configuration constants for tuning organic motion
+const BAND_WIDTH = 180;        // Cohort width in pixels (140-220 works well)
+const SPATIAL_LAG = 0.002;     // Spatial phase offset in local time
+const FIELD_A = 0.006;         // Primary space-time field amplitude
+const FIELD_B = 0.004;         // Secondary space-time field amplitude
+const LOCAL_SIN_AMP = 0.011;   // Per-blade sine wave amplitude
+const NOISE_AMP = 0.0125;      // Local noise amplitude for variation
+
+// Breeze intensity levels (scales amplitudes only, not desync)
 const BREEZE_LEVELS = {
   subtle: 1.3,
   medium: 2.0,
@@ -233,9 +242,10 @@ const PrairieGrass = ({ breeze = 'medium' } = {}) => {
             swayBoost: 0,                        // additive intensity boost
             heightReact: heightReact,             // height reaction factor
             // Per-blade timing for natural desynchronized motion
-            timeScale: 0.85 + Math.random() * 0.4,   // 0.85-1.25 speed variation
+            timeScale: 0.90 + Math.random() * 0.35,   // 0.90-1.25 speed variation
             phaseJitter: Math.random() * Math.PI * 2, // random phase offset
-            cohort: Math.floor(x / 200) % 3          // wide bands for regional variation
+            cohort: Math.floor(x / BAND_WIDTH) % 3,  // soft banding for regional variation
+            dampingVar: 0.87 + Math.random() * 0.04  // 0.87-0.91 damping variation
           });
           
           // Create pronounced tufts/clumps around seed pods
@@ -292,9 +302,10 @@ const PrairieGrass = ({ breeze = 'medium' } = {}) => {
                 swayBoost: 0,
                 heightReact: clusterHeightReact,
                 // Per-blade timing
-                timeScale: 0.85 + Math.random() * 0.4,
+                timeScale: 0.90 + Math.random() * 0.35,
                 phaseJitter: Math.random() * Math.PI * 2,
-                cohort: Math.floor(clusterX / 200) % 3
+                cohort: Math.floor(clusterX / BAND_WIDTH) % 3,
+                dampingVar: 0.87 + Math.random() * 0.04
               });
             }
             
@@ -334,9 +345,10 @@ const PrairieGrass = ({ breeze = 'medium' } = {}) => {
                 swayBoost: 0,
                 heightReact: baseHeightReact,
                 // Per-blade timing
-                timeScale: 0.85 + Math.random() * 0.4,
+                timeScale: 0.90 + Math.random() * 0.35,
                 phaseJitter: Math.random() * Math.PI * 2,
-                cohort: Math.floor(baseX / 200) % 3
+                cohort: Math.floor(baseX / BAND_WIDTH) % 3,
+                dampingVar: 0.87 + Math.random() * 0.04
               });
             }
           }
@@ -362,8 +374,8 @@ const PrairieGrass = ({ breeze = 'medium' } = {}) => {
 
     bladesRef.current = initializeGrass(W);
 
-    // Slightly looser damping for more visible motion
-    const damping = 0.87;
+    // Base damping (individual blades will vary)
+    const baseDamping = 0.89;
     const BREEZE = BREEZE_LEVELS[breeze] ?? BREEZE_LEVELS.medium;
 
     const drawFrame = () => {
@@ -403,18 +415,18 @@ const PrairieGrass = ({ breeze = 'medium' } = {}) => {
           const nx = blade.x * 0.004 + blade.seed * 3.1;
           
           // Per-blade local time - each blade runs at its own speed and phase
-          const tl = t * blade.timeScale + blade.phaseJitter + blade.x * 0.0015;
+          const tl = t * blade.timeScale + blade.phaseJitter + blade.x * SPATIAL_LAG;
           
-          // Space-time wind field for non-uniform waves across the meadow
-          const field =
-            Math.sin(blade.x * 0.008 - t * 0.18 + blade.cohort * 0.7) * 0.008 * BREEZE +
-            Math.sin(blade.x * 0.02 + t * 0.3 + blade.seed * 6.283) * 0.005 * BREEZE;
+          // Space-time wind field using sine-based implementation
+          const cohortPhase = blade.cohort * 0.6;
+          const seedPhase = blade.seed * 6.283;
+          const field = sampleWindFieldSines(blade.x, t, cohortPhase, seedPhase) * BREEZE;
           
           // Local noise driven by per-blade time for desynchronized motion
           const localNoise =
             0.6 * Math.sin(nx + tl * 0.25 + blade.swayOffset * 0.55) +
             0.4 * Math.sin(nx * 1.7 - tl * 0.18 + blade.seed * 5.7);
-          const noiseTerm = localNoise * 0.013 * blade.variability;
+          const noiseTerm = localNoise * NOISE_AMP * blade.variability;
           
           // Reduced horizontal gradient for subtlety
           const horiz = ((blade.x / W) - 0.5) * 0.01;
@@ -430,7 +442,7 @@ const PrairieGrass = ({ breeze = 'medium' } = {}) => {
           const windEffect = (
             windBase
             + field  // Add space-time field variation
-            + Math.sin(tl + blade.swayOffset) * 0.012 * effectiveIntensity  // Use local time
+            + Math.sin(tl + blade.swayOffset) * LOCAL_SIN_AMP * effectiveIntensity  // Use local time
             + horiz
             + noiseTerm
           ) * seedReduction;  // Apply reduction for seed heads
@@ -464,9 +476,11 @@ const PrairieGrass = ({ breeze = 'medium' } = {}) => {
           blade.targetAngle = 0;
         }
         
-        // Spring physics with per-blade stiffness - now for all blades
+        // Spring physics with per-blade stiffness and damping
         const accel = blade.stiffnessVar * (blade.targetAngle - blade.angle);
         blade.velocity += accel;
+        // Use per-blade damping for more variation
+        const damping = blade.dampingVar || baseDamping;
         blade.velocity *= damping;
         blade.angle += blade.velocity;
         

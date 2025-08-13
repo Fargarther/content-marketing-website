@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { projects } from '../data/projects';
+import useCarouselWheel from '../hooks/useCarouselWheel';
+import useCarouselSwipe from '../hooks/useCarouselSwipe';
 import './Carousel.css';
 
 const Carousel = () => {
@@ -7,8 +9,7 @@ const Carousel = () => {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [counterKey, setCounterKey] = useState(0);
   const wheelRef = useRef(null);
-  const wheelTimeoutRef = useRef(null);
-  const wheelAccumulatorRef = useRef(0);
+  const containerRef = useRef(null);
 
   const itemCount = projects.length;
   const angleStep = 360 / itemCount;
@@ -138,51 +139,43 @@ const Carousel = () => {
   };
 
 
-  // Mouse wheel control with one-card-per-gesture
-  useEffect(() => {
-    const handleWheel = (e) => {
-      e.preventDefault();
-      if (isTransitioning) return;
-
-      // Accumulate wheel delta
-      wheelAccumulatorRef.current += e.deltaY;
-      
-      // Clear existing timeout
-      if (wheelTimeoutRef.current) {
-        clearTimeout(wheelTimeoutRef.current);
+  // Use robust wheel control hook for one-card-per-gesture (any axis)
+  useCarouselWheel({
+    viewportRef: wheelRef,
+    onNext: () => {
+      if (!isTransitioning) {
+        rotateWheel(1);
       }
-      
-      // Set threshold for triggering rotation (adjust as needed)
-      const threshold = 50;
-      
-      if (Math.abs(wheelAccumulatorRef.current) >= threshold) {
-        // Trigger rotation based on accumulated delta
-        if (wheelAccumulatorRef.current > 0) {
-          rotateWheel(1);  // Downward scroll = clockwise
-        } else {
-          rotateWheel(-1); // Upward scroll = counter-clockwise
-        }
-        wheelAccumulatorRef.current = 0; // Reset accumulator
-      } else {
-        // Reset accumulator after a pause in scrolling
-        wheelTimeoutRef.current = setTimeout(() => {
-          wheelAccumulatorRef.current = 0;
-        }, 150);
+    },
+    onPrev: () => {
+      if (!isTransitioning) {
+        rotateWheel(-1);
       }
-    };
+    },
+    enabled: !isTransitioning,
+    thresholdPx: 260,
+    cooldownMs: 490, // Reduced by 30% from 700ms
+    requireFullyInView: false // Allow scrolling even when partially visible
+  });
 
-    const container = wheelRef.current?.parentElement;
-    if (container) {
-      container.addEventListener('wheel', handleWheel, { passive: false });
-      
-      return () => {
-        container.removeEventListener('wheel', handleWheel);
-        if (wheelTimeoutRef.current) {
-          clearTimeout(wheelTimeoutRef.current);
-        }
-      };
-    }
-  }, [rotateWheel, isTransitioning]);
+  // Use swipe control hook for touch gestures (any axis)
+  useCarouselSwipe({
+    viewportRef: containerRef,
+    onNext: () => {
+      if (!isTransitioning) {
+        rotateWheel(1);
+      }
+    },
+    onPrev: () => {
+      if (!isTransitioning) {
+        rotateWheel(-1);
+      }
+    },
+    enabled: !isTransitioning,
+    thresholdPxTouch: 80,
+    intentPx: 8,
+    cooldownMs: 350 // Reduced by 30% from 500ms
+  });
 
   // Keyboard controls
   useEffect(() => {
@@ -198,60 +191,14 @@ const Carousel = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [rotateWheel]);
 
-  // Touch controls with one-card-per-swipe
-  const touchStartX = useRef(0);
-  const touchEndX = useRef(0);
-  const touchStartTime = useRef(0);
-  const hasSwiped = useRef(false);
-
-  const handleTouchStart = (e) => {
-    touchStartX.current = e.touches[0].clientX;
-    touchStartTime.current = Date.now();
-    hasSwiped.current = false;
-  };
-
-  const handleTouchEnd = () => {
-    if (hasSwiped.current) return;
-    
-    const diff = touchStartX.current - touchEndX.current;
-    const timeDiff = Date.now() - touchStartTime.current;
-    
-    // Require minimum swipe distance and reasonable time
-    const minSwipeDistance = 30;
-    const maxSwipeTime = 500; // milliseconds
-    
-    if (Math.abs(diff) > minSwipeDistance) {
-      // Quick swipe or deliberate drag
-      if (timeDiff < maxSwipeTime || Math.abs(diff) > 100) {
-        rotateWheel(diff > 0 ? 1 : -1);
-        hasSwiped.current = true;
-      }
-    }
-  };
-
-  const handleTouchMove = (e) => {
-    touchEndX.current = e.touches[0].clientX;
-    
-    // If already swiped, prevent additional swipes in same gesture
-    if (!hasSwiped.current) {
-      const diff = touchStartX.current - touchEndX.current;
-      
-      // Trigger swipe early if threshold met during move
-      if (Math.abs(diff) > 80 && !isTransitioning) {
-        rotateWheel(diff > 0 ? 1 : -1);
-        hasSwiped.current = true;
-      }
-    }
-  };
+  // Touch controls are now handled by useCarouselSwipe hook
 
   const currentIndex = Math.round((-rotation % 360) / angleStep + itemCount) % itemCount;
 
   return (
     <div 
+      ref={containerRef}
       className="carousel-container"
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
       role="region"
       aria-label="Project carousel"
       aria-roledescription="carousel"

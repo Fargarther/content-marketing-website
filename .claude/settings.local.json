@@ -5,7 +5,9 @@
       "Bash(mkdir:*)",
       "Bash(npm run lint)",
       "Bash(npm run build:*)",
-      "Bash(npx serve:*)"
+      "Bash(npx serve:*)",
+      "Bash(rm:*)",
+      "Bash(del \"C:\\Users\\benso\\OneDrive\\Documents\\content-marketing-website\\src\\hooks\\useCarouselWheel.js\")"
     ],
     "deny": []
   }
