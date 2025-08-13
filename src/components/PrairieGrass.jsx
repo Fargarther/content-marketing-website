@@ -12,6 +12,11 @@ const FIELD_B = 0.004;         // Secondary space-time field amplitude
 const LOCAL_SIN_AMP = 0.011;   // Per-blade sine wave amplitude
 const NOISE_AMP = 0.0125;      // Local noise amplitude for variation
 
+// Progressive rendering constants
+const INIT_BATCH_SIZE = 600;   // Blades to create per frame at startup
+const PLACEHOLDER_ALPHA = 0.55; // Opacity for vector fallback
+const PLACEHOLDER_GRADIENT = ['#114d2b', '#1a6b3a']; // Dark to mid green
+
 // Breeze intensity levels (scales amplitudes only, not desync)
 const BREEZE_LEVELS = {
   subtle: 1.3,
@@ -19,78 +24,128 @@ const BREEZE_LEVELS = {
   lively: 2.5
 };
 
+// Helper: Draw vector placeholder for blades without loaded sprites
+function drawBladePlaceholder(ctx, blade) {
+  const { x, baseY, angle, scale, opacity = 1 } = blade;
+  const h = 60 * scale; // Simple height estimate
+  const lean = Math.max(-0.8, Math.min(0.8, angle * 0.9));
+
+  // Create gradient from dark to mid green
+  const g = ctx.createLinearGradient(x, baseY - h, x, baseY);
+  g.addColorStop(0, PLACEHOLDER_GRADIENT[0]);
+  g.addColorStop(1, PLACEHOLDER_GRADIENT[1]);
+
+  ctx.save();
+  ctx.globalAlpha = Math.min(1, opacity * PLACEHOLDER_ALPHA);
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.moveTo(x, baseY);
+  // Draw S-curve blade shape
+  ctx.quadraticCurveTo(
+    x - h * 0.25 * (0.5 + lean), baseY - h * 0.55,
+    x + h * 0.08 * lean, baseY - h
+  );
+  ctx.quadraticCurveTo(
+    x + h * 0.16 * lean, baseY - h * 0.55,
+    x, baseY
+  );
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+// Helper: Batch blade creation to avoid blocking main thread
+function buildBladesInBatches(makeBlade, targetArray, total, batch = INIT_BATCH_SIZE, onDone) {
+  let i = 0;
+  function step() {
+    const end = Math.min(i + batch, total);
+    for (; i < end; i++) {
+      targetArray.push(makeBlade(i));
+    }
+    if (i < total) {
+      requestAnimationFrame(step);
+    } else {
+      onDone?.();
+    }
+  }
+  requestAnimationFrame(step);
+}
+
 const PrairieGrass = ({ breeze = 'medium' } = {}) => {
   const canvasRef = useRef(null);
   const pointerRef = useRef({ x: null, y: null });
   const timeRef = useRef(0);
   const animationRef = useRef(null);
   const bladesRef = useRef([]);
-  const [imagesLoaded, setImagesLoaded] = useState(false);
+  const [renderStarted, setRenderStarted] = useState(false);
   const observerRef = useRef(null);
   const isVisibleRef = useRef(true);
+  const spritesReadyCountRef = useRef(0);
 
   useEffect(() => {
-    const loadImages = async () => {
+    // Start rendering immediately, load images progressively
+    const loadImagesProgressive = () => {
       const imageCache = {};
+      window.grassImageCache = imageCache; // Make available immediately
       
-      try {
-        // Get all sprite names from manifest
-        const bladeNames = grassManifest.blades.map(b => b.name);
-        const budNames = grassManifest.buds.map(b => b.name);
-        
-        // Preload all sprites using the new system
-        const allNames = [...bladeNames, ...budNames];
-        const loadedImages = await preloadSprites(allNames);
-        
-        // Build cache with expected keys
-        bladeNames.forEach(name => {
-          const img = loadedImages[name];
-          if (img) {
+      // Start animation loop right away
+      setRenderStarted(true);
+      
+      // Get all sprite names from manifest
+      const bladeNames = grassManifest.blades.map(b => b.name);
+      const budNames = grassManifest.buds.map(b => b.name);
+      
+      // Load blade sprites with high priority
+      bladeNames.forEach(name => {
+        const url = spriteUrl(name);
+        if (url) {
+          const img = new Image();
+          img.decoding = 'async';
+          if ('fetchPriority' in img) img.fetchPriority = 'high';
+          
+          img.onload = () => {
             imageCache[`blade_${name}`] = img;
-          } else {
-            // Create image from URL if preload failed
-            const url = spriteUrl(name);
-            if (url) {
-              const fallbackImg = new Image();
-              fallbackImg.src = url;
-              imageCache[`blade_${name}`] = fallbackImg;
-            }
-          }
-        });
-        
-        budNames.forEach(name => {
-          const img = loadedImages[name];
-          if (img) {
-            imageCache[`bud_${name}`] = img;
-          } else {
-            // Create image from URL if preload failed
-            const url = spriteUrl(name);
-            if (url) {
-              const fallbackImg = new Image();
-              fallbackImg.src = url;
-              imageCache[`bud_${name}`] = fallbackImg;
-            }
-          }
-        });
-        
-        window.grassImageCache = imageCache;
-        setImagesLoaded(true);
-        
-        // Log available sprites in development
-        if (import.meta.env.DEV) {
-          console.log('[PrairieGrass] Loaded sprites:', Object.keys(imageCache));
+            spritesReadyCountRef.current++;
+          };
+          
+          img.src = url;
+          imageCache[`blade_${name}`] = img; // Add immediately (may not be complete)
         }
-      } catch (err) {
-        console.error('Failed to load grass images:', err);
-        setImagesLoaded(true); // Continue with fallback rendering
+      });
+      
+      // Load bud sprites with normal priority
+      budNames.forEach(name => {
+        const url = spriteUrl(name);
+        if (url) {
+          const img = new Image();
+          img.decoding = 'async';
+          
+          img.onload = () => {
+            imageCache[`bud_${name}`] = img;
+            spritesReadyCountRef.current++;
+          };
+          
+          img.src = url;
+          imageCache[`bud_${name}`] = img; // Add immediately (may not be complete)
+        }
+      });
+      
+      // Log progress in development
+      if (import.meta.env.DEV) {
+        const totalSprites = bladeNames.length + budNames.length;
+        const checkProgress = setInterval(() => {
+          const loaded = spritesReadyCountRef.current;
+          console.log(`[PrairieGrass] Sprites loaded: ${loaded}/${totalSprites}`);
+          if (loaded >= totalSprites) clearInterval(checkProgress);
+        }, 1000);
       }
     };
 
-    loadImages();
+    loadImagesProgressive();
   }, []);
 
   useEffect(() => {
-    if (!imagesLoaded) return;
+    if (!renderStarted) return;
 
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -526,15 +581,11 @@ const PrairieGrass = ({ breeze = 'medium' } = {}) => {
             );
           }
         } else {
-          // Fallback rendering
-          ctx.strokeStyle = '#6b7d5f';
-          ctx.lineWidth = 2 * blade.scale;
-          ctx.lineCap = 'round';
-          ctx.beginPath();
-          ctx.moveTo(0, 0);
-          const fallbackHeight = Math.min(H * blade.scale * 0.6, H * 0.98);
-          ctx.lineTo(0, -fallbackHeight);
-          ctx.stroke();
+          // Use vector placeholder for immediate rendering
+          ctx.restore(); // Restore before calling placeholder
+          drawBladePlaceholder(ctx, blade);
+          // Don't re-save/translate, will be handled by next iteration
+          return; // Skip rest of blade rendering
         }
         
         ctx.restore();
