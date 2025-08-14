@@ -16,6 +16,68 @@ const PLACEHOLDER_ALPHA = 0.55; // Opacity for vector fallback
 // Cached gradient for performance
 let __phGrad = null;
 
+// === Passive sway helpers ===
+const deg2rad = (d) => d * Math.PI / 180;
+
+// Use existing noise if present; otherwise provide a tiny fallback.
+const __hasN2 = typeof valueNoise1D === 'function';
+function __n2(x, y) {
+  if (__hasN2) return valueNoise1D(x, y);
+  const s = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
+  return s - Math.floor(s); // 0..1
+}
+
+// Stable pseudo-seed per blade if none provided
+function __seedForBlade(blade) {
+  if (blade.seed != null) return blade.seed;
+  if (blade._seed != null) return blade._seed;
+  const x = blade.x ?? 0, y = blade.baseY ?? 0;
+  const s = Math.abs(Math.sin(x * 12.92 + y * 0.173)) * 1000;
+  blade._seed = s;
+  return s;
+}
+
+// Compute per-blade passive sway angle (radians) at time t (seconds)
+function getPassiveSway(blade, tSec) {
+  if (!blade._sway) {
+    const seed = __seedForBlade(blade);
+    const r = (m) => {
+      const s = Math.sin((seed) * m) * 43758.5453;
+      return s - Math.floor(s); // 0..1
+    };
+    const sign = r(31.7) < 0.5 ? -1 : 1;
+    const size = Math.max(0.6, Math.min(1.8, blade.scale ?? 1));
+
+    blade._sway = {
+      phase: (r(7.9) + 0.15) * Math.PI * 2,         // unique start phase
+      freq:  0.55 + r(11.3) * 0.65,                 // 0.55..1.2 Hz per blade
+      bias:  deg2rad(sign * (2 + r(19.1) * 4)),     // ±2..6° left/right lean
+      amp:   deg2rad((4 + r(23.9) * 7) * (0.7 + size * 0.6)), // 4..11°, scaled by size
+      wanderSpeed: 0.02 + r(5.5) * 0.05,            // very slow meander
+      wanderAmp:   deg2rad(1 + r(13.1) * 2),        // +1..3° extra
+      size
+    };
+  }
+
+  const sw = blade._sway;
+  // core oscillation
+  const s = Math.sin(tSec * sw.freq + sw.phase);
+  // super-slow drift (sub-degree)
+  const slow = Math.sin(tSec * 0.07 + __seedForBlade(blade)) * deg2rad(0.8);
+  // small random walk / wander
+  const wander = (__n2(__seedForBlade(blade) * 97.3, tSec * sw.wanderSpeed) * 2 - 1); // -1..1
+
+  // DOF-ish boost: bigger/closer blades sway a bit more
+  const dof = 0.7 + Math.min(1.5, sw.size * 0.8);
+
+  // live amplitude with wander + any runtime boost already used (e.g., gust mixing)
+  const ampNow =
+    (sw.amp * (1 + 0.35 * wander) + sw.wanderAmp * wander) * dof +
+    (blade.swayBoost || 0);
+
+  return sw.bias + slow + s * ampNow;  // radians
+}
+
 // Breeze intensity levels (scales amplitudes only, not desync)
 const BREEZE_LEVELS = {
   subtle: 1.3,
@@ -492,7 +554,14 @@ const PrairieGrass = ({ breeze = 'medium' } = {}) => {
         ctx.save();
         if (blade.bladeImage && blade.bladeImage.complete) {
           ctx.translate(blade.x, blade.baseY);
-          ctx.rotate(blade.angle + blade.naturalLean);
+          // Get time in seconds for passive sway
+          const tSec = timeRef.current;
+          // Calculate passive sway and add to rotation
+          const passive = getPassiveSway(blade, tSec);
+          const gust = blade.gustAngle || 0;  // Keep existing gust logic
+          const lean = blade.naturalLean || 0;
+          const base = blade.angle || 0;  // Existing wind-based angle
+          ctx.rotate(base + lean + passive + gust);
           ctx.globalAlpha = blade.opacity;
 
           const bladeH = Math.min(H * blade.scale, H * 0.98);
@@ -520,9 +589,14 @@ const PrairieGrass = ({ breeze = 'medium' } = {}) => {
             );
           }
         } else {
+          // Get time in seconds for passive sway
+          const tSec = timeRef.current;
+          // Calculate passive sway for placeholder blades too
+          const passive = getPassiveSway(blade, tSec);
+          const gust = blade.gustAngle || 0;
           drawBladePlaceholder(ctx, {
             ...blade,
-            angle: blade.angle,
+            angle: blade.angle + passive + gust,
             naturalLean: blade.naturalLean,
           });
         }
@@ -552,12 +626,15 @@ const PrairieGrass = ({ breeze = 'medium' } = {}) => {
     if (!prefersReduced) {
       animationRef.current = requestAnimationFrame(drawFrame);
     } else {
-      // Draw static grass
+      // Draw static grass with a snapshot of passive sway
       ctx.clearRect(0, 0, W, H);
+      const staticTime = 0; // Fixed time for static render
       bladesRef.current.forEach(blade => {
         ctx.save();
         ctx.translate(blade.x, blade.baseY);
-        ctx.rotate(blade.naturalLean);
+        // Include passive sway even in static mode for visual interest
+        const passive = getPassiveSway(blade, staticTime);
+        ctx.rotate(blade.naturalLean + passive);
         ctx.globalAlpha = blade.opacity;
         
         if (blade.bladeImage && blade.bladeImage.complete) {
