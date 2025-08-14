@@ -7,7 +7,7 @@ const CloudBand = () => {
       {/* BACK LAYER (soft + slow) */}
       <svg className="clouds-svg" viewBox="0 0 2000 400" preserveAspectRatio="none" aria-hidden>
         <defs>
-          <symbol id="cloud-a" viewBox="0 0 230 100">
+          <symbol id="cloud-a" viewBox="0 0 230 120">
             <path fill="white" opacity="0.92"
               d="M22 70c-8-24 22-46 49-37 8-18 33-30 54-20 14-18 45-22 68-8
                  23-5 41 16 41 36 18 2 32 18 32 38
@@ -17,7 +17,7 @@ const CloudBand = () => {
           <symbol id="cloud-b" viewBox="0 0 260 110">
             <path d="M30 80c-10-25 18-45 42-35 12-20 38-32 62-18 15-22 42-28 65-12 28-6 48 15 48 38 18 3 32 14 32 30 0 20-16 32-40 32H65C45 115 32 100 30 80Z"/>
           </symbol>
-          <symbol id="cloud-slim" viewBox="0 0 280 70">
+          <symbol id="cloud-slim" viewBox="0 0 280 90">
             <path fill="white" opacity="0.88"
               d="M18 48c-6-18 18-34 44-28 10-14 34-20 54-12 16-12 40-14 62-4
                  22-2 36 14 36 28 14 2 26 12 26 24
@@ -75,17 +75,17 @@ const CloudBand = () => {
           <symbol id="cloud-c" viewBox="0 0 200 85">
             <path d="M20 60c-7-18 14-35 32-25 7-15 25-22 42-12 10-14 30-20 48-10 15-4 32 6 38 22 14 2 25 11 25 24 0 15-13 25-32 25H42C30 84 22 72 20 60Z"/>
           </symbol>
-          <symbol id="cloud-d" viewBox="0 0 240 105">
+          <symbol id="cloud-d" viewBox="0 0 240 125">
             <path fill="white" opacity="0.95"
               d="M24 78c-8-22 20-42 45-32 10-18 36-28 56-16 14-16 40-22 60-9
                  24-4 42 16 42 34 15 3 28 14 28 30
                  0 20-18 33-44 33H52
                  C36 118 28 98 24 78Z" />
           </symbol>
-          <symbol id="cloud-e" viewBox="0 0 190 75">
+          <symbol id="cloud-e" viewBox="0 0 190 95">
             <path d="M25 58c-6-15 10-28 26-22 6-13 20-18 35-10 9-12 26-17 40-8 18-2 33 10 33 25 10 1 20 7 20 17 0 11-10 19-25 19H40C29 79 24 68 25 58Z"/>
           </symbol>
-          <symbol id="cloud-f" viewBox="0 0 210 88">
+          <symbol id="cloud-f" viewBox="0 0 210 108">
             <path d="M28 68c-5-20 16-36 36-28 9-16 30-24 50-11 11-14 32-19 50-6 20-3 38 11 38 30 13 1 24 9 24 23 0 15-13 25-32 25H52C39 101 32 88 28 68Z"/>
           </symbol>
         </defs>
