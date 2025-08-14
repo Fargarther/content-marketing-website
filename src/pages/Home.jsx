@@ -5,15 +5,13 @@ import Carousel from '../components/Carousel';
 import CloudBand from '../components/CloudBand';
 import './Home.css';
 
-const Home = () => {
+export default function Home() {
   return (
     <>
-      <CloudBand />
-      <Carousel />
-      <PrairieGrass />
       <GroundNav />
+      <PrairieGrass />
+      <Carousel />
+      <CloudBand />
     </>
   );
-};
-
-export default Home;
+}
