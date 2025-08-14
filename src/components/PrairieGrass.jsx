@@ -1,14 +1,14 @@
 import React, { useRef, useEffect } from 'react';
 import { spriteUrl } from '../sprites/grass';
-import { sampleWindFieldSines } from '../utils/valueNoise1D';
+import { sampleWindField, valueNoise1D } from '../utils/valueNoise1D';
 import grassManifest from '../data/grassManifest.json';
 import './PrairieGrass.css';
 
 // Configuration constants for tuning organic motion
-const BAND_WIDTH = 180;        // Cohort width in pixels (140-220 works well)
-const SPATIAL_LAG = 0.002;     // Spatial phase offset in local time
+const BAND_WIDTH = 80;         // Even smaller cohorts for maximum desync
+const SPATIAL_LAG = 0.003;     // Increased spatial phase offset
 const LOCAL_SIN_AMP = 0.011;   // Per-blade sine wave amplitude
-const NOISE_AMP = 0.0125;      // Local noise amplitude for variation
+const NOISE_AMP = 0.018;       // Increased noise for more chaos
 
 // Progressive rendering constants
 const PLACEHOLDER_ALPHA = 0.55; // Opacity for vector fallback
@@ -257,23 +257,24 @@ const PrairieGrass = ({ breeze = 'medium' } = {}) => {
             zIndex: layer.zIndex,
             bladeImage: bladeImages.filter(img => img)[Math.floor(Math.random() * Math.max(1, bladeImages.filter(img => img).length))] || null,
             budImage: hasBud ? (budImages.filter(img => img)[Math.floor(Math.random() * Math.max(1, budImages.filter(img => img).length))] || null) : null,
-            swayIntensity: 0.8 + Math.random() * 0.4,
+            swayIntensity: 0.65 + Math.random() * 0.7,  // Widened by ~25% for more variation
             bladeType: bladeType === bladeTypes.short ? 'short' : 
                       (bladeType === bladeTypes.medium ? 'medium' : 'tall'),
             // Per-blade variation for natural motion
             seed: Math.random(),                 // stable random for this blade
-            variability: 0.85 + Math.random()*0.3,  // 0.85–1.15
-            stiffnessVar: 0.08 + Math.random()*0.06, // per-blade spring (0.08–0.14)
+            variability: 0.75 + Math.random()*0.5,  // Wider range 0.75–1.25
+            stiffnessVar: 0.07 + Math.random()*0.09, // Broader spring range (0.07–0.16)
             decayGustAngle: 0.90 + Math.random()*0.06, // 0.90–0.96
             decaySwayBoost: 0.92 + Math.random()*0.05, // 0.92–0.97
             gustAngle: 0,                        // additive gust channel
             swayBoost: 0,                        // additive intensity boost
             heightReact: heightReact,             // height reaction factor
             // Per-blade timing for natural desynchronized motion
-            timeScale: 0.90 + Math.random() * 0.35,   // 0.90-1.25 speed variation
+            timeScale: 0.65 + Math.random() * 1.2,   // Even wider (0.65-1.85) for max desync
             phaseJitter: Math.random() * Math.PI * 2, // random phase offset
+            temporalJitter: 0.015 + Math.random() * 0.035, // Increased drift (0.015-0.05)
             cohort: Math.floor(x / BAND_WIDTH) % 3,  // soft banding for regional variation
-            dampingVar: 0.87 + Math.random() * 0.04  // 0.87-0.91 damping variation
+            dampingVar: 0.85 + Math.random() * 0.07  // Broader damping (0.85-0.92)
           });
           
           // Create pronounced tufts/clumps around seed pods
@@ -318,11 +319,11 @@ const PrairieGrass = ({ breeze = 'medium' } = {}) => {
                 zIndex: layer.zIndex,
                 bladeImage: bladeImages.filter(img => img)[Math.floor(Math.random() * Math.max(1, bladeImages.filter(img => img).length))] || null,
                 budImage: null, // Cluster blades never have buds
-                swayIntensity: 0.7 + Math.random() * 0.4, // Varied sway intensity
+                swayIntensity: 0.55 + Math.random() * 0.7, // Wider variation for clusters
                 bladeType: 'cluster',
                 // Per-blade variation for natural motion
                 seed: Math.random(),
-                variability: 0.85 + Math.random()*0.3,
+                variability: 0.75 + Math.random()*0.5,
                 stiffnessVar: 0.08 + Math.random()*0.06,
                 decayGustAngle: 0.90 + Math.random()*0.06,
                 decaySwayBoost: 0.92 + Math.random()*0.05,
@@ -330,10 +331,11 @@ const PrairieGrass = ({ breeze = 'medium' } = {}) => {
                 swayBoost: 0,
                 heightReact: clusterHeightReact,
                 // Per-blade timing
-                timeScale: 0.90 + Math.random() * 0.35,
+                timeScale: 0.65 + Math.random() * 1.2, // Max desync
                 phaseJitter: Math.random() * Math.PI * 2,
+                temporalJitter: 0.015 + Math.random() * 0.035,
                 cohort: Math.floor(clusterX / BAND_WIDTH) % 3,
-                dampingVar: 0.87 + Math.random() * 0.04
+                dampingVar: 0.85 + Math.random() * 0.07
               });
             }
             
@@ -361,11 +363,11 @@ const PrairieGrass = ({ breeze = 'medium' } = {}) => {
                 zIndex: layer.zIndex + 0.1, // Slightly in front
                 bladeImage: bladeImages.filter(img => img)[Math.floor(Math.random() * Math.max(1, bladeImages.filter(img => img).length))] || null,
                 budImage: null,
-                swayIntensity: 0.6 + Math.random() * 0.3,
+                swayIntensity: 0.45 + Math.random() * 0.6, // Wider range for base blades
                 bladeType: 'base',
                 // Per-blade variation for natural motion
                 seed: Math.random(),
-                variability: 0.85 + Math.random()*0.3,
+                variability: 0.75 + Math.random()*0.5,
                 stiffnessVar: 0.08 + Math.random()*0.06,
                 decayGustAngle: 0.90 + Math.random()*0.06,
                 decaySwayBoost: 0.92 + Math.random()*0.05,
@@ -373,10 +375,11 @@ const PrairieGrass = ({ breeze = 'medium' } = {}) => {
                 swayBoost: 0,
                 heightReact: baseHeightReact,
                 // Per-blade timing
-                timeScale: 0.90 + Math.random() * 0.35,
+                timeScale: 0.65 + Math.random() * 1.2, // Max desync
                 phaseJitter: Math.random() * Math.PI * 2,
+                temporalJitter: 0.015 + Math.random() * 0.035,
                 cohort: Math.floor(baseX / BAND_WIDTH) % 3,
-                dampingVar: 0.87 + Math.random() * 0.04
+                dampingVar: 0.85 + Math.random() * 0.07
               });
             }
           }
@@ -435,15 +438,18 @@ const PrairieGrass = ({ breeze = 'medium' } = {}) => {
         const isSeedHead = !!blade.budImage;
         const seedReduction = isSeedHead ? 0.5 : 1.0;
 
-        const nx = blade.x * 0.004 + blade.seed * 3.1;
-        const tl = t * blade.timeScale + blade.phaseJitter + blade.x * SPATIAL_LAG;
+        // Add temporal jitter to make each blade drift in its own time
+        const tDrift = t + (blade.temporalJitter || 0) * t;
+        const tl = tDrift * blade.timeScale + blade.phaseJitter + blade.x * SPATIAL_LAG;
         const cohortPhase = blade.cohort * 0.6;
-        const seedPhase = blade.seed * 6.283;
-        const field = sampleWindFieldSines(blade.x, t, cohortPhase, seedPhase) * BREEZE;
+        // Use value noise for more organic wind field
+        const field = sampleWindField(blade.x, tDrift, cohortPhase) * BREEZE;
 
-        const localNoise =
-          0.6 * Math.sin(nx + tl * 0.25 + blade.swayOffset * 0.55) +
-          0.4 * Math.sin(nx * 1.7 - tl * 0.18 + blade.seed * 5.7);
+        // Three octaves of value noise for complex micro-variation
+        const n1 = valueNoise1D(blade.x * 0.02 - tl * 0.35, blade.seed * 997);
+        const n2 = valueNoise1D(blade.x * 0.05 + tl * 0.22, blade.seed * 1597);
+        const n3 = valueNoise1D(blade.x * 0.08 - tl * 0.45, blade.seed * 2311);
+        const localNoise = 0.5 * n1 + 0.35 * n2 + 0.15 * n3;
         const noiseTerm = localNoise * NOISE_AMP * blade.variability;
 
         const horiz = ((blade.x / W) - 0.5) * 0.01;
