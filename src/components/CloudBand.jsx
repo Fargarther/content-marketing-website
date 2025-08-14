@@ -7,11 +7,30 @@ const CloudBand = () => {
       {/* BACK LAYER (soft + slow) */}
       <svg className="clouds-svg" viewBox="0 0 2000 400" preserveAspectRatio="none" aria-hidden>
         <defs>
-          <symbol id="cloud-a" viewBox="0 0 220 90">
-            <path d="M15 65c-8-20 12-40 35-28 10-22 35-30 58-15 8-12 28-18 45-8 18-5 38 8 42 28 16 2 30 12 30 28 0 18-16 30-38 30H45C28 100 20 85 15 65Z"/>
+          <symbol id="cloud-a" viewBox="0 0 230 100">
+            <path fill="white" opacity="0.92"
+              d="M22 70c-8-24 22-46 49-37 8-18 33-30 54-20 14-18 45-22 68-8
+                 23-5 41 16 41 36 18 2 32 18 32 38
+                 0 22-20 38-50 38H58
+                 C36 117 26 95 22 70Z" />
           </symbol>
           <symbol id="cloud-b" viewBox="0 0 260 110">
             <path d="M30 80c-10-25 18-45 42-35 12-20 38-32 62-18 15-22 42-28 65-12 28-6 48 15 48 38 18 3 32 14 32 30 0 20-16 32-40 32H65C45 115 32 100 30 80Z"/>
+          </symbol>
+          <symbol id="cloud-slim" viewBox="0 0 280 70">
+            <path fill="white" opacity="0.88"
+              d="M18 48c-6-18 18-34 44-28 10-14 34-20 54-12 16-12 40-14 62-4
+                 22-2 36 14 36 28 14 2 26 12 26 24
+                 0 18-18 26-40 26H56
+                 C38 82 26 66 18 48Z" />
+          </symbol>
+          <symbol id="cloud-cirrus" viewBox="0 0 320 60">
+            <path fill="white" opacity="0.75"
+              d="M10 42c-5-16 18-28 36-22 12-10 30-14 48-8
+                 22-10 52-10 76 2 28-6 54 6 58 22
+                 18 2 30 12 30 22
+                 0 14-16 22-36 22H46
+                 C28 58 16 50 10 42Z" />
           </symbol>
         </defs>
 
@@ -27,6 +46,27 @@ const CloudBand = () => {
           <g className="bob-1 d4"><use href="#cloud-a" x="2480" y="60"  width="310" height="125"/></g>
           <g className="bob-2 d1"><use href="#cloud-b" x="2820" y="30"  width="370" height="150"/></g>
         </g>
+        {/* High, wispy cirrus (very thin, near the top) */}
+        <g opacity="0.65">
+          <g className="track">
+            <g className="bob-1"><use href="#cloud-cirrus" x="420" y="6" width="300" height="66"/></g>
+          </g>
+          <g className="track offset">
+            <g className="bob-2"><use href="#cloud-cirrus" x="2420" y="10" width="320" height="70"/></g>
+          </g>
+        </g>
+
+        {/* Slim mid/high altitude shapes (still in the back lane) */}
+        <g opacity="0.8">
+          <g className="track">
+            <g className="bob-1"><use href="#cloud-slim" x="180" y="12" width="260" height="80"/></g>
+            <g className="bob-2"><use href="#cloud-slim" x="980" y="18" width="240" height="76"/></g>
+          </g>
+          <g className="track offset">
+            <g className="bob-1"><use href="#cloud-slim" x="2180" y="12" width="260" height="80"/></g>
+            <g className="bob-2"><use href="#cloud-slim" x="2980" y="18" width="240" height="76"/></g>
+          </g>
+        </g>
       </svg>
 
       {/* FRONT LAYER (crisper + faster) */}
@@ -35,8 +75,12 @@ const CloudBand = () => {
           <symbol id="cloud-c" viewBox="0 0 200 85">
             <path d="M20 60c-7-18 14-35 32-25 7-15 25-22 42-12 10-14 30-20 48-10 15-4 32 6 38 22 14 2 25 11 25 24 0 15-13 25-32 25H42C30 84 22 72 20 60Z"/>
           </symbol>
-          <symbol id="cloud-d" viewBox="0 0 240 95">
-            <path d="M22 75c-8-24 20-42 45-32 10-18 34-28 56-14 12-16 35-22 54-8 24-4 42 14 42 35 15 2 28 12 28 27 0 18-15 29-36 29H50C35 112 28 98 22 75Z"/>
+          <symbol id="cloud-d" viewBox="0 0 240 105">
+            <path fill="white" opacity="0.95"
+              d="M24 78c-8-22 20-42 45-32 10-18 36-28 56-16 14-16 40-22 60-9
+                 24-4 42 16 42 34 15 3 28 14 28 30
+                 0 20-18 33-44 33H52
+                 C36 118 28 98 24 78Z" />
           </symbol>
           <symbol id="cloud-e" viewBox="0 0 190 75">
             <path d="M25 58c-6-15 10-28 26-22 6-13 20-18 35-10 9-12 26-17 40-8 18-2 33 10 33 25 10 1 20 7 20 17 0 11-10 19-25 19H40C29 79 24 68 25 58Z"/>
