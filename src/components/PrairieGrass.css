@@ -14,5 +14,4 @@
   pointer-events: auto;
   cursor: default;
   /* Instant visual while sprites load */
-  background: linear-gradient(180deg, #0b3a26 0%, #145a36 100%);
 }
