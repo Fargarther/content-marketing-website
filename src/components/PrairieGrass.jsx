@@ -1,5 +1,5 @@
-import React, { useRef, useEffect, useState } from 'react';
-import { spriteUrl, getBladeSprites, getBudSprites, preloadSprites, spriteKeys } from '../sprites/grass';
+import React, { useRef, useEffect } from 'react';
+import { spriteUrl } from '../sprites/grass';
 import { sampleWindFieldSines } from '../utils/valueNoise1D';
 import grassManifest from '../data/grassManifest.json';
 import './PrairieGrass.css';
@@ -7,17 +7,14 @@ import './PrairieGrass.css';
 // Configuration constants for tuning organic motion
 const BAND_WIDTH = 180;        // Cohort width in pixels (140-220 works well)
 const SPATIAL_LAG = 0.002;     // Spatial phase offset in local time
-const FIELD_A = 0.006;         // Primary space-time field amplitude
-const FIELD_B = 0.004;         // Secondary space-time field amplitude
 const LOCAL_SIN_AMP = 0.011;   // Per-blade sine wave amplitude
 const NOISE_AMP = 0.0125;      // Local noise amplitude for variation
 
 // Progressive rendering constants
-const INIT_BATCH_SIZE = 600;   // Blades to create per frame at startup
 const PLACEHOLDER_ALPHA = 0.55; // Opacity for vector fallback
 
 // Cached gradient for performance
-let phGrad = null;
+let __phGrad = null;
 
 // Breeze intensity levels (scales amplitudes only, not desync)
 const BREEZE_LEVELS = {
@@ -28,20 +25,19 @@ const BREEZE_LEVELS = {
 
 // Helper: Draw vector placeholder for blades without loaded sprites
 function drawBladePlaceholder(ctx, blade) {
-  const { x, baseY, angle = 0, scale = 1, opacity = 1 } = blade;
+  const { x, baseY, angle = 0, naturalLean = 0, scale = 1, opacity = 1 } = blade;
   const h = 60 * scale;
-  const lean = Math.max(-0.8, Math.min(0.8, angle * 0.9));
+  const lean = Math.max(-0.8, Math.min(0.8, (angle + naturalLean) * 0.9));
 
-  // Create gradient once and reuse
-  if (!phGrad) {
-    phGrad = ctx.createLinearGradient(0, 0, 0, 100);
-    phGrad.addColorStop(0, '#114d2b');
-    phGrad.addColorStop(1, '#1a6b3a');
+  if (!__phGrad) {
+    __phGrad = ctx.createLinearGradient(0, 0, 0, 100);
+    __phGrad.addColorStop(0, '#114d2b');
+    __phGrad.addColorStop(1, '#1a6b3a');
   }
 
   ctx.save();
   ctx.globalAlpha = Math.min(1, opacity * PLACEHOLDER_ALPHA);
-  ctx.fillStyle = phGrad;
+  ctx.fillStyle = __phGrad;
   ctx.beginPath();
   ctx.moveTo(x, baseY);
   ctx.quadraticCurveTo(
@@ -56,25 +52,12 @@ function drawBladePlaceholder(ctx, blade) {
   ctx.restore();
 }
 
-// Helper: Batch blade creation to avoid blocking main thread
-function buildBladesInBatches(makeBlade, out, total, batch = 600) {
-  let i = 0;
-  function step() {
-    const end = Math.min(i + batch, total);
-    for (; i < end; i++) out.push(makeBlade(i));
-    if (i < total) requestAnimationFrame(step);
-  }
-  requestAnimationFrame(step);
-}
-
 const PrairieGrass = ({ breeze = 'medium' } = {}) => {
   const canvasRef = useRef(null);
   const pointerRef = useRef({ x: null, y: null });
   const timeRef = useRef(0);
   const animationRef = useRef(null);
   const bladesRef = useRef([]);
-  // Start rendering immediately, no gating on image loads
-  const [renderStarted] = useState(true);
   const observerRef = useRef(null);
   const isVisibleRef = useRef(true);
   const spritesReadyCountRef = useRef(0);
@@ -135,8 +118,6 @@ const PrairieGrass = ({ breeze = 'medium' } = {}) => {
   }, []);
 
   useEffect(() => {
-    if (!renderStarted) return;
-
     const canvas = canvasRef.current;
     if (!canvas) return;
     
@@ -432,156 +413,113 @@ const PrairieGrass = ({ breeze = 'medium' } = {}) => {
       }
 
       ctx.clearRect(0, 0, W, H);
-      
-      // Faster animation tick for more fluid motion
       timeRef.current += 0.022;
-      
-      // Multi-frequency wind with ultra-low "breathing" swell
+
       const ultraLow = Math.sin(timeRef.current * 0.12) * 0.012 * BREEZE;
       const drift = -0.008 * Math.sin(timeRef.current * 0.05) * BREEZE;
-      const windBase = ultraLow + drift +
-                      Math.sin(timeRef.current) * 0.018 * BREEZE +
-                      Math.sin(timeRef.current * 0.7) * 0.012 * BREEZE +
-                      Math.sin(timeRef.current * 1.35) * 0.010 * BREEZE;
+      const windBase =
+        ultraLow +
+        drift +
+        Math.sin(timeRef.current) * 0.018 * BREEZE +
+        Math.sin(timeRef.current * 0.7) * 0.012 * BREEZE +
+        Math.sin(timeRef.current * 1.35) * 0.01 * BREEZE;
 
-      // Skip offscreen blades for performance
       const viewportPadding = 100;
-      const visibleBlades = bladesRef.current.filter(blade => 
-        blade.x >= -viewportPadding && blade.x <= W + viewportPadding
+      const visibleBlades = bladesRef.current.filter(
+        (blade) => blade.x >= -viewportPadding && blade.x <= W + viewportPadding
       );
-      
-      const t = timeRef.current; // reuse for efficiency
-      
-      visibleBlades.forEach(blade => {
-        // Apply wind to all blades, but less to seed heads
+
+      const t = timeRef.current;
+
+      visibleBlades.forEach((blade) => {
         const isSeedHead = !!blade.budImage;
-        const seedReduction = isSeedHead ? 0.5 : 1.0; // Seed heads sway 50% as much
-        
-        if (true) {  // Apply to all blades now
-          // Natural variation: low-frequency spatial/temporal noise per blade
-          const nx = blade.x * 0.004 + blade.seed * 3.1;
-          
-          // Per-blade local time - each blade runs at its own speed and phase
-          const tl = t * blade.timeScale + blade.phaseJitter + blade.x * SPATIAL_LAG;
-          
-          // Space-time wind field using sine-based implementation
-          const cohortPhase = blade.cohort * 0.6;
-          const seedPhase = blade.seed * 6.283;
-          const field = sampleWindFieldSines(blade.x, t, cohortPhase, seedPhase) * BREEZE;
-          
-          // Local noise driven by per-blade time for desynchronized motion
-          const localNoise =
-            0.6 * Math.sin(nx + tl * 0.25 + blade.swayOffset * 0.55) +
-            0.4 * Math.sin(nx * 1.7 - tl * 0.18 + blade.seed * 5.7);
-          const noiseTerm = localNoise * NOISE_AMP * blade.variability;
-          
-          // Reduced horizontal gradient for subtlety
-          const horiz = ((blade.x / W) - 0.5) * 0.01;
-          
-          // Use effective intensity (with gust boost) and your tuned base + noise
-          const maxIntensity = 1.5;
-          blade.swayBoost *= blade.decaySwayBoost; // per-blade decay
-          const effectiveIntensity = Math.min(
-            blade.swayIntensity * (1 + Math.max(0, blade.swayBoost)),
-            maxIntensity
-          );
-          
-          const windEffect = (
-            windBase
-            + field  // Add space-time field variation
-            + Math.sin(tl + blade.swayOffset) * LOCAL_SIN_AMP * effectiveIntensity  // Use local time
-            + horiz
-            + noiseTerm
-          ) * seedReduction;  // Apply reduction for seed heads
-          
-          // Per-blade gust decay and target angle
-          blade.gustAngle *= blade.decayGustAngle; // per-blade decay
-          
-          // Much stronger passive sway for continuous motion
-          const baseTarget = windEffect * 0.85;
-          blade.targetAngle = baseTarget + blade.gustAngle;
-          const px = pointerRef.current.x;
-          const py = pointerRef.current.y;
-          
-          if (px !== null && py !== null) {
-            const dx = blade.x - px;
-            const dy = blade.baseY - py;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            const influence = 120; // radius
-            
-            if (distance < influence) {
-              const direction = dx > 0 ? 1 : -1;
-              const factor = Math.pow((influence - distance) / influence, 2);
-              
-              // A bit stronger than last pass, scaled by heightReact & variability
-              const hoverPush = 0.46 * factor * blade.scale * blade.heightReact * blade.variability;
-              blade.targetAngle = direction * hoverPush + windEffect * 0.35;
-            }
+        const seedReduction = isSeedHead ? 0.5 : 1.0;
+
+        const nx = blade.x * 0.004 + blade.seed * 3.1;
+        const tl = t * blade.timeScale + blade.phaseJitter + blade.x * SPATIAL_LAG;
+        const cohortPhase = blade.cohort * 0.6;
+        const seedPhase = blade.seed * 6.283;
+        const field = sampleWindFieldSines(blade.x, t, cohortPhase, seedPhase) * BREEZE;
+
+        const localNoise =
+          0.6 * Math.sin(nx + tl * 0.25 + blade.swayOffset * 0.55) +
+          0.4 * Math.sin(nx * 1.7 - tl * 0.18 + blade.seed * 5.7);
+        const noiseTerm = localNoise * NOISE_AMP * blade.variability;
+
+        const horiz = ((blade.x / W) - 0.5) * 0.01;
+
+        blade.swayBoost *= blade.decaySwayBoost;
+        const effectiveIntensity = Math.min(
+          blade.swayIntensity * (1 + Math.max(0, blade.swayBoost)),
+          1.5
+        );
+
+        const windEffect =
+          (windBase + field + Math.sin(tl + blade.swayOffset) * LOCAL_SIN_AMP * effectiveIntensity + horiz + noiseTerm) *
+          seedReduction;
+
+        blade.gustAngle *= blade.decayGustAngle;
+        const baseTarget = windEffect * 0.85;
+        blade.targetAngle = baseTarget + blade.gustAngle;
+
+        const px = pointerRef.current.x;
+        const py = pointerRef.current.y;
+        if (px !== null && py !== null) {
+          const dx = blade.x - px;
+          const dy = blade.baseY - py;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          const influence = 120;
+          if (distance < influence) {
+            const direction = dx > 0 ? 1 : -1;
+            const factor = Math.pow((influence - distance) / influence, 2);
+            const hoverPush = 0.46 * factor * blade.scale * blade.heightReact * blade.variability;
+            blade.targetAngle = direction * hoverPush + windEffect * 0.35;
           }
-        } else {
-          // Seed pod blades remain static
-          blade.targetAngle = 0;
         }
-        
-        // Spring physics with per-blade stiffness and damping
+
         const accel = blade.stiffnessVar * (blade.targetAngle - blade.angle);
         blade.velocity += accel;
-        // Use per-blade damping for more variation
         const damping = blade.dampingVar || baseDamping;
         blade.velocity *= damping;
         blade.angle += blade.velocity;
-        
-        // Draw blade
+
         ctx.save();
-        ctx.translate(blade.x, blade.baseY);
-        // Rotate based on computed angle + natural lean
-        ctx.rotate(blade.angle + blade.naturalLean);
-        ctx.globalAlpha = blade.opacity;
-        
         if (blade.bladeImage && blade.bladeImage.complete) {
-          // Draw leaf blade - ensure it's anchored at the bottom
+          ctx.translate(blade.x, blade.baseY);
+          ctx.rotate(blade.angle + blade.naturalLean);
+          ctx.globalAlpha = blade.opacity;
+
           const bladeH = Math.min(H * blade.scale, H * 0.98);
           const bladeAspect = blade.bladeImage.width / blade.bladeImage.height;
           const bladeW = Math.max(6, bladeH * bladeAspect);
-          
-          // IMPORTANT: Draw blade anchored at bottom with overlap into ground
-          // Adding 3px overlap to ensure no floating
           ctx.drawImage(
-            blade.bladeImage, 
-            -bladeW / 2,     // center horizontally
-            -bladeH + 3,     // draw from ground up with 3px overlap into ground
-            bladeW, 
+            blade.bladeImage,
+            -bladeW / 2,
+            -bladeH + 3,
+            bladeW,
             bladeH
           );
-          
-          // Draw bud from baseline and make it taller than any leaf
+
           if (blade.budImage && blade.budImage.complete) {
-            // Target: at least 1.78x the leaf OR ≥ 92% of canvas height (whichever is bigger)
-            // but never clip top
             const targetBudH = Math.max(bladeH * 1.78, H * 0.92);
-            const budH = Math.min(Math.round(targetBudH), Math.floor(H - 2)); // 2px safety
+            const budH = Math.min(Math.round(targetBudH), Math.floor(H - 2));
             const budAspect = blade.budImage.width / blade.budImage.height;
             const budW = Math.max(6, budH * budAspect);
-            
-            // baseline-anchored with overlap
             ctx.drawImage(
               blade.budImage,
-              -budW / 2,      // center horizontally
-              -budH + 3,      // bottom anchored with 3px overlap into ground
+              -budW / 2,
+              -budH + 3,
               budW,
               budH
             );
           }
         } else {
-          // Use vector placeholder for immediate rendering
-          ctx.restore(); // Restore before calling placeholder
-          drawBladePlaceholder(ctx, blade);
-          ctx.save(); // Re-save for proper restore at end
-          ctx.translate(blade.x, blade.baseY);
-          ctx.rotate(blade.angle + blade.naturalLean);
-          ctx.globalAlpha = blade.opacity;
+          drawBladePlaceholder(ctx, {
+            ...blade,
+            angle: blade.angle,
+            naturalLean: blade.naturalLean,
+          });
         }
-        
         ctx.restore();
       });
 
@@ -698,7 +636,7 @@ const PrairieGrass = ({ breeze = 'medium' } = {}) => {
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('carousel-gust', handleCarouselGust);
     };
-  }, [imagesLoaded]);
+  }, [breeze]);
 
   const handleMouseMove = e => {
     const rect = e.currentTarget.getBoundingClientRect();
