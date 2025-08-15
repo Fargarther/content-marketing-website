@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { spriteUrl } from '../sprites/grass';
-import { sampleWindField, valueNoise1D } from '../utils/valueNoise1D';
+import { sampleWindField } from '../utils/valueNoise1D';
 import grassManifest from '../data/grassManifest.json';
 import './PrairieGrass.css';
 
@@ -119,6 +119,7 @@ const PrairieGrass = ({ breeze = 'medium' } = {}) => {
   const canvasRef = useRef(null);
   const pointerRef = useRef({ x: null, y: null });
   const timeRef = useRef(0);
+  const lastTimeRef = useRef(0);
   const animationRef = useRef(null);
   const bladesRef = useRef([]);
   const observerRef = useRef(null);
@@ -475,30 +476,34 @@ const PrairieGrass = ({ breeze = 'medium' } = {}) => {
     const baseDamping = 0.92;
     const BREEZE = BREEZE_LEVELS[breeze] ?? BREEZE_LEVELS.medium;
 
-    const drawFrame = () => {
+    const drawFrame = (ts) => {
+      if (!lastTimeRef.current) lastTimeRef.current = ts;
+      const dt = (ts - lastTimeRef.current) / 1000;
+      lastTimeRef.current = ts;
+      const cdt = Math.min(dt, 0.05);
+      timeRef.current = (timeRef.current + cdt) % 1000000000;
+      const t = timeRef.current;
+
       if (!isVisibleRef.current) {
         animationRef.current = requestAnimationFrame(drawFrame);
         return;
       }
 
       ctx.clearRect(0, 0, W, H);
-      timeRef.current += 0.022;
 
-      const ultraLow = Math.sin(timeRef.current * 0.12) * 0.009 * BREEZE;
-      const drift = -0.005 * Math.sin(timeRef.current * 0.05) * BREEZE;
+      const ultraLow = Math.sin(t * 0.12) * 0.009 * BREEZE;
+      const drift = -0.005 * Math.sin(t * 0.05) * BREEZE;
       const windBase =
         ultraLow +
         drift +
-        Math.sin(timeRef.current) * 0.014 * BREEZE +
-        Math.sin(timeRef.current * 0.7) * 0.009 * BREEZE +
-        Math.sin(timeRef.current * 1.35) * 0.007 * BREEZE;
+        Math.sin(t) * 0.014 * BREEZE +
+        Math.sin(t * 0.7) * 0.009 * BREEZE +
+        Math.sin(t * 1.35) * 0.007 * BREEZE;
 
       const viewportPadding = 100;
       const visibleBlades = bladesRef.current.filter(
         (blade) => blade.x >= -viewportPadding && blade.x <= W + viewportPadding
       );
-
-      const t = timeRef.current;
 
       visibleBlades.forEach((blade) => {
         const isSeedHead = !!blade.budImage;
