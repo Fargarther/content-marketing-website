@@ -5,10 +5,13 @@ import grassManifest from '../data/grassManifest.json';
 import './PrairieGrass.css';
 
 // Configuration constants for tuning organic motion
-const BAND_WIDTH = 80;         // Even smaller cohorts for maximum desync
-const SPATIAL_LAG = 0.003;     // Increased spatial phase offset
-const LOCAL_SIN_AMP = 0.007;   // Reduced sine amplitude (less twitch)
-const NOISE_AMP = 0.010;       // Reduced noise amplitude
+const BAND_WIDTH = 80;         // cohorts for de-sync
+// Reduced spatial lag to prevent jitter from large phase shifts
+const SPATIAL_LAG = 0.002;
+// Lower sine amplitude to calm the base oscillation
+const LOCAL_SIN_AMP = 0.006;
+// Lower noise amplitude for smoother motion
+const NOISE_AMP = 0.008;
 
 // Progressive rendering constants
 const PLACEHOLDER_ALPHA = 0.55; // Opacity for vector fallback
@@ -16,65 +19,64 @@ const PLACEHOLDER_ALPHA = 0.55; // Opacity for vector fallback
 // Cached gradient for performance
 let __phGrad = null;
 
-// === Passive sway helpers ===
+// ---- passive sway tuning ----
+const SWAY_SPEED = 0.65;             // <1 slows everything (try 0.5..0.8)
+const PASSIVE_TAU = 0.16;            // seconds; low-pass time constant (0.12..0.2)
+const MAX_RATE_DEG_PER_S = 28;       // max passive angle change speed
+const MAX_RATE = (Math.PI / 180) * MAX_RATE_DEG_PER_S;
+
+// ---- math & noise helpers ----
 const deg2rad = (d) => d * Math.PI / 180;
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+const lerp = (a, b, t) => a + (b - a) * t;
+const smoothstep01 = (t) => { const x = clamp(t, 0, 1); return x * x * (3 - 2 * x); };
 
-// Use existing noise if present; otherwise provide a tiny fallback.
-const __hasN2 = typeof valueNoise1D === 'function';
-function __n2(x, y) {
-  if (__hasN2) return valueNoise1D(x, y);
-  const s = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
-  return s - Math.floor(s); // 0..1
+// Stable 0..1 hash
+function hash1(n) { const s = Math.sin(n) * 43758.5453123; return s - Math.floor(s); }
+
+// Continuous 1D value noise (0..1)
+function valueNoise1D(x, seed = 0) {
+  const i = Math.floor(x);
+  const f = x - i;
+  const a = hash1((i     * 57.0) + seed * 0.123);
+  const b = hash1(((i+1) * 57.0) + seed * 0.123);
+  return lerp(a, b, smoothstep01(f));
 }
 
-// Stable pseudo-seed per blade if none provided
-function __seedForBlade(blade) {
-  if (blade.seed != null) return blade.seed;
-  if (blade._seed != null) return blade._seed;
-  const x = blade.x ?? 0, y = blade.baseY ?? 0;
-  const s = Math.abs(Math.sin(x * 12.92 + y * 0.173)) * 1000;
-  blade._seed = s;
-  return s;
-}
-
-// Compute per-blade passive sway angle (radians) at time t (seconds)
 function getPassiveSway(blade, tSec) {
   if (!blade._sway) {
-    const seed = __seedForBlade(blade);
-    const r = (m) => {
-      const s = Math.sin((seed) * m) * 43758.5453;
-      return s - Math.floor(s); // 0..1
-    };
+    const seed = blade.seed ?? (blade._seed ??= Math.abs(Math.sin((blade.x||0)*12.92 + (blade.baseY||0)*0.173)) * 1000);
+    const r = (m) => { const s = Math.sin(seed * m) * 43758.5453; return s - Math.floor(s); };
     const sign = r(31.7) < 0.5 ? -1 : 1;
     const size = Math.max(0.6, Math.min(1.8, blade.scale ?? 1));
 
     blade._sway = {
-      phase: (r(7.9) + 0.15) * Math.PI * 2,         // unique start phase
-      freq:  0.008 + r(11.3) * 0.012,               // 0.008..0.02 Hz per blade (95% slower)
-      bias:  deg2rad(sign * (0.13 + r(19.1) * 0.26)),     // ±0.13..0.39° left/right lean (+30%)
-      amp:   deg2rad((0.26 + r(23.9) * 0.455) * (0.7 + size * 0.6)), // 0.26..0.715°, scaled (+30%)
-      wanderSpeed: 0.0005 + r(5.5) * 0.001,         // 95% slower wander
-      wanderAmp:   deg2rad(0.065 + r(13.1) * 0.13), // +0.065..0.195° extra (+30%)
+      seed,
+      phase: (r(7.9) + 0.15) * Math.PI * 2,
+      // SLOWER base freq & wander than before:
+      freq:  0.25 + r(11.3) * 0.40,           // 0.25..0.65 Hz
+      bias:  deg2rad(sign * (2 + r(19.1) * 4)),    // ±2..6°
+      amp:   deg2rad((4 + r(23.9) * 7) * (0.7 + size*0.6)), // 4..11° scaled by size
+      wanderSpeed: 0.007 + r(5.5) * 0.013,    // 0.007..0.02
+      wanderAmp:   deg2rad(1 + r(13.1) * 2),  // +1..3°
       size
     };
   }
 
   const sw = blade._sway;
-  // core oscillation
-  const s = Math.sin(tSec * sw.freq + sw.phase);
-  // super-slow drift (sub-degree)
-  const slow = Math.sin(tSec * 0.0015 + __seedForBlade(blade)) * deg2rad(0.052); // 95% slower, +30% amplitude
-  // small random walk / wander
-  const wander = (__n2(__seedForBlade(blade) * 97.3, tSec * sw.wanderSpeed) * 2 - 1); // -1..1
 
-  // DOF-ish boost: bigger/closer blades sway a bit more
+  // slow sinusoid (scaled by SWAY_SPEED)
+  const s = Math.sin((tSec * SWAY_SPEED) * sw.freq + sw.phase);
+  // very slow drift
+  const slow = Math.sin(tSec * 0.07 + sw.seed) * deg2rad(0.8);
+  // continuous wander in [-1,1] (scaled by SWAY_SPEED)
+  const wn = valueNoise1D((tSec * SWAY_SPEED) * sw.wanderSpeed, sw.seed * 97.3) * 2 - 1;
+
+  // subtle DOF scaling by blade size
   const dof = 0.7 + Math.min(1.5, sw.size * 0.8);
+  const ampNow = (sw.amp * (1 + 0.35 * wn) + sw.wanderAmp * wn) * dof + (blade.swayBoost || 0);
 
-  // live amplitude with wander (removed swayBoost to prevent double-application)
-  const ampNow =
-    (sw.amp * (1 + 0.35 * wander) + sw.wanderAmp * wander) * dof;
-
-  return sw.bias + slow + s * ampNow;  // radians
+  return sw.bias + slow + s * ampNow; // radians
 }
 
 // Breeze intensity levels (scales amplitudes only, not desync)
@@ -324,16 +326,19 @@ const PrairieGrass = ({ breeze = 'medium' } = {}) => {
             // Per-blade variation for natural motion
             seed: Math.random(),                 // stable random for this blade
             variability: 0.75 + Math.random()*0.5,  // Wider range 0.75–1.25
-            stiffnessVar: 0.07 + Math.random()*0.09, // Broader spring range (0.07–0.16)
-            decayGustAngle: 0.90 + Math.random()*0.06, // 0.90–0.96
-            decaySwayBoost: 0.92 + Math.random()*0.05, // 0.92–0.97
+            // Reduce spring stiffness for smoother transitions
+            stiffnessVar: 0.05 + Math.random()*0.05,     // 0.05–0.10
+            // Increase damping so gust angles and sway boosts decay more
+            decayGustAngle: 0.92 + Math.random()*0.05,   // 0.92–0.97
+            decaySwayBoost: 0.93 + Math.random()*0.04,   // 0.93–0.97
             gustAngle: 0,                        // additive gust channel
             swayBoost: 0,                        // additive intensity boost
             heightReact: heightReact,             // height reaction factor
             // Per-blade timing for natural desynchronized motion
             timeScale: 0.65 + Math.random() * 1.2,   // Even wider (0.65-1.85) for max desync
             phaseJitter: Math.random() * Math.PI * 2, // random phase offset
-            temporalJitter: 0.015 + Math.random() * 0.035, // Increased drift (0.015-0.05)
+            // Lower temporal jitter for calmer per-blade timing
+            temporalJitter: 0.005 + Math.random() * 0.015, // 0.005–0.02
             cohort: Math.floor(x / BAND_WIDTH) % 3,  // soft banding for regional variation
             dampingVar: 0.85 + Math.random() * 0.07  // Broader damping (0.85-0.92)
           });
@@ -385,16 +390,16 @@ const PrairieGrass = ({ breeze = 'medium' } = {}) => {
                 // Per-blade variation for natural motion
                 seed: Math.random(),
                 variability: 0.75 + Math.random()*0.5,
-                stiffnessVar: 0.08 + Math.random()*0.06,
-                decayGustAngle: 0.90 + Math.random()*0.06,
-                decaySwayBoost: 0.92 + Math.random()*0.05,
+                stiffnessVar: 0.05 + Math.random()*0.05,
+                decayGustAngle: 0.92 + Math.random()*0.05,
+                decaySwayBoost: 0.93 + Math.random()*0.04,
                 gustAngle: 0,
                 swayBoost: 0,
                 heightReact: clusterHeightReact,
                 // Per-blade timing
                 timeScale: 0.65 + Math.random() * 1.2, // Max desync
                 phaseJitter: Math.random() * Math.PI * 2,
-                temporalJitter: 0.015 + Math.random() * 0.035,
+                temporalJitter: 0.005 + Math.random() * 0.015,
                 cohort: Math.floor(clusterX / BAND_WIDTH) % 3,
                 dampingVar: 0.85 + Math.random() * 0.07
               });
@@ -429,16 +434,16 @@ const PrairieGrass = ({ breeze = 'medium' } = {}) => {
                 // Per-blade variation for natural motion
                 seed: Math.random(),
                 variability: 0.75 + Math.random()*0.5,
-                stiffnessVar: 0.08 + Math.random()*0.06,
-                decayGustAngle: 0.90 + Math.random()*0.06,
-                decaySwayBoost: 0.92 + Math.random()*0.05,
+                stiffnessVar: 0.05 + Math.random()*0.05,
+                decayGustAngle: 0.92 + Math.random()*0.05,
+                decaySwayBoost: 0.93 + Math.random()*0.04,
                 gustAngle: 0,
                 swayBoost: 0,
                 heightReact: baseHeightReact,
                 // Per-blade timing
                 timeScale: 0.65 + Math.random() * 1.2, // Max desync
                 phaseJitter: Math.random() * Math.PI * 2,
-                temporalJitter: 0.015 + Math.random() * 0.035,
+                temporalJitter: 0.005 + Math.random() * 0.015,
                 cohort: Math.floor(baseX / BAND_WIDTH) % 3,
                 dampingVar: 0.85 + Math.random() * 0.07
               });
@@ -553,15 +558,34 @@ const PrairieGrass = ({ breeze = 'medium' } = {}) => {
         ctx.save();
         if (blade.bladeImage && blade.bladeImage.complete) {
           ctx.translate(blade.x, blade.baseY);
-          // Get time in seconds for passive sway
-          const tSec = timeRef.current;
-          // Calculate passive sway and add to rotation
-          const passive = getPassiveSway(blade, tSec);
-          const gust = blade.gustAngle || 0;  // Keep existing gust logic
+          
+          // seconds clock
+          const tNow = timeRef.current; // already in seconds
+          
+          // per-blade time step
+          blade._tPrev ??= tNow;
+          const dt = clamp(tNow - blade._tPrev, 0.0, 0.05); // clamp long stalls
+          blade._tPrev = tNow;
+
+          // raw passive (radians)
+          const passiveRaw = getPassiveSway(blade, tNow);
+
+          // 1) one-pole low-pass toward the target (tau = PASSIVE_TAU)
+          const alpha = 1 - Math.exp(-dt / PASSIVE_TAU);
+          blade._passiveLP ??= passiveRaw;
+          const lpCandidate = blade._passiveLP + (passiveRaw - blade._passiveLP) * alpha;
+
+          // 2) slew limit: cap max change per frame by MAX_RATE * dt
+          const limit = MAX_RATE * dt;
+          const delta = clamp(lpCandidate - blade._passiveLP, -limit, limit);
+          blade._passiveLP += delta;
+
+          // combine with your existing contributions
+          const gust = blade.gustAngle || 0;
           const lean = blade.naturalLean || 0;
-          const windAngle = blade.angle || 0;  // Existing wind-based angle from physics
-          // Combine all rotations smoothly
-          ctx.rotate(windAngle + lean + passive + gust);
+          const base = blade.angle || 0;
+
+          ctx.rotate(base + lean + blade._passiveLP + gust);
           ctx.globalAlpha = blade.opacity;
 
           const bladeH = Math.min(H * blade.scale, H * 0.98);
@@ -589,15 +613,32 @@ const PrairieGrass = ({ breeze = 'medium' } = {}) => {
             );
           }
         } else {
-          // Get time in seconds for passive sway
-          const tSec = timeRef.current;
-          // Calculate passive sway for placeholder blades too
-          const passive = getPassiveSway(blade, tSec);
+          // seconds clock for placeholder blades
+          const tNow = timeRef.current;
+          
+          // per-blade time step
+          blade._tPrev ??= tNow;
+          const dt = clamp(tNow - blade._tPrev, 0.0, 0.05);
+          blade._tPrev = tNow;
+
+          // raw passive (radians)
+          const passiveRaw = getPassiveSway(blade, tNow);
+
+          // 1) one-pole low-pass toward the target (tau = PASSIVE_TAU)
+          const alpha = 1 - Math.exp(-dt / PASSIVE_TAU);
+          blade._passiveLP ??= passiveRaw;
+          const lpCandidate = blade._passiveLP + (passiveRaw - blade._passiveLP) * alpha;
+
+          // 2) slew limit: cap max change per frame by MAX_RATE * dt
+          const limit = MAX_RATE * dt;
+          const delta = clamp(lpCandidate - blade._passiveLP, -limit, limit);
+          blade._passiveLP += delta;
+
           const gust = blade.gustAngle || 0;
-          const windAngle = blade.angle || 0;
+          const base = blade.angle || 0;
           drawBladePlaceholder(ctx, {
             ...blade,
-            angle: windAngle + passive + gust,
+            angle: base + blade._passiveLP + gust,
             naturalLean: blade.naturalLean,
           });
         }
@@ -635,6 +676,8 @@ const PrairieGrass = ({ breeze = 'medium' } = {}) => {
         ctx.translate(blade.x, blade.baseY);
         // Include passive sway even in static mode for visual interest
         const passive = getPassiveSway(blade, staticTime);
+        // Initialize the low-pass filter for static mode
+        blade._passiveLP = passive;
         ctx.rotate(blade.naturalLean + passive);
         ctx.globalAlpha = blade.opacity;
         
