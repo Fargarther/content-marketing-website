@@ -65,18 +65,18 @@ function getPassiveSway(blade, tSec) {
 
   const sw = blade._sway;
 
-  // Reduced sway distance by 90% total and slowed speed by 98% (keeping only 2% of original speed)
-  // slow sinusoid (scaled by SWAY_SPEED and heavily reduced frequency)
-  const s = Math.sin((tSec * SWAY_SPEED * 0.02) * sw.freq + sw.phase);
-  // very slow drift (reduced amplitude by 90% and speed by 98%)
-  const slow = Math.sin(tSec * 0.07 * 0.02 + sw.seed) * deg2rad(0.8 * 0.1);
-  // continuous wander in [-1,1] (scaled by SWAY_SPEED and heavily reduced speed)
-  const wn = valueNoise1D((tSec * SWAY_SPEED * 0.02) * sw.wanderSpeed, sw.seed * 97.3) * 2 - 1;
+  // Reduced by 50% from original
+  // slow sinusoid (scaled by SWAY_SPEED)
+  const s = Math.sin((tSec * SWAY_SPEED) * sw.freq + sw.phase);
+  // very slow drift (reduced by 50%)
+  const slow = Math.sin(tSec * 0.07 + sw.seed) * deg2rad(0.8 * 0.5);
+  // continuous wander in [-1,1] (scaled by SWAY_SPEED)
+  const wn = valueNoise1D((tSec * SWAY_SPEED) * sw.wanderSpeed, sw.seed * 97.3) * 2 - 1;
 
   // subtle DOF scaling by blade size
   const dof = 0.7 + Math.min(1.5, sw.size * 0.8);
-  // Reduced amplitude by 90% total (keeping only 10%)
-  const ampNow = ((sw.amp * (1 + 0.35 * wn) + sw.wanderAmp * wn) * dof * 0.1) + (blade.swayBoost || 0);
+  // Amplitude reduced by 50%
+  const ampNow = ((sw.amp * (1 + 0.35 * wn) + sw.wanderAmp * wn) * dof * 0.5) + (blade.swayBoost || 0);
 
   return sw.bias + slow + s * ampNow; // radians
 }
