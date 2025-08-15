@@ -50,11 +50,11 @@ function getPassiveSway(blade, tSec) {
 
     blade._sway = {
       phase: (r(7.9) + 0.15) * Math.PI * 2,         // unique start phase
-      freq:  0.55 + r(11.3) * 0.65,                 // 0.55..1.2 Hz per blade
-      bias:  deg2rad(sign * (2 + r(19.1) * 4)),     // ±2..6° left/right lean
-      amp:   deg2rad((4 + r(23.9) * 7) * (0.7 + size * 0.6)), // 4..11°, scaled by size
-      wanderSpeed: 0.02 + r(5.5) * 0.05,            // very slow meander
-      wanderAmp:   deg2rad(1 + r(13.1) * 2),        // +1..3° extra
+      freq:  0.008 + r(11.3) * 0.012,               // 0.008..0.02 Hz per blade (95% slower)
+      bias:  deg2rad(sign * (0.13 + r(19.1) * 0.26)),     // ±0.13..0.39° left/right lean (+30%)
+      amp:   deg2rad((0.26 + r(23.9) * 0.455) * (0.7 + size * 0.6)), // 0.26..0.715°, scaled (+30%)
+      wanderSpeed: 0.0005 + r(5.5) * 0.001,         // 95% slower wander
+      wanderAmp:   deg2rad(0.065 + r(13.1) * 0.13), // +0.065..0.195° extra (+30%)
       size
     };
   }
@@ -63,17 +63,16 @@ function getPassiveSway(blade, tSec) {
   // core oscillation
   const s = Math.sin(tSec * sw.freq + sw.phase);
   // super-slow drift (sub-degree)
-  const slow = Math.sin(tSec * 0.07 + __seedForBlade(blade)) * deg2rad(0.8);
+  const slow = Math.sin(tSec * 0.0015 + __seedForBlade(blade)) * deg2rad(0.052); // 95% slower, +30% amplitude
   // small random walk / wander
   const wander = (__n2(__seedForBlade(blade) * 97.3, tSec * sw.wanderSpeed) * 2 - 1); // -1..1
 
   // DOF-ish boost: bigger/closer blades sway a bit more
   const dof = 0.7 + Math.min(1.5, sw.size * 0.8);
 
-  // live amplitude with wander + any runtime boost already used (e.g., gust mixing)
+  // live amplitude with wander (removed swayBoost to prevent double-application)
   const ampNow =
-    (sw.amp * (1 + 0.35 * wander) + sw.wanderAmp * wander) * dof +
-    (blade.swayBoost || 0);
+    (sw.amp * (1 + 0.35 * wander) + sw.wanderAmp * wander) * dof;
 
   return sw.bias + slow + s * ampNow;  // radians
 }
@@ -560,8 +559,9 @@ const PrairieGrass = ({ breeze = 'medium' } = {}) => {
           const passive = getPassiveSway(blade, tSec);
           const gust = blade.gustAngle || 0;  // Keep existing gust logic
           const lean = blade.naturalLean || 0;
-          const base = blade.angle || 0;  // Existing wind-based angle
-          ctx.rotate(base + lean + passive + gust);
+          const windAngle = blade.angle || 0;  // Existing wind-based angle from physics
+          // Combine all rotations smoothly
+          ctx.rotate(windAngle + lean + passive + gust);
           ctx.globalAlpha = blade.opacity;
 
           const bladeH = Math.min(H * blade.scale, H * 0.98);
@@ -594,9 +594,10 @@ const PrairieGrass = ({ breeze = 'medium' } = {}) => {
           // Calculate passive sway for placeholder blades too
           const passive = getPassiveSway(blade, tSec);
           const gust = blade.gustAngle || 0;
+          const windAngle = blade.angle || 0;
           drawBladePlaceholder(ctx, {
             ...blade,
-            angle: blade.angle + passive + gust,
+            angle: windAngle + passive + gust,
             naturalLean: blade.naturalLean,
           });
         }
