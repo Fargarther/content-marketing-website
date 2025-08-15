@@ -7,8 +7,8 @@ import './PrairieGrass.css';
 // Configuration constants for tuning organic motion
 const BAND_WIDTH = 80;         // Even smaller cohorts for maximum desync
 const SPATIAL_LAG = 0.003;     // Increased spatial phase offset
-const LOCAL_SIN_AMP = 0.011;   // Per-blade sine wave amplitude
-const NOISE_AMP = 0.018;       // Increased noise for more chaos
+const LOCAL_SIN_AMP = 0.007;   // Reduced sine amplitude (less twitch)
+const NOISE_AMP = 0.010;       // Reduced noise amplitude
 
 // Progressive rendering constants
 const PLACEHOLDER_ALPHA = 0.55; // Opacity for vector fallback
@@ -80,9 +80,9 @@ function getPassiveSway(blade, tSec) {
 
 // Breeze intensity levels (scales amplitudes only, not desync)
 const BREEZE_LEVELS = {
-  subtle: 1.3,
-  medium: 2.0,
-  lively: 2.5
+  subtle: 1.1,
+  medium: 1.6,
+  lively: 2.1
 };
 
 // Helper: Draw vector placeholder for blades without loaded sprites
@@ -468,7 +468,7 @@ const PrairieGrass = ({ breeze = 'medium' } = {}) => {
     bladesRef.current = initializeGrass(W);
 
     // Base damping (individual blades will vary)
-    const baseDamping = 0.89;
+    const baseDamping = 0.92;
     const BREEZE = BREEZE_LEVELS[breeze] ?? BREEZE_LEVELS.medium;
 
     const drawFrame = () => {
@@ -480,14 +480,14 @@ const PrairieGrass = ({ breeze = 'medium' } = {}) => {
       ctx.clearRect(0, 0, W, H);
       timeRef.current += 0.022;
 
-      const ultraLow = Math.sin(timeRef.current * 0.12) * 0.012 * BREEZE;
-      const drift = -0.008 * Math.sin(timeRef.current * 0.05) * BREEZE;
+      const ultraLow = Math.sin(timeRef.current * 0.12) * 0.009 * BREEZE;
+      const drift = -0.005 * Math.sin(timeRef.current * 0.05) * BREEZE;
       const windBase =
         ultraLow +
         drift +
-        Math.sin(timeRef.current) * 0.018 * BREEZE +
-        Math.sin(timeRef.current * 0.7) * 0.012 * BREEZE +
-        Math.sin(timeRef.current * 1.35) * 0.01 * BREEZE;
+        Math.sin(timeRef.current) * 0.014 * BREEZE +
+        Math.sin(timeRef.current * 0.7) * 0.009 * BREEZE +
+        Math.sin(timeRef.current * 1.35) * 0.007 * BREEZE;
 
       const viewportPadding = 100;
       const visibleBlades = bladesRef.current.filter(
@@ -527,7 +527,7 @@ const PrairieGrass = ({ breeze = 'medium' } = {}) => {
           seedReduction;
 
         blade.gustAngle *= blade.decayGustAngle;
-        const baseTarget = windEffect * 0.85;
+        const baseTarget = windEffect * 0.60;
         blade.targetAngle = baseTarget + blade.gustAngle;
 
         const px = pointerRef.current.x;
