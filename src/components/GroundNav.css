@@ -4,12 +4,12 @@
 }
 
 .ground-nav {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;                     /* sits at the very bottom */
+  position: relative;          /* NOT fixed or sticky */
+  bottom: auto;
+  left: auto;
+  right: auto;
   height: 120px;                 /* increased height */
-  z-index: 1105;                 /* ABOVE the grass (yours was 1001) */
+  z-index: 1200;               /* higher than grass/sky backgrounds */
   pointer-events: none;          /* overall container lets clicks through */
 }
 
@@ -24,8 +24,8 @@
 }
 
 .ground-inner {
-  position: absolute;
-  inset: 0;
+  position: relative;
+  inset: auto;
   background:
     radial-gradient(1px 1px at 20% 30%, rgba(0,0,0,0.12) 0 40%, transparent 41%) repeat,
     radial-gradient(1px 1px at 70% 60%, rgba(0,0,0,0.10) 0 45%, transparent 46%) repeat,

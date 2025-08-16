@@ -13,6 +13,11 @@ export default function GroundNav() {
   const [currentHash, setCurrentHash] = useState(window.location.hash || '#home');
   const parallaxOffset = useRef({ x: 0, y: 0 });
   const gustDecay = useRef([]);
+  const lastPointerSamplesRef = useRef([]);
+  const lastTimeRef = useRef(performance.now());
+
+  const clamp = (n, lo, hi) => Math.max(lo, Math.min(n, hi));
+  const getRockRadius = (rock) => rock.radius ?? (Math.max(rock.w, rock.h) / 2 || 10);
 
   // Get Y position along the ridge path
   const getRidgeY = useCallback((normalizedX) => {
@@ -52,16 +57,20 @@ export default function GroundNav() {
       const positions = rockData.map(rock => {
         const pixelX = rock.x * width;
         const ridgeY = getRidgeY(rock.x);
-        
+
         // Add small random vertical offset
         const yOffset = (Math.random() - 0.5) * 8;
-        
+
         return {
           ...rock,
           pixelX,
           pixelY: ridgeY + yOffset,
           vertices: generatePebbleVertices(rock.seed, rock.w, rock.h),
-          color: getRockColor(rock.hue, rock.z)
+          color: getRockColor(rock.hue, rock.z),
+          vx: 0,
+          vy: 0,
+          falling: false,
+          radius: getRockRadius(rock)
         };
       });
       
@@ -159,8 +168,37 @@ export default function GroundNav() {
     };
     
     let { w, h } = resize();
-    
+
+    const GRAVITY = 900;
+    const AIR_FRICTION = 0.98;
+    const GROUND_FRICTION = 0.9;
+
     const animate = () => {
+      const now = performance.now();
+      const dtSec = Math.min((now - lastTimeRef.current) / 1000, 0.05);
+      lastTimeRef.current = now;
+
+      rockPositions.forEach(rock => {
+        if (rock.falling) {
+          rock.vy += GRAVITY * dtSec;
+          rock.pixelX += rock.vx * dtSec;
+          rock.pixelY += rock.vy * dtSec;
+          rock.vx *= Math.pow(AIR_FRICTION, Math.max(1, 60 * dtSec));
+          rock.pixelX = clamp(rock.pixelX, rock.radius, w - rock.radius);
+          const xNorm = clamp(rock.pixelX / w, 0, 1);
+          const groundY = getRidgeY(xNorm) - rock.radius;
+          if (rock.pixelY >= groundY) {
+            rock.pixelY = groundY;
+            rock.vy = 0;
+            rock.vx *= GROUND_FRICTION;
+            if (Math.abs(rock.vx) < 5) {
+              rock.vx = 0;
+              rock.falling = false;
+            }
+          }
+        }
+      });
+
       // Update gust decay
       gustDecay.current.forEach(gust => {
         if (gust.decay > 0) {
@@ -175,7 +213,7 @@ export default function GroundNav() {
           }
         }
       });
-      
+
       drawRocks(ctx, w, h);
       rafRef.current = requestAnimationFrame(animate);
     };
@@ -203,20 +241,56 @@ export default function GroundNav() {
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
       draggingIndex = pickNearestFrontRock(x, y);
-      if (draggingIndex !== -1) e.preventDefault();
+      if (draggingIndex !== -1) {
+        e.preventDefault();
+        const rock = rockPositions[draggingIndex];
+        rock.falling = false;
+        rock.vx = 0;
+        rock.vy = 0;
+        lastPointerSamplesRef.current = [{ x, y, t: performance.now() }];
+      }
     };
-    
+
     const onPointerMove = (e) => {
       if (!ENABLE_ROCK_DRAG || draggingIndex === -1) return;
       const rect = cvs.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
-      // constrain slightly so rocks stay near the ridge
       rockPositions[draggingIndex].pixelX = x;
       rockPositions[draggingIndex].pixelY = y - 48;
+
+      const samples = lastPointerSamplesRef.current;
+      const now = performance.now();
+      samples.push({ x, y, t: now });
+      while (samples.length > 8 || now - samples[0].t > 120) {
+        samples.shift();
+      }
     };
-    
-    const onPointerUp = () => { draggingIndex = -1; };
+
+    const onPointerUp = () => {
+      if (draggingIndex !== -1) {
+        const rock = rockPositions[draggingIndex];
+        const samples = lastPointerSamplesRef.current;
+        let vx = 0, vy = 0;
+        if (samples.length >= 2) {
+          const latest = samples[samples.length - 1];
+          let prev = samples[0];
+          for (let i = samples.length - 2; i >= 0; i--) {
+            if (latest.t - samples[i].t >= 60) { prev = samples[i]; break; }
+          }
+          const dt = (latest.t - prev.t) / 1000;
+          if (dt > 0) {
+            vx = clamp((latest.x - prev.x) / dt, -400, 400);
+            vy = clamp((latest.y - prev.y) / dt, -200, 200);
+          }
+        }
+        rock.vx = vx;
+        rock.vy = vy;
+        rock.falling = true;
+      }
+      draggingIndex = -1;
+      lastPointerSamplesRef.current = [];
+    };
     
     cvs.addEventListener('pointerdown', onPointerDown);
     window.addEventListener('pointermove', onPointerMove);
@@ -258,7 +332,7 @@ export default function GroundNav() {
       window.removeEventListener('pointerup', onPointerUp);
       window.removeEventListener('pointercancel', onPointerUp);
     };
-  }, [rockPositions, drawRocks]);
+  }, [rockPositions, drawRocks, getRidgeY]);
 
   return (
     <div className="ground-nav">
