@@ -20,6 +20,7 @@
   width: 100%; height: 80px;
   pointer-events: none;
   filter: drop-shadow(0 2px 3px rgba(0,0,0,0.15));
+  z-index: 0;                   /* behind everything else in the bar */
 }
 
 .ground-inner {
@@ -47,7 +48,7 @@
   width: 100%;
   max-width: 800px;
   position: relative;
-  z-index: 2;                    /* above rocks canvas */
+  z-index: 3;                   /* above canvas */
 }
 
 .nav-list li {
@@ -86,5 +87,10 @@
 .ground-rocks {
   position: absolute;
   inset: 0;
-  z-index: 1;                    /* behind links */
+  z-index: 2;                   /* above background, below links */
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: auto;         /* canvas can receive pointerdown */
+  touch-action: none;           /* allows smooth dragging on touch */
 }

@@ -148,11 +148,13 @@ export default function GroundNav() {
     const resize = () => {
       const w = cvs.clientWidth;
       const h = cvs.clientHeight;
-      cvs.width = w * dpr;
-      cvs.height = h * dpr;
+      cvs.width = Math.round(w * dpr);
+      cvs.height = Math.round(h * dpr);
       cvs.style.width = `${w}px`;
       cvs.style.height = `${h}px`;
-      ctx.scale(dpr, dpr);
+
+      // IMPORTANT: reset & set DPR in one step (no accumulation)
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       return { w, h };
     };
     
