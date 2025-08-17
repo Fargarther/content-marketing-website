@@ -1,110 +1,90 @@
-/* Root variables */
 :root {
   --ground-color: #c4b5a0;
-  --ground-dark:  #9a8c73;
+  --ground-dark: #9a8c73;
 }
 
-/* Ground navigation bar */
 .ground-nav {
   position: fixed;
-  left: 0; right: 0; bottom: 0;
-  height: 120px;                 /* keep existing height if different */
-  z-index: 3000;                 /* sit above grass/sky */
-  isolation: isolate;            /* independent stacking context */
-  pointer-events: none;          /* children opt in */
-  background: var(--ground-color); /* backfill to match SVG */
+  left: 0;
+  right: 0;
+  bottom: 0;                     /* sits at the very bottom */
+  height: 120px;                 /* increased height */
+  z-index: 1105;                 /* ABOVE the grass (yours was 1001) */
+  pointer-events: none;          /* overall container lets clicks through */
 }
 
-/* Ridge: remove edge artifact by overlapping and avoiding inline baseline */
 .ground-ridge {
   position: absolute;
-  left: -1px; right: -1px;       /* tiny horizontal bleed */
-  top: -3px; bottom: -12px;      /* overlap into the bar to cover AA edge */
-  width: 100%;
-  display: block;                /* no inline baseline gap */
+  top: -48px;                    /* overlaps prairie: covers blade bottoms */
+  left: 0; right: 0;
+  width: 100%; height: 80px;
   pointer-events: none;
-  /* IMPORTANT: remove drop shadow here; it darkens the boundary and reads as a line */
-  filter: none;
+  filter: drop-shadow(0 2px 3px rgba(0,0,0,0.15));
 }
 
-/* Last safety backfill just under the ridge, inside the bar */
-.ground-nav::after {
-  content: "";
-  position: absolute;
-  left: 0; right: 0; top: 0;
-  height: 10px;
-  background: var(--ground-color);
-  z-index: 1;                    /* below canvas/links */
-  pointer-events: none;
-}
-
-/* Canvas stays between ridge and links */
-.ground-rocks {
-  position: absolute;
-  inset: 0;
-  z-index: 1;                    /* behind links */
-  pointer-events: auto;
-  touch-action: none;
-}
-
-/* Links layer ABOVE canvas so buttons are clickable */
 .ground-inner {
   position: absolute;
   inset: 0;
-  z-index: 2;                    /* above canvas */
-  pointer-events: auto;
-  display: grid;
-  grid-template-rows: 1fr auto;  /* bottom row for nav */
   background:
     radial-gradient(1px 1px at 20% 30%, rgba(0,0,0,0.12) 0 40%, transparent 41%) repeat,
     radial-gradient(1px 1px at 70% 60%, rgba(0,0,0,0.10) 0 45%, transparent 46%) repeat,
     linear-gradient(to bottom, var(--ground-color), var(--ground-dark));
   background-size: 180px 120px, 220px 150px, 100% 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 40px;
+  pointer-events: auto;          /* links + rocks are interactive */
 }
 
 .nav-list {
-  grid-row: 2;                   /* bottom row */
   display: flex;
-  justify-content: space-evenly; /* distribute across bottom band */
-  align-items: flex-end;         /* anchor to the edge */
-  gap: 12px;
-  padding: 0 16px 12px;          /* bottom padding = “on the band” */
+  align-items: center;
+  justify-content: space-evenly;
   list-style: none;
   margin: 0;
+  padding: 0;
   width: 100%;
-  max-width: 900px;
-  z-index: 3;                    /* above canvas */
+  max-width: 800px;
+  position: relative;
+  z-index: 2;                    /* above rocks canvas */
+}
+
+.nav-list li {
+  margin: 0;
+  padding: 0;
 }
 
 .ground-inner a {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 72px;
-  min-height: 40px;
-  padding: 8px 14px;
+  display: inline-block;
   text-decoration: none;
+  color: #3a3a32;
   font-weight: 600;
-  color: #2a2a22;
-  border-radius: 16px;
-  /* soft “feathered” look */
-  background: rgba(255,255,255,0.22);
-  border: 1px solid rgba(255,255,255,0.35);
-  box-shadow:
-    0 10px 22px rgba(0,0,0,0.16),
-    inset 0 0 0 0.75px rgba(255,255,255,0.28);
-  backdrop-filter: blur(4px);
-  transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
-  cursor: pointer;
+  font-size: 1.25rem;             /* Larger text */
+  padding: 10px 20px;             /* More padding */
+  border-radius: 8px;
+  backdrop-filter: blur(1px);
+  transition: all 0.3s ease;
 }
 
-.ground-inner a:hover { transform: translateY(-2px); background: rgba(255,255,255,0.30); }
-.ground-inner a:active { transform: translateY(-1px); }
-.ground-inner a:focus-visible { outline: 2px solid rgba(0,0,0,0.45); outline-offset: 2px; }
+.ground-inner a:hover {
+  background: rgba(255,255,255,0.35);
+  transform: translateY(-2px);
+}
+
+.ground-inner a:focus {
+  outline: 2px solid #6b7d5f;
+  outline-offset: 2px;
+}
+
 .ground-inner a[aria-current="page"] {
-  background: rgba(255,255,255,0.32);
-  box-shadow:
-    0 12px 24px rgba(0,0,0,0.18),
-    inset 0 0 0 0.75px rgba(255,255,255,0.34);
+  background: rgba(255,255,255,0.45);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transform: translateY(-1px);
 }
 
+.ground-rocks {
+  position: absolute;
+  inset: 0;
+  z-index: 1;                    /* behind links */
+}

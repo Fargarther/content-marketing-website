@@ -13,11 +13,6 @@ export default function GroundNav() {
   const [currentHash, setCurrentHash] = useState(window.location.hash || '#home');
   const parallaxOffset = useRef({ x: 0, y: 0 });
   const gustDecay = useRef([]);
-  const lastPointerSamplesRef = useRef([]);
-  const lastTimeRef = useRef(performance.now());
-
-  const clamp = (n, lo, hi) => Math.max(lo, Math.min(n, hi));
-  const getRockRadius = (rock) => rock.radius ?? (Math.max(rock.w, rock.h) / 2 || 10);
 
   // Get Y position along the ridge path
   const getRidgeY = useCallback((normalizedX) => {
@@ -57,20 +52,16 @@ export default function GroundNav() {
       const positions = rockData.map(rock => {
         const pixelX = rock.x * width;
         const ridgeY = getRidgeY(rock.x);
-
+        
         // Add small random vertical offset
         const yOffset = (Math.random() - 0.5) * 8;
-
+        
         return {
           ...rock,
           pixelX,
           pixelY: ridgeY + yOffset,
           vertices: generatePebbleVertices(rock.seed, rock.w, rock.h),
-          color: getRockColor(rock.hue, rock.z),
-          vx: 0,
-          vy: 0,
-          falling: false,
-          radius: getRockRadius(rock)
+          color: getRockColor(rock.hue, rock.z)
         };
       });
       
@@ -157,48 +148,17 @@ export default function GroundNav() {
     const resize = () => {
       const w = cvs.clientWidth;
       const h = cvs.clientHeight;
-      cvs.width = Math.round(w * dpr);
-      cvs.height = Math.round(h * dpr);
+      cvs.width = w * dpr;
+      cvs.height = h * dpr;
       cvs.style.width = `${w}px`;
       cvs.style.height = `${h}px`;
-
-      // IMPORTANT: reset & set DPR in one step (no accumulation)
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.scale(dpr, dpr);
       return { w, h };
     };
     
     let { w, h } = resize();
-
-    const GRAVITY = 900;
-    const AIR_FRICTION = 0.98;
-    const GROUND_FRICTION = 0.9;
-
+    
     const animate = () => {
-      const now = performance.now();
-      const dtSec = Math.min((now - lastTimeRef.current) / 1000, 0.05);
-      lastTimeRef.current = now;
-
-      rockPositions.forEach(rock => {
-        if (rock.falling) {
-          rock.vy += GRAVITY * dtSec;
-          rock.pixelX += rock.vx * dtSec;
-          rock.pixelY += rock.vy * dtSec;
-          rock.vx *= Math.pow(AIR_FRICTION, Math.max(1, 60 * dtSec));
-          rock.pixelX = clamp(rock.pixelX, rock.radius, w - rock.radius);
-          const xNorm = clamp(rock.pixelX / w, 0, 1);
-          const groundY = getRidgeY(xNorm) - rock.radius;
-          if (rock.pixelY >= groundY) {
-            rock.pixelY = groundY;
-            rock.vy = 0;
-            rock.vx *= GROUND_FRICTION;
-            if (Math.abs(rock.vx) < 5) {
-              rock.vx = 0;
-              rock.falling = false;
-            }
-          }
-        }
-      });
-
       // Update gust decay
       gustDecay.current.forEach(gust => {
         if (gust.decay > 0) {
@@ -213,7 +173,7 @@ export default function GroundNav() {
           }
         }
       });
-
+      
       drawRocks(ctx, w, h);
       rafRef.current = requestAnimationFrame(animate);
     };
@@ -241,56 +201,20 @@ export default function GroundNav() {
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
       draggingIndex = pickNearestFrontRock(x, y);
-      if (draggingIndex !== -1) {
-        e.preventDefault();
-        const rock = rockPositions[draggingIndex];
-        rock.falling = false;
-        rock.vx = 0;
-        rock.vy = 0;
-        lastPointerSamplesRef.current = [{ x, y, t: performance.now() }];
-      }
+      if (draggingIndex !== -1) e.preventDefault();
     };
-
+    
     const onPointerMove = (e) => {
       if (!ENABLE_ROCK_DRAG || draggingIndex === -1) return;
       const rect = cvs.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
+      // constrain slightly so rocks stay near the ridge
       rockPositions[draggingIndex].pixelX = x;
       rockPositions[draggingIndex].pixelY = y - 48;
-
-      const samples = lastPointerSamplesRef.current;
-      const now = performance.now();
-      samples.push({ x, y, t: now });
-      while (samples.length > 8 || now - samples[0].t > 120) {
-        samples.shift();
-      }
     };
-
-    const onPointerUp = () => {
-      if (draggingIndex !== -1) {
-        const rock = rockPositions[draggingIndex];
-        const samples = lastPointerSamplesRef.current;
-        let vx = 0, vy = 0;
-        if (samples.length >= 2) {
-          const latest = samples[samples.length - 1];
-          let prev = samples[0];
-          for (let i = samples.length - 2; i >= 0; i--) {
-            if (latest.t - samples[i].t >= 60) { prev = samples[i]; break; }
-          }
-          const dt = (latest.t - prev.t) / 1000;
-          if (dt > 0) {
-            vx = clamp((latest.x - prev.x) / dt, -400, 400);
-            vy = clamp((latest.y - prev.y) / dt, -200, 200);
-          }
-        }
-        rock.vx = vx;
-        rock.vy = vy;
-        rock.falling = true;
-      }
-      draggingIndex = -1;
-      lastPointerSamplesRef.current = [];
-    };
+    
+    const onPointerUp = () => { draggingIndex = -1; };
     
     cvs.addEventListener('pointerdown', onPointerDown);
     window.addEventListener('pointermove', onPointerMove);
@@ -332,48 +256,39 @@ export default function GroundNav() {
       window.removeEventListener('pointerup', onPointerUp);
       window.removeEventListener('pointercancel', onPointerUp);
     };
-  }, [rockPositions, drawRocks, getRidgeY]);
+  }, [rockPositions, drawRocks]);
 
   return (
     <div className="ground-nav">
-      <svg
+      {/* Enhanced uneven top ridge with more dramatic variations */}
+      <svg 
         ref={svgRef}
-        className="ground-ridge"
-        viewBox="0 0 1200 80"
-        preserveAspectRatio="none"
-        shapeRendering="crispEdges"
-        style={{ display: 'block' }}
+        className="ground-ridge" 
+        viewBox="0 0 1200 80" 
+        preserveAspectRatio="none" 
         aria-hidden="true"
       >
         <path
-          d="M0,62
-             C40,15 70,58 120,22
-             C160,8 190,65 240,18
-             C280,55 310,12 360,48
-             C400,5 430,62 480,25
-             C520,60 550,8 600,52
-             C640,15 670,58 720,28
-             C760,5 790,65 840,35
-             C880,12 910,58 960,22
-             C1000,55 1030,8 1080,45
-             C1120,15 1150,52 1180,28
-             C1200,40 1200,35 1200,40
+          d="M0,55 
+             C80,35 120,25 200,45 
+             C280,65 320,20 400,35 
+             C480,50 520,15 600,40 
+             C680,65 720,25 800,30 
+             C880,35 920,55 1000,25 
+             C1080,10 1140,35 1200,40 
              L1200,80 L0,80 Z"
           fill="var(--ground-color)"
-          stroke="none"
         />
       </svg>
-      <canvas ref={canvasRef} className="ground-rocks" aria-hidden="true" />
 
       <div className="ground-inner">
-        <nav role="navigation" aria-label="Primary">
+        <nav aria-label="Main navigation">
           <ul className="nav-list">
-            {navLinks.map((link) => {
-              const isCurrent = currentHash === link.href;
+            {navLinks.map((link, index) => {
+              const isCurrent = link.href === currentHash;
               return (
-                <li key={link.href}>
-                  <a
-                    className="nav-link"
+                <li key={index}>
+                  <a 
                     href={link.href}
                     aria-current={isCurrent ? "page" : undefined}
                   >
@@ -384,6 +299,9 @@ export default function GroundNav() {
             })}
           </ul>
         </nav>
+
+        {/* Rocks canvas sits behind links */}
+        <canvas ref={canvasRef} className="ground-rocks" aria-hidden="true" />
       </div>
     </div>
   );
