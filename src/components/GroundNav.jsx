@@ -336,23 +336,26 @@ export default function GroundNav() {
 
   return (
     <div className="ground-nav">
-      <svg 
+      <svg
         ref={svgRef}
         className="ground-ridge"
-        viewBox="0 0 1200 80" 
-        preserveAspectRatio="none" 
+        viewBox="0 0 1200 80"
+        preserveAspectRatio="none"
+        shapeRendering="crispEdges"
+        style={{ display: 'block' }}
         aria-hidden="true"
       >
         <path
-          d="M0,55 
-             C80,35 120,25 200,45 
-             C280,65 320,20 400,35 
-             C480,50 520,15 600,40 
-             C680,65 720,25 800,30 
-             C880,35 920,55 1000,25 
-             C1080,10 1140,35 1200,40 
+          d="M0,55
+             C80,35 120,25 200,45
+             C280,65 320,20 400,35
+             C480,50 520,15 600,40
+             C680,65 720,25 800,30
+             C880,35 920,55 1000,25
+             C1080,10 1140,35 1200,40
              L1200,80 L0,80 Z"
           fill="var(--ground-color)"
+          stroke="none"
         />
       </svg>
       <canvas ref={canvasRef} className="ground-rocks" aria-hidden="true" />
@@ -360,11 +363,11 @@ export default function GroundNav() {
       <div className="ground-inner">
         <nav role="navigation" aria-label="Primary">
           <ul className="nav-list">
-            {navLinks.map((link, index) => {
+            {navLinks.map((link) => {
               const isCurrent = currentHash === link.href;
               return (
                 <li key={link.href}>
-                  <a 
+                  <a
                     className="nav-link"
                     href={link.href}
                     aria-current={isCurrent ? "page" : undefined}
