@@ -7,7 +7,8 @@
       "Bash(npm run build:*)",
       "Bash(npx serve:*)",
       "Bash(rm:*)",
-      "Bash(del \"C:\\Users\\benso\\OneDrive\\Documents\\content-marketing-website\\src\\hooks\\useCarouselWheel.js\")"
+      "Bash(del \"C:\\Users\\benso\\OneDrive\\Documents\\content-marketing-website\\src\\hooks\\useCarouselWheel.js\")",
+      "Bash(git checkout:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"
