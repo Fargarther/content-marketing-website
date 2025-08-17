@@ -336,10 +336,9 @@ export default function GroundNav() {
 
   return (
     <div className="ground-nav">
-      {/* Enhanced uneven top ridge with more dramatic variations */}
       <svg 
         ref={svgRef}
-        className="ground-ridge" 
+        className="ground-ridge"
         viewBox="0 0 1200 80" 
         preserveAspectRatio="none" 
         aria-hidden="true"
@@ -356,15 +355,17 @@ export default function GroundNav() {
           fill="var(--ground-color)"
         />
       </svg>
+      <canvas ref={canvasRef} className="ground-rocks" aria-hidden="true" />
 
       <div className="ground-inner">
-        <nav aria-label="Main navigation">
+        <nav role="navigation" aria-label="Primary">
           <ul className="nav-list">
             {navLinks.map((link, index) => {
-              const isCurrent = link.href === currentHash;
+              const isCurrent = currentHash === link.href;
               return (
-                <li key={index}>
+                <li key={link.href}>
                   <a 
+                    className="nav-link"
                     href={link.href}
                     aria-current={isCurrent ? "page" : undefined}
                   >
@@ -375,9 +376,6 @@ export default function GroundNav() {
             })}
           </ul>
         </nav>
-
-        {/* Rocks canvas sits behind links */}
-        <canvas ref={canvasRef} className="ground-rocks" aria-hidden="true" />
       </div>
     </div>
   );

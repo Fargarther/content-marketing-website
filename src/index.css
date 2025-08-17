@@ -1,3 +1,8 @@
+:root {
+  --ground-nav-height: 120px;
+}
+
 body {
   margin: 0;
+  padding-bottom: calc(var(--ground-nav-height) + env(safe-area-inset-bottom, 0px));
 }
