@@ -1,0 +1,31 @@
+.svg-grass {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 40px;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+.svg-grass svg {
+  width: 100%;
+  height: 100%;
+}
+
+.svg-grass .tuft {
+  fill: #FF9023;
+  transform-origin: center bottom;
+  transition: transform 0.3s ease;
+}
+
+.ground-nav:hover + .svg-grass .tuft,
+.svg-grass .tuft:hover {
+  transform: rotate(-3deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .svg-grass .tuft {
+    transition: none;
+  }
+}
