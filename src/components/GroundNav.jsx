@@ -12,6 +12,7 @@ export default function GroundNav() {
   const [rockPositions, setRockPositions] = useState([]);
   const [currentHash, setCurrentHash] = useState(window.location.hash || '#home');
   const parallaxOffset = useRef({ x: 0, y: 0 });
+  const gustDecay = useRef([]);
 
   // Get Y position along the ridge path
   const getRidgeY = useCallback((normalizedX) => {
@@ -68,6 +69,8 @@ export default function GroundNav() {
       positions.sort((a, b) => a.z - b.z);
       setRockPositions(positions);
       
+      // Initialize gust decay for each rock
+      gustDecay.current = positions.map(() => ({ x: 0, y: 0, decay: 0 }));
     };
 
     initRocks();
@@ -79,11 +82,13 @@ export default function GroundNav() {
   const drawRocks = useCallback((ctx, width, height) => {
     ctx.clearRect(0, 0, width, height);
     
-    rockPositions.forEach((rock) => {
+    rockPositions.forEach((rock, index) => {
+      const gust = gustDecay.current[index];
+      
       // Apply parallax based on layer
       const parallaxMultiplier = rock.z === 0 ? 0.25 : rock.z === 1 ? 0.5 : 1.0;
-      const offsetX = parallaxOffset.current.x * parallaxMultiplier;
-      const offsetY = 0;
+      const offsetX = parallaxOffset.current.x * parallaxMultiplier + gust.x;
+      const offsetY = gust.y;
       
       // Transform to canvas position
       const centerX = rock.pixelX + offsetX;
@@ -154,6 +159,21 @@ export default function GroundNav() {
     let { w, h } = resize();
     
     const animate = () => {
+      // Update gust decay
+      gustDecay.current.forEach(gust => {
+        if (gust.decay > 0) {
+          gust.decay *= 0.95;
+          if (gust.decay < 0.01) {
+            gust.x = 0;
+            gust.y = 0;
+            gust.decay = 0;
+          } else {
+            gust.x *= 0.98;
+            gust.y *= 0.96;
+          }
+        }
+      });
+      
       drawRocks(ctx, w, h);
       rafRef.current = requestAnimationFrame(animate);
     };
@@ -201,12 +221,36 @@ export default function GroundNav() {
     window.addEventListener('pointerup', onPointerUp);
     window.addEventListener('pointercancel', onPointerUp);
     
+    // Listen for carousel gust with positional effect
+    const handleCarouselGust = (e) => {
+      const focusX = e.detail?.x ?? window.innerWidth / 2;
+      const radius = Math.max(180, window.innerWidth * 0.18);
+      const sigma = radius / 2;
+      
+      rockPositions.forEach((rock, index) => {
+        // Only affect mid and front layers
+        if (rock.z === 0) return;
+        
+        const dx = rock.pixelX - focusX;
+        const weight = Math.exp(-(dx * dx) / (2 * sigma * sigma));
+        
+        // Small nudge away from center
+        gustDecay.current[index] = {
+          x: (dx > 0 ? 1 : -1) * weight * 3,
+          y: -weight * 2,
+          decay: 1
+        };
+      });
+    };
+    
+    window.addEventListener('carousel-gust', handleCarouselGust);
     window.addEventListener('resize', () => {
       ({ w, h } = resize());
     });
     
     return () => {
       cancelAnimationFrame(rafRef.current);
+      window.removeEventListener('carousel-gust', handleCarouselGust);
       cvs.removeEventListener('pointerdown', onPointerDown);
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerUp);
