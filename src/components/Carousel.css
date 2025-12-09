@@ -1,6 +1,6 @@
 .carousel-container {
   width: 100%;
-  height: calc(100vh - 120px); /* Fill screen above nav */
+  height: clamp(320px, 70vh, 680px);
   position: relative;
   overflow: hidden;
   display: flex;
@@ -9,8 +9,7 @@
   perspective: 1000px;
   perspective-origin: center center;
   z-index: 10; /* Above clouds */
-  /* We're intentionally consuming gestures in both axes over the carousel */
-  touch-action: none; /* Allow custom swipe handling in both axes */
+  touch-action: pan-x pan-y;
 }
 
 .carousel-wheel {
@@ -20,9 +19,8 @@
   /* Center the wheel horizontally */
   transform: translateX(0);
   transform-style: preserve-3d;
-  /* Prevent rubber-band scrolling and ensure vertical touch scrolls the page */
   overscroll-behavior-x: contain;
-  touch-action: pan-y;
+  touch-action: pan-x pan-y;
 }
 
 .carousel-item {

@@ -1,9 +1,9 @@
 .prairie-grass-container {
-  position: fixed;
-  bottom: calc(120px - 1vh);  /* Lowered by 1vh from the 120px GroundNav height */
+  position: absolute;
+  bottom: var(--ground-nav-height, 120px);
   left: 0;
-  right: 0;
-  height: 180px;
+  width: calc(var(--panel-count, 1) * 100vw);
+  height: 220px;
   pointer-events: none;
   z-index: 1001;
 }
@@ -11,7 +11,6 @@
 .prairie-grass {
   width: 100%;
   height: 100%;
-  pointer-events: auto;
+  pointer-events: none;
   cursor: default;
-  /* Instant visual while sprites load */
 }

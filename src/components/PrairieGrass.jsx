@@ -117,7 +117,7 @@ function drawBladePlaceholder(ctx, blade) {
   ctx.restore();
 }
 
-const PrairieGrass = ({ breeze = 'medium' } = {}) => {
+const PrairieGrass = ({ breeze = 'medium', spanCount = 1 } = {}) => {
   const canvasRef = useRef(null);
   const pointerRef = useRef({ x: null, y: null });
   const timeRef = useRef(0);
@@ -189,7 +189,7 @@ const PrairieGrass = ({ breeze = 'medium' } = {}) => {
     
     const ctx = canvas.getContext('2d');
     const updateCanvasSize = () => {
-      const W = window.innerWidth;
+      const W = Math.max(window.innerWidth * spanCount, window.innerWidth);
       const H = 180; // Increased height to prevent seed head cutoff
       const dpr = Math.min(window.devicePixelRatio || 1, 1.5); // Cap DPR for performance
       

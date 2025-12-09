@@ -5,7 +5,47 @@ import "./GroundNav.css";
 
 const ENABLE_ROCK_DRAG = true; // Enable gentle drag for front rocks only
 
-export default function GroundNav() {
+// Generate a gently noisy uphill → plateau → downhill ridge
+const createRidgePath = (width, groundHeight = 180, viewportHeight = 800) => {
+  const h = groundHeight;
+  const baseY = h * 0.78; // keep baseline low
+  const pts = [];
+  const segs = 48; // more segments for micro irregularity
+  const plateauStart = 0.44;
+  const plateauEnd = 0.72;
+  const maxLift = Math.min(baseY - 12, Math.max(h * 0.8, viewportHeight * 0.5)); // crest toward half viewport while baseline stays put
+
+  for (let i = 0; i <= segs; i++) {
+    const t = i / segs;
+    const x = t * width;
+
+    // Shape: rise → plateau → fall
+    let lift = 0;
+    if (t < plateauStart) {
+      lift = maxLift * (t / plateauStart);
+    } else if (t > plateauEnd) {
+      lift = maxLift * (1 - (t - plateauEnd) / (1 - plateauEnd));
+    } else {
+      lift = maxLift;
+    }
+
+    // Gentle noise for bumps
+    const noise = (Math.sin(t * 28) + Math.sin(t * 57) * 0.55 + Math.sin(t * 101) * 0.35) * 3.5;
+    const y = baseY - lift + noise;
+    pts.push({ x, y });
+  }
+
+  const move = `M${pts[0].x},${pts[0].y}`;
+  const curves = pts.slice(1).map((p, i) => {
+    const prev = pts[i];
+    const dx = p.x - prev.x;
+    return `C ${prev.x + dx / 3},${prev.y} ${prev.x + (2 * dx) / 3},${p.y} ${p.x},${p.y}`;
+  }).join(" ");
+
+  return `${move} ${curves} L ${width},${h} L 0,${h} Z`;
+};
+
+export default function GroundNav({ totalWidth, groundHeight, viewportHeight }) {
   const canvasRef = useRef(null);
   const svgRef = useRef(null);
   const rafRef = useRef(null);
@@ -13,6 +53,14 @@ export default function GroundNav() {
   const [currentHash, setCurrentHash] = useState(window.location.hash || '#home');
   const parallaxOffset = useRef({ x: 0, y: 0 });
   const gustDecay = useRef([]);
+  const [pathWidth, setPathWidth] = useState(() => Math.max(totalWidth || window.innerWidth || 1200, 800));
+  const [ridgePath, setRidgePath] = useState(() =>
+    createRidgePath(
+      Math.max(totalWidth || window.innerWidth || 1200, 800),
+      groundHeight || 180,
+      viewportHeight || window.innerHeight || 800
+    )
+  );
 
   // Get Y position along the ridge path
   const getRidgeY = useCallback((normalizedX) => {
@@ -26,14 +74,14 @@ export default function GroundNav() {
     const point = path.getPointAtLength(normalizedX * pathLength);
     
     // Transform from SVG viewBox (0-1200) to actual position
-    const svgWidth = 1200;
-    const actualWidth = window.innerWidth;
+    const svgWidth = pathWidth || 1200;
+    const actualWidth = totalWidth || window.innerWidth;
     const scale = actualWidth / svgWidth;
     
     // The ridge SVG is 80px tall, positioned at top: -48px
     // We want rocks to sit near the top of the ridge curve
     return -48 + (point.y * scale) - 10; // Offset up by 10px to sit on ridge
-  }, []);
+  }, [totalWidth, pathWidth]);
 
   // Listen for hash changes
   useEffect(() => {
@@ -48,7 +96,7 @@ export default function GroundNav() {
   // Initialize rock positions
   useEffect(() => {
     const initRocks = () => {
-      const width = window.innerWidth;
+      const width = totalWidth || window.innerWidth;
       const positions = rockData.map(rock => {
         const pixelX = rock.x * width;
         const ridgeY = getRidgeY(rock.x);
@@ -77,6 +125,13 @@ export default function GroundNav() {
     window.addEventListener('resize', initRocks);
     return () => window.removeEventListener('resize', initRocks);
   }, [getRidgeY]);
+
+  // Update ridge path when width changes
+  useEffect(() => {
+    const width = Math.max(totalWidth || window.innerWidth || 1200, 800);
+    setPathWidth(width);
+    setRidgePath(createRidgePath(width, groundHeight || 180, viewportHeight || window.innerHeight || 800));
+  }, [totalWidth, groundHeight, viewportHeight]);
 
   // Draw rocks with parallax
   const drawRocks = useCallback((ctx, width, height) => {
@@ -264,19 +319,12 @@ export default function GroundNav() {
       <svg 
         ref={svgRef}
         className="ground-ridge" 
-        viewBox="0 0 1200 80" 
+        viewBox={`0 0 ${pathWidth} ${groundHeight || 180}`} 
         preserveAspectRatio="none" 
         aria-hidden="true"
       >
         <path
-          d="M0,55 
-             C80,35 120,25 200,45 
-             C280,65 320,20 400,35 
-             C480,50 520,15 600,40 
-             C680,65 720,25 800,30 
-             C880,35 920,55 1000,25 
-             C1080,10 1140,35 1200,40 
-             L1200,80 L0,80 Z"
+          d={ridgePath}
           fill="var(--ground-color)"
         />
       </svg>

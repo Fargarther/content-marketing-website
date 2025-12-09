@@ -75,11 +75,6 @@ export default function useCarouselWheel({
       // Optional: require carousel to be fully visible
       if (requireFullyInView && !fullyInView(el)) return;
 
-      // We intentionally consume ALL wheel events over carousel
-      // This prevents page scroll and gives us full control
-      e.preventDefault();
-      e.stopPropagation();
-
       const now = performance.now();
       
       // Respect cooldown to prevent momentum triggers
@@ -103,6 +98,9 @@ export default function useCarouselWheel({
 
       // Check threshold and trigger navigation
       if (Math.abs(accRef.current) >= thresholdPx) {
+        // Only stop native scroll when we actually step the carousel
+        e.preventDefault();
+        e.stopPropagation();
         if (accRef.current > 0) {
           // Positive: right/down → next
           onNext?.();

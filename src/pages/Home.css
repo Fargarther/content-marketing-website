@@ -1,126 +1,140 @@
-.site-header {
-  padding: 3rem 2rem;
-  text-align: center;
+.horizontal-shell {
+  position: relative;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
   background: #FDFCF5;
 }
 
-.header-content {
-  max-width: 1200px;
-  margin: 0 auto;
+.scroll-track {
+  position: relative;
+  height: 100%;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(100vw, 100vw);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: none;
+  scroll-behavior: auto;
+  padding: 0;
+  z-index: 5;
+  touch-action: pan-x pan-y;
+  overscroll-behavior: none;
 }
 
-.site-title {
-  font-size: 2.5rem;
-  color: #3a3a3a;
-  margin: 0 0 0.5rem 0;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+.scroll-track::-webkit-scrollbar {
+  height: 10px;
 }
 
-.site-tagline {
-  font-size: 1.125rem;
-  color: #666;
-  margin: 0;
-  font-weight: 400;
+.scroll-track::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
 }
 
-.main-content {
-  min-height: calc(100vh - 240px);
-  padding: 2rem 2rem 200px;
-  background: #FDFCF5;
+.scroll-track::-webkit-scrollbar-thumb {
+  background: #c4b5a0;
+  border-radius: 999px;
+}
+
+.panel {
+  position: relative;
   display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding: 3.5rem 6vw;
+  padding-bottom: calc(var(--ground-nav-height) + 80px);
+  scroll-snap-align: start;
+  min-height: 100%;
+  color: #2f2f2f;
+}
+
+.panel-inner {
+  max-width: 960px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  z-index: 2;
+}
+
+.panel-inner.compact {
+  max-width: 1100px;
+}
+
+.hero-panel {
+  background: linear-gradient(135deg, #fdfcf5 0%, #f3f1e7 100%);
+}
+
+.projects-panel {
+  background: linear-gradient(180deg, rgba(253, 252, 245, 0.8), rgba(247, 244, 232, 0.9));
   align-items: center;
   justify-content: center;
 }
 
-.hero-section {
-  max-width: 1200px;
-  margin: 0 auto;
-  width: 100%;
+.about-panel {
+  background: linear-gradient(135deg, #fdfcf5 0%, #edf0e8 100%);
 }
 
-.hero-grid {
-  display: grid;
-  grid-template-columns: 1.2fr 0.8fr;
-  gap: 4rem;
-  align-items: center;
-  margin-top: 0;
+.contact-panel {
+  background: linear-gradient(135deg, #f3efe5 0%, #fdfcf5 100%);
 }
 
-.carousel-wrapper {
-  display: flex;
-  justify-content: flex-start;
-  overflow: hidden;
-}
-
-.headshot-wrapper {
+.section-header {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 2rem;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
 }
 
-.bio-text {
-  text-align: center;
-  max-width: 300px;
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.8rem;
+  color: #6b7d5f;
+  font-weight: 700;
 }
 
-.bio-text h2 {
-  font-size: 1.5rem;
-  color: #3a3a3a;
-  margin: 0 0 0.75rem 0;
-  font-weight: 600;
-}
-
-.bio-text p {
-  font-size: 1rem;
-  line-height: 1.6;
-  color: #666;
+h1, h2 {
   margin: 0;
+  letter-spacing: -0.02em;
 }
 
-@media (max-width: 1024px) {
-  .hero-grid {
-    grid-template-columns: 1fr;
-    gap: 3rem;
-  }
-  
-  .carousel-wrapper {
-    justify-content: flex-start;
-  }
-  
-  .headshot-wrapper {
-    order: -1;
+h1 {
+  font-size: clamp(2rem, 2.4vw + 1rem, 3rem);
+  line-height: 1.05;
+}
+
+h2 {
+  font-size: clamp(1.2rem, 1.4vw + 0.9rem, 2rem);
+  line-height: 1.2;
+}
+
+.cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.8rem 1.25rem;
+  border-radius: 10px;
+  background: #6b7d5f;
+  color: #fdfcf5;
+  font-weight: 700;
+  width: fit-content;
+  box-shadow: 0 8px 20px rgba(107, 125, 95, 0.25);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 26px rgba(107, 125, 95, 0.3);
+}
+
+@media (max-width: 900px) {
+  .panel {
+    padding: 3rem 1.75rem;
   }
 }
 
-@media (max-width: 768px) {
-  .site-header {
-    padding: 2rem 1.5rem;
-  }
-  
-  .site-title {
-    font-size: 2rem;
-  }
-  
-  .site-tagline {
-    font-size: 1rem;
-  }
-  
-  .main-content {
-    padding: 1.5rem 1.5rem 200px;
-  }
-  
-  .hero-grid {
-    gap: 2rem;
-    margin-top: 2rem;
-  }
-  
-  .bio-text h2 {
-    font-size: 1.25rem;
-  }
-  
-  .bio-text p {
-    font-size: 0.95rem;
+@media (max-width: 640px) {
+  .panel {
+    padding: 2.5rem 1.25rem;
   }
 }
