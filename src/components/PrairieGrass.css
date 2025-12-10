@@ -1,7 +1,7 @@
 .prairie-grass-container {
   position: absolute;
   /* align to ground height with a slight nudge into the ridge */
-  bottom: calc(var(--ground-height, 120px) - 12px);
+  bottom: calc(var(--ground-height, 120px) - 24px);
   left: 0;
   width: calc(var(--panel-count, 1) * 100vw);
   height: 260px; /* allow full blade height so tips don't clip */

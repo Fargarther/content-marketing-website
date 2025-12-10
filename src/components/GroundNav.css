@@ -4,10 +4,11 @@
 }
 
 .ground-nav {
-  position: absolute;
-  left: 0;
-  bottom: 0;                     /* sits at the very bottom */
-  width: calc(var(--panel-count, 1) * 100vw);
+  position: fixed;
+  left: 50%;
+  bottom: 0;                     /* stick to bottom */
+  transform: translateX(-50%);
+  width: 100vw;
   height: var(--ground-height, 120px);
   z-index: 1105;                 /* ABOVE the grass (yours was 1001) */
   pointer-events: none;          /* overall container lets clicks through */

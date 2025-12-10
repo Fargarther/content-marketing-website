@@ -60,22 +60,16 @@
   max-width: 1100px;
 }
 
-.hero-panel {
-  background: linear-gradient(135deg, #fdfcf5 0%, #f3f1e7 100%);
+.hero-panel,
+.projects-panel,
+.about-panel,
+.contact-panel {
+  background: transparent;
 }
 
 .projects-panel {
-  background: linear-gradient(180deg, rgba(253, 252, 245, 0.8), rgba(247, 244, 232, 0.9));
   align-items: center;
   justify-content: center;
-}
-
-.about-panel {
-  background: linear-gradient(135deg, #fdfcf5 0%, #edf0e8 100%);
-}
-
-.contact-panel {
-  background: linear-gradient(135deg, #f3efe5 0%, #fdfcf5 100%);
 }
 
 .section-header {

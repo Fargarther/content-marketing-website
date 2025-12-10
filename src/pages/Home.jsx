@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useCallback, useState } from 'react';
 import GroundNav from '../components/GroundNav';
 import PrairieGrass from '../components/PrairieGrass';
-import CloudBand from '../components/CloudBand';
 import './Home.css';
 
 export default function Home() {
@@ -139,8 +138,6 @@ export default function Home() {
         '--ground-height': `${groundVisualHeight}px`,
       }}
     >
-      <CloudBand />
-
       <div className="scroll-track" ref={trackRef} onWheel={handleWheel}>
         <section className="panel hero-panel" id="home">
           <div className="panel-inner">
@@ -175,7 +172,7 @@ export default function Home() {
           </div>
         </section>
 
-        <PrairieGrass spanCount={PANEL_COUNT} />
+        <PrairieGrass spanCount={PANEL_COUNT} scrollVelocityRef={velocityRef} trackRef={trackRef} />
         <GroundNav
           totalWidth={totalWidth}
           groundHeight={groundVisualHeight}

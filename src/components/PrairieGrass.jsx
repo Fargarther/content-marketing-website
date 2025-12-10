@@ -38,14 +38,14 @@ function hash1(n) { const s = Math.sin(n) * 43758.5453123; return s - Math.floor
 function valueNoise1D(x, seed = 0) {
   const i = Math.floor(x);
   const f = x - i;
-  const a = hash1((i     * 57.0) + seed * 0.123);
-  const b = hash1(((i+1) * 57.0) + seed * 0.123);
+  const a = hash1((i * 57.0) + seed * 0.123);
+  const b = hash1(((i + 1) * 57.0) + seed * 0.123);
   return lerp(a, b, smoothstep01(f));
 }
 
 function getPassiveSway(blade, tSec) {
   if (!blade._sway) {
-    const seed = blade.seed ?? (blade._seed ??= Math.abs(Math.sin((blade.x||0)*12.92 + (blade.baseY||0)*0.173)) * 1000);
+    const seed = blade.seed ?? (blade._seed ??= Math.abs(Math.sin((blade.x || 0) * 12.92 + (blade.baseY || 0) * 0.173)) * 1000);
     const r = (m) => { const s = Math.sin(seed * m) * 43758.5453; return s - Math.floor(s); };
     const sign = r(31.7) < 0.5 ? -1 : 1;
     const size = Math.max(0.6, Math.min(1.8, blade.scale ?? 1));
@@ -54,11 +54,11 @@ function getPassiveSway(blade, tSec) {
       seed,
       phase: (r(7.9) + 0.15) * Math.PI * 2,
       // SLOWER base freq & wander than before:
-      freq:  0.25 + r(11.3) * 0.40,           // 0.25..0.65 Hz
-      bias:  deg2rad(sign * (2 + r(19.1) * 4)),    // ±2..6°
-      amp:   deg2rad((4 + r(23.9) * 7) * (0.7 + size*0.6)), // 4..11° scaled by size
+      freq: 0.25 + r(11.3) * 0.40,           // 0.25..0.65 Hz
+      bias: deg2rad(sign * (2 + r(19.1) * 4)),    // ±2..6°
+      amp: deg2rad((4 + r(23.9) * 7) * (0.7 + size * 0.6)), // 4..11° scaled by size
       wanderSpeed: 0.007 + r(5.5) * 0.013,    // 0.007..0.02
-      wanderAmp:   deg2rad(1 + r(13.1) * 2),  // +1..3°
+      wanderAmp: deg2rad(1 + r(13.1) * 2),  // +1..3°
       size
     };
   }
@@ -117,23 +117,14 @@ function drawBladePlaceholder(ctx, blade) {
   ctx.restore();
 }
 
-// Rolling ridge sample to match GroundNav
-function sampleRidgeY(normalizedX, groundHeight = 140, viewportHeight = 800) {
+// Flat ridge sample for a straight grass baseline
+function sampleRidgeY(normalizedX, groundHeight = 140) {
   const h = groundHeight;
   const baseY = h * 0.78;
-  const amp = Math.min(h * 0.22, Math.max(30, (viewportHeight || 800) * 0.12));
-  const t = Math.min(Math.max(normalizedX, 0), 1);
-
-  const yOffset =
-    Math.sin(t * Math.PI * 2) * amp * 0.55 +
-    Math.sin(t * Math.PI * 4 + 1.2) * amp * 0.18;
-
-  const noise = (Math.sin(t * 19) + Math.sin(t * 37) * 0.6) * 2.2;
-
-  return baseY - yOffset + noise;
+  return baseY;
 }
 
-const PrairieGrass = ({ breeze = 'medium', spanCount = 1 } = {}) => {
+const PrairieGrass = ({ breeze = 'medium', spanCount = 1, scrollVelocityRef, trackRef } = {}) => {
   const canvasRef = useRef(null);
   const pointerRef = useRef({ x: null, y: null });
   const timeRef = useRef(0);
@@ -151,11 +142,11 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1 } = {}) => {
     const loadImagesProgressive = () => {
       const imageCache = {};
       window.grassImageCache = imageCache; // Make available immediately
-      
+
       // Get all sprite names from manifest
       const bladeNames = grassManifest.blades.map(b => b.name);
       const budNames = grassManifest.buds.map(b => b.name);
-      
+
       // Load blade sprites with high priority
       bladeNames.forEach(name => {
         const url = spriteUrl(name);
@@ -171,7 +162,7 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1 } = {}) => {
           imageCache[`blade_${name}`] = img; // Add immediately (may not be complete)
         }
       });
-      
+
       // Load bud sprites with normal priority
       budNames.forEach(name => {
         const url = spriteUrl(name);
@@ -186,7 +177,7 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1 } = {}) => {
           imageCache[`bud_${name}`] = img; // Add immediately (may not be complete)
         }
       });
-      
+
       // Log progress in development
       if (import.meta.env.DEV) {
         const totalSprites = bladeNames.length + budNames.length;
@@ -217,20 +208,20 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1 } = {}) => {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    
+
     const ctx = canvas.getContext('2d');
     const updateCanvasSize = () => {
       const W = Math.max(window.innerWidth * spanCount, window.innerWidth);
       const H = 260; // Taller canvas to avoid clipping tips and allow sway
       const dpr = Math.min(window.devicePixelRatio || 1, 1.5); // Cap DPR for performance
-      
+
       canvas.width = W * dpr;
       canvas.height = H * dpr;
       canvas.style.width = `${W}px`;
       canvas.style.height = `${H}px`;
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.scale(dpr, dpr);
-      
+
       return { W, H };
     };
 
@@ -253,33 +244,33 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1 } = {}) => {
         const y = (H - 4) - rise * riseScale; // keep baseline near bottom
         return Math.max(0, Math.min(H - 1, y));
       };
-      
+
       // Define blade type categories with distributions
       // Constrain heights so non-pod blades never match pod heights
       const NONPOD_MIN = 0.40, NONPOD_MAX = 0.72; // leaves max at ~72% of H
       const POD_LEAF_MIN = 0.35, POD_LEAF_MAX = 0.55; // pod leaves shorter
-      
+
       const bladeTypes = {
-        short: { 
+        short: {
           probability: 0.40, // 40%
           scaleRange: [NONPOD_MIN, NONPOD_MIN + 0.15], // 40-55% of H
           leanRange: [-0.25, 0.25], // Harsh angles for weathered look
           canHaveBud: false // Never on shortest blades
         },
-        medium: { 
+        medium: {
           probability: 0.35, // 35%
           scaleRange: [NONPOD_MIN + 0.15, NONPOD_MAX - 0.1], // 55-62% of H
           leanRange: [-0.28, 0.28], // Even harsher angles
           canHaveBud: true
         },
-        tall: { 
+        tall: {
           probability: 0.25, // 25%
           scaleRange: [NONPOD_MAX - 0.1, NONPOD_MAX], // 62-72% of H
           leanRange: [-0.3, 0.3], // Most aggressive angles
           canHaveBud: true
         }
       };
-      
+
       // Helper to select blade type based on probability
       const selectBladeType = () => {
         const rand = Math.random();
@@ -287,15 +278,18 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1 } = {}) => {
         if (rand < bladeTypes.short.probability + bladeTypes.medium.probability) return bladeTypes.medium;
         return bladeTypes.tall;
       };
-      
+
       // Cap blade counts for ultra-wide screens
       const screenWidthFactor = Math.min(width / 1920, 1.5);
-      
+
       // Create multiple layers for depth - moderately sparse grass
       const layers = [
-        { density: Math.floor(38 * screenWidthFactor), opacity: 0.6, zIndex: 0 }, // Back - moderately sparse
-        { density: Math.floor(30 * screenWidthFactor), opacity: 0.8, zIndex: 1 }, // Mid - moderately sparse
-        { density: Math.floor(24 * screenWidthFactor), opacity: 1.0, zIndex: 2 }  // Front - moderately sparse
+        // Back: Slowest, densest, darkest
+        { density: Math.floor(45 * screenWidthFactor), opacity: 0.5, zIndex: 0, speedFactor: 0.6 },
+        // Mid: Normal speed
+        { density: Math.floor(30 * screenWidthFactor), opacity: 0.85, zIndex: 1, speedFactor: 1.0 },
+        // Front: Fast, sparse, blurry
+        { density: Math.floor(18 * screenWidthFactor), opacity: 1.0, zIndex: 2, speedFactor: 1.4 }
       ];
 
       let totalBladesCreated = 0;
@@ -303,18 +297,18 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1 } = {}) => {
 
       // Store pod blade positions for clustering
       const podPositions = [];
-      
+
       layers.forEach((layer) => {
         const count = Math.floor(width / layer.density);
         for (let i = 0; i < count; i++) {
           // Skip placing blade 15% of the time for natural gaps
           if (Math.random() < 0.15) continue;
-          
+
           // Heavy jitter for irregular spacing
           const baseX = (i / count) * width;
           const x = baseX + (Math.random() - 0.5) * layer.density * 0.8;
           const bladeType = selectBladeType();
-          
+
           // Determine if this blade should have a bud (reduced to ~10% overall)
           let hasBud = false;
           if (bladeType.canHaveBud) {
@@ -324,33 +318,33 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1 } = {}) => {
             const budProbability = currentBudRatio < targetBudRatio ? 0.15 : 0.08;
             hasBud = Math.random() < budProbability;
           }
-          
+
           // Random scale within the blade type's range
           // If has bud, use shorter pod leaf range
           let scale;
           if (hasBud && bladeType.canHaveBud) {
             scale = POD_LEAF_MIN + Math.random() * (POD_LEAF_MAX - POD_LEAF_MIN);
           } else {
-            scale = bladeType.scaleRange[0] + 
-                   Math.random() * (bladeType.scaleRange[1] - bladeType.scaleRange[0]);
+            scale = bladeType.scaleRange[0] +
+              Math.random() * (bladeType.scaleRange[1] - bladeType.scaleRange[0]);
           }
-          
+
           if (hasBud) {
             budBladesCreated++;
             podPositions.push(x); // Remember pod position for clustering
           }
           totalBladesCreated++;
-          
+
           // Pod blades get less harsh lean
-          const naturalLean = hasBud ? 
+          const naturalLean = hasBud ?
             (Math.random() - 0.5) * 0.3 : // ±0.15 radians for pods
             bladeType.leanRange[0] + Math.random() * (bladeType.leanRange[1] - bladeType.leanRange[0]);
-          
+
           // Reaction factor by height (0.9–1.35), pods reduced
           const normH = Math.min(1, Math.max(0, scale)); // 0..1
           let heightReact = 0.9 + 0.45 * normH;              // 0.9..1.35
           if (hasBud) heightReact *= 0.75;       // pods calmer
-          
+
           blades.push({
             x: x,
             baseY: baseYForX(x), // Follow ridge profile
@@ -365,16 +359,16 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1 } = {}) => {
             bladeImage: bladeImages.filter(img => img)[Math.floor(Math.random() * Math.max(1, bladeImages.filter(img => img).length))] || null,
             budImage: hasBud ? (budImages.filter(img => img)[Math.floor(Math.random() * Math.max(1, budImages.filter(img => img).length))] || null) : null,
             swayIntensity: 0.65 + Math.random() * 0.7,  // Widened by ~25% for more variation
-            bladeType: bladeType === bladeTypes.short ? 'short' : 
-                      (bladeType === bladeTypes.medium ? 'medium' : 'tall'),
+            bladeType: bladeType === bladeTypes.short ? 'short' :
+              (bladeType === bladeTypes.medium ? 'medium' : 'tall'),
             // Per-blade variation for natural motion
             seed: Math.random(),                 // stable random for this blade
-            variability: 0.75 + Math.random()*0.5,  // Wider range 0.75–1.25
+            variability: 0.75 + Math.random() * 0.5,  // Wider range 0.75–1.25
             // Reduce spring stiffness for smoother transitions
-            stiffnessVar: 0.05 + Math.random()*0.05,     // 0.05–0.10
+            stiffnessVar: 0.05 + Math.random() * 0.05,     // 0.05–0.10
             // Increase damping so gust angles and sway boosts decay more
-            decayGustAngle: 0.92 + Math.random()*0.05,   // 0.92–0.97
-            decaySwayBoost: 0.93 + Math.random()*0.04,   // 0.93–0.97
+            decayGustAngle: 0.92 + Math.random() * 0.05,   // 0.92–0.97
+            decaySwayBoost: 0.93 + Math.random() * 0.04,   // 0.93–0.97
             gustAngle: 0,                        // additive gust channel
             swayBoost: 0,                        // additive intensity boost
             heightReact: heightReact,             // height reaction factor
@@ -386,17 +380,17 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1 } = {}) => {
             cohort: Math.floor(x / BAND_WIDTH) % 3,  // soft banding for regional variation
             dampingVar: 0.85 + Math.random() * 0.07  // Broader damping (0.85-0.92)
           });
-          
+
           // Create pronounced tufts/clumps around seed pods
           if (hasBud) {
             const clusterCount = 4 + Math.floor(Math.random() * 4); // 4-7 blades for fuller tufts
-            
+
             for (let j = 0; j < clusterCount; j++) {
               // Create concentric rings of blades around the pod
               const angle = (j / clusterCount) * Math.PI * 2; // Distribute around pod
               const distance = 5 + Math.random() * 20; // Distance from pod center (5-25px)
               const clusterX = x + Math.cos(angle) * distance;
-              
+
               // Varied heights within tuft - some medium, some short
               const heightVariation = Math.random();
               let clusterScale;
@@ -407,23 +401,23 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1 } = {}) => {
               } else {
                 clusterScale = 0.6 + Math.random() * 0.15; // Taller (60-75%)
               }
-              
+
               // Blades lean outward from pod center slightly
               const outwardLean = Math.cos(angle) * 0.1; // Subtle outward lean
               const clusterLean = outwardLean + (Math.random() - 0.5) * 0.3;
-              
+
               // Reaction factor for cluster blades
-            const clusterNormH = Math.min(1, Math.max(0, clusterScale));
-            const clusterHeightReact = 0.9 + 0.45 * clusterNormH;
-            
-            blades.push({
-              x: clusterX,
-              baseY: baseYForX(clusterX),  // Follow ridge
-              scale: clusterScale,
-              angle: 0,
-              velocity: 0,
-              targetAngle: 0,
-              naturalLean: clusterLean,
+              const clusterNormH = Math.min(1, Math.max(0, clusterScale));
+              const clusterHeightReact = 0.9 + 0.45 * clusterNormH;
+
+              blades.push({
+                x: clusterX,
+                baseY: baseYForX(clusterX),  // Follow ridge
+                scale: clusterScale,
+                angle: 0,
+                velocity: 0,
+                targetAngle: 0,
+                naturalLean: clusterLean,
                 swayOffset: Math.random() * Math.PI * 2, // Different sway phase
                 opacity: layer.opacity * (0.85 + Math.random() * 0.15), // Varied opacity
                 zIndex: layer.zIndex,
@@ -433,10 +427,10 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1 } = {}) => {
                 bladeType: 'cluster',
                 // Per-blade variation for natural motion
                 seed: Math.random(),
-                variability: 0.75 + Math.random()*0.5,
-                stiffnessVar: 0.05 + Math.random()*0.05,
-                decayGustAngle: 0.92 + Math.random()*0.05,
-                decaySwayBoost: 0.93 + Math.random()*0.04,
+                variability: 0.75 + Math.random() * 0.5,
+                stiffnessVar: 0.05 + Math.random() * 0.05,
+                decayGustAngle: 0.92 + Math.random() * 0.05,
+                decaySwayBoost: 0.93 + Math.random() * 0.04,
                 gustAngle: 0,
                 swayBoost: 0,
                 heightReact: clusterHeightReact,
@@ -448,18 +442,18 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1 } = {}) => {
                 dampingVar: 0.85 + Math.random() * 0.07
               });
             }
-            
+
             // Add a few very close, short blades for density at base
             const baseBladesCount = 2 + Math.floor(Math.random() * 2); // 2-3 base blades
             for (let k = 0; k < baseBladesCount; k++) {
               const baseAngle = Math.random() * Math.PI * 2;
               const baseDistance = 3 + Math.random() * 5; // Very close (3-8px)
               const baseX = x + Math.cos(baseAngle) * baseDistance;
-              
+
               const baseScale = 0.2 + Math.random() * 0.15;
               const baseNormH = Math.min(1, Math.max(0, baseScale));
               const baseHeightReact = 0.9 + 0.45 * baseNormH;
-              
+
               blades.push({
                 x: baseX,
                 baseY: baseYForX(baseX),  // Follow ridge
@@ -477,10 +471,10 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1 } = {}) => {
                 bladeType: 'base',
                 // Per-blade variation for natural motion
                 seed: Math.random(),
-                variability: 0.75 + Math.random()*0.5,
-                stiffnessVar: 0.05 + Math.random()*0.05,
-                decayGustAngle: 0.92 + Math.random()*0.05,
-                decaySwayBoost: 0.93 + Math.random()*0.04,
+                variability: 0.75 + Math.random() * 0.5,
+                stiffnessVar: 0.05 + Math.random() * 0.05,
+                decayGustAngle: 0.92 + Math.random() * 0.05,
+                decaySwayBoost: 0.93 + Math.random() * 0.04,
                 gustAngle: 0,
                 swayBoost: 0,
                 heightReact: baseHeightReact,
@@ -502,12 +496,12 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1 } = {}) => {
         if (a.zIndex !== b.zIndex) {
           return a.zIndex - b.zIndex;
         }
-        
+
         // Within same layer:
         // Put buds in back (draw first)
         if (a.budImage && !b.budImage) return -1;
         if (!a.budImage && b.budImage) return 1;
-        
+
         // Then sort by height (taller in back)
         return b.scale - a.scale;
       });
@@ -556,8 +550,15 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1 } = {}) => {
         const tDrift = t + (blade.temporalJitter || 0) * t;
         const tl = tDrift * blade.timeScale + blade.phaseJitter + blade.x * SPATIAL_LAG;
         const cohortPhase = blade.cohort * 0.6;
+
+        // Reactive Wind: Bind to scroll velocity
+        // 99% REDUCTION: Very subtle influence
+        const velocity = Math.min(Math.max((scrollVelocityRef?.current || 0), -100), 100);
+        const scrollWind = velocity * 0.0015;
+        const totalBreeze = Math.min(1.8, BREEZE + Math.abs(scrollWind));
+
         // Use value noise for more organic wind field
-        const field = sampleWindField(blade.x, tDrift, cohortPhase) * BREEZE;
+        const field = sampleWindField(blade.x, tDrift, cohortPhase) * totalBreeze + scrollWind;
 
         // Three octaves of value noise for complex micro-variation
         const n1 = valueNoise1D(blade.x * 0.02 - tl * 0.35, blade.seed * 997);
@@ -603,13 +604,40 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1 } = {}) => {
         blade.velocity *= damping;
         blade.angle += blade.velocity;
 
+        // PARALLAX: Calculate draw position based on layer speed and scroll position
+        let drawX = blade.x;
+        // If trackRef is available, we can do parallax
+        if (trackRef?.current) {
+          const scrollLeft = trackRef.current.scrollLeft;
+          // Layers with speedFactor < 1 move slower than the "camera" (scroll)
+          // Since the canvas moves 1:1 with scroll (it's inside scroll-track),
+          // we need to Shift the *drawing* to counteract the movement.
+          // If speedFactor is 0.6, it should move 60% of scroll. 
+          // Currently it moves 100%. So we shift it RIGHT by 40% of scrollLeft.
+          // Shift = scrollLeft * (1 - speedFactor).
+
+          // Note: This assumes the canvas is 1:1 with content width. 
+          // If we want "faster" foreground (speed > 1), we shift LEFT.
+
+          // Get layer speed from blade's zIndex/layer bucket or just iterate layers
+          // Ideally we stored speedFactor on the blade or found the layer.
+          // Let's guess speedFactor from zIndex for now to save lookup perf?
+          // zIndex 0 (Back): 0.6
+          // zIndex 1 (Mid): 1.0
+          // zIndex 2 (Front): 1.4
+          const speedFactor = blade.zIndex === 0 ? 0.6 : (blade.zIndex === 1 ? 1.0 : 1.4);
+
+          const parallaxOffset = scrollLeft * (1 - speedFactor);
+          drawX += parallaxOffset;
+        }
+
         ctx.save();
         if (blade.bladeImage && blade.bladeImage.complete) {
-          ctx.translate(blade.x, blade.baseY);
-          
+          ctx.translate(drawX, blade.baseY);
+
           // seconds clock
           const tNow = timeRef.current; // already in seconds
-          
+
           // per-blade time step
           blade._tPrev ??= tNow;
           const dt = clamp(tNow - blade._tPrev, 0.0, 0.05); // clamp long stalls
@@ -666,7 +694,7 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1 } = {}) => {
         } else {
           // seconds clock for placeholder blades
           const tNow = timeRef.current;
-          
+
           // per-blade time step
           blade._tPrev ??= tNow;
           const dt = clamp(tNow - blade._tPrev, 0.0, 0.05);
@@ -722,7 +750,7 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1 } = {}) => {
 
     // Check for reduced motion
     const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    
+
     if (!prefersReduced) {
       animationRef.current = requestAnimationFrame(drawFrame);
     } else {
@@ -738,23 +766,23 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1 } = {}) => {
         blade._passiveLP = passive;
         ctx.rotate(blade.naturalLean + passive);
         ctx.globalAlpha = blade.opacity;
-        
+
         if (blade.bladeImage && blade.bladeImage.complete) {
           // Draw leaf blade (static rendering) - ensure anchored at bottom
           const maxBladeH = H * 1.05;
           const bladeH = Math.min(maxBladeH, H * blade.scale);
           const bladeAspect = blade.bladeImage.width / blade.bladeImage.height;
           const bladeW = Math.max(6, bladeH * bladeAspect);
-          
+
           // Draw blade anchored at bottom with overlap
           ctx.drawImage(
-            blade.bladeImage, 
-            -bladeW / 2, 
+            blade.bladeImage,
+            -bladeW / 2,
             -bladeH + 6,  // overlap into ground
-            bladeW, 
+            bladeW,
             bladeH
           );
-          
+
           // Draw bud (static rendering)
           if (blade.budImage && blade.budImage.complete) {
             const maxBudH = H * 1.1;
@@ -762,7 +790,7 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1 } = {}) => {
             const budH = Math.min(targetBudH, maxBudH);
             const budAspect = blade.budImage.width / blade.budImage.height;
             const budW = Math.max(6, budH * budAspect);
-            
+
             // baseline-anchored with overlap
             ctx.drawImage(
               blade.budImage,
@@ -773,7 +801,7 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1 } = {}) => {
             );
           }
         }
-        
+
         ctx.restore();
       });
 
@@ -807,7 +835,7 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1 } = {}) => {
         const seedReduction = blade.budImage ? 0.5 : 1.0;
 
         const dx = blade.x - focusX;
-        const weight = Math.exp(-(dx*dx) / (2 * sigma * sigma)); // 0..1
+        const weight = Math.exp(-(dx * dx) / (2 * sigma * sigma)); // 0..1
 
         // Per-blade randomizer so not all blades move equally
         const rand = 0.9 + (blade.seed * 0.2); // narrower range (0.9-1.1)
@@ -820,7 +848,7 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1 } = {}) => {
         blade.gustAngle += dir * 0.15 * weight * rand * scaleFactor * seedReduction;
       });
     };
-    
+
     window.addEventListener('carousel-gust', handleCarouselGust);
 
     return () => {
