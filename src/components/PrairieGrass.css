@@ -1,9 +1,9 @@
 .prairie-grass-container {
   position: absolute;
-  bottom: calc(var(--ground-nav-height, 120px) - 52px); /* sink blades into the ridge */
+  bottom: calc(var(--ground-nav-height, 120px) - 62px); /* sink blades deeper into the ridge */
   left: 0;
   width: calc(var(--panel-count, 1) * 100vw);
-  height: 220px;
+  height: 240px; /* allow full blade height so tips don't clip */
   pointer-events: none; /* let clicks reach underlying content */
   z-index: 1001;
 }

@@ -117,6 +117,28 @@ function drawBladePlaceholder(ctx, blade) {
   ctx.restore();
 }
 
+// Sample the ridge curve used by GroundNav so grass can sit on the hill profile
+function sampleRidgeY(normalizedX, groundHeight = 140, viewportHeight = 800) {
+  const h = groundHeight;
+  const baseY = h * 0.78;
+  const t = Math.min(Math.max(normalizedX, 0), 1);
+  const plateauStart = 0.44;
+  const plateauEnd = 0.72;
+  const maxLift = Math.min(baseY - 12, Math.max(h * 0.8, (viewportHeight || 800) * 0.5));
+
+  let lift = 0;
+  if (t < plateauStart) {
+    lift = maxLift * (t / plateauStart);
+  } else if (t > plateauEnd) {
+    lift = maxLift * (1 - (t - plateauEnd) / (1 - plateauEnd));
+  } else {
+    lift = maxLift;
+  }
+
+  const noise = (Math.sin(t * 28) + Math.sin(t * 57) * 0.55 + Math.sin(t * 101) * 0.35) * 3.5;
+  return baseY - lift + noise;
+}
+
 const PrairieGrass = ({ breeze = 'medium', spanCount = 1 } = {}) => {
   const canvasRef = useRef(null);
   const pointerRef = useRef({ x: null, y: null });
@@ -128,6 +150,7 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1 } = {}) => {
   const isVisibleRef = useRef(true);
   const spritesReadyCountRef = useRef(0);
   const groundColorRef = useRef('#c4b5a0');
+  const groundHeightRef = useRef(140);
 
   useEffect(() => {
     // Load images asynchronously without blocking render
@@ -190,6 +213,11 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1 } = {}) => {
     if (cssColor) {
       groundColorRef.current = cssColor.trim() || groundColorRef.current;
     }
+    const cssHeight = getComputedStyle(document.documentElement).getPropertyValue('--ground-nav-height');
+    const parsedHeight = parseFloat(cssHeight);
+    if (!Number.isNaN(parsedHeight)) {
+      groundHeightRef.current = parsedHeight;
+    }
   }, []);
 
   useEffect(() => {
@@ -221,6 +249,16 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1 } = {}) => {
       const imageCache = window.grassImageCache || {};
       const bladeImages = grassManifest.blades.map(b => imageCache[`blade_${b.name}`] || null);
       const budImages = grassManifest.buds.map(b => imageCache[`bud_${b.name}`] || null);
+      const groundH = groundHeightRef.current || 140;
+      const baseBaseline = groundH * 0.78;
+      const riseScale = (H / groundH) * 0.8; // scale ridge rise into canvas height (stronger lift)
+      const ridgeAt = (x) => sampleRidgeY(x / width, groundH, window.innerHeight || 800);
+      const baseYForX = (x) => {
+        const ridgeY = ridgeAt(x);
+        const rise = baseBaseline - ridgeY;
+        const y = (H - 1) - rise * riseScale;
+        return Math.max(0, Math.min(H - 1, y));
+      };
       
       // Define blade type categories with distributions
       // Constrain heights so non-pod blades never match pod heights
@@ -321,7 +359,7 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1 } = {}) => {
           
           blades.push({
             x: x,
-            baseY: H - 1, // Adjusted to ensure blades sit right at the bottom edge
+            baseY: baseYForX(x), // Follow ridge profile
             scale,
             angle: 0,
             velocity: 0,
@@ -381,17 +419,17 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1 } = {}) => {
               const clusterLean = outwardLean + (Math.random() - 0.5) * 0.3;
               
               // Reaction factor for cluster blades
-              const clusterNormH = Math.min(1, Math.max(0, clusterScale));
-              const clusterHeightReact = 0.9 + 0.45 * clusterNormH;
-              
-              blades.push({
-                x: clusterX,
-                baseY: H - 1,  // Adjusted to ensure proper grounding
-                scale: clusterScale,
-                angle: 0,
-                velocity: 0,
-                targetAngle: 0,
-                naturalLean: clusterLean,
+            const clusterNormH = Math.min(1, Math.max(0, clusterScale));
+            const clusterHeightReact = 0.9 + 0.45 * clusterNormH;
+            
+            blades.push({
+              x: clusterX,
+              baseY: baseYForX(clusterX),  // Follow ridge
+              scale: clusterScale,
+              angle: 0,
+              velocity: 0,
+              targetAngle: 0,
+              naturalLean: clusterLean,
                 swayOffset: Math.random() * Math.PI * 2, // Different sway phase
                 opacity: layer.opacity * (0.85 + Math.random() * 0.15), // Varied opacity
                 zIndex: layer.zIndex,
@@ -430,7 +468,7 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1 } = {}) => {
               
               blades.push({
                 x: baseX,
-                baseY: H - 1,  // Adjusted to ensure proper grounding
+                baseY: baseYForX(baseX),  // Follow ridge
                 scale: baseScale, // Very short for base
                 angle: 0,
                 velocity: 0,
@@ -610,7 +648,7 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1 } = {}) => {
           ctx.drawImage(
             blade.bladeImage,
             -bladeW / 2,
-            -bladeH + 3,
+            -bladeH + 12, // push blades down into the soil band
             bladeW,
             bladeH
           );
@@ -623,7 +661,7 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1 } = {}) => {
             ctx.drawImage(
               blade.budImage,
               -budW / 2,
-              -budH + 3,
+              -budH + 12, // push seed heads down similarly
               budW,
               budH
             );
@@ -731,7 +769,7 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1 } = {}) => {
             ctx.drawImage(
               blade.budImage,
               -budW / 2,
-              -budH + 3,  // 3px overlap into ground
+              -budH + 12,  // deeper overlap into ground
               budW,
               budH
             );
