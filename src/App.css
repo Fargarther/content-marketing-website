@@ -6,7 +6,8 @@
 
 html, body {
   height: 100%;
-  overflow: hidden; /* No scrolling */
+  overflow-x: hidden;
+  overflow-y: auto; /* allow vertical scroll so nav/content stay reachable */
 }
 
 body {
@@ -19,8 +20,8 @@ body {
 }
 
 .app {
-  height: 100%;
-  overflow: hidden; /* No scrolling */
+  min-height: 100%;
+  overflow-x: hidden;
   position: relative;
   background: #FDFCF5;
 }

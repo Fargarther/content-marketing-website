@@ -127,6 +127,7 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1 } = {}) => {
   const observerRef = useRef(null);
   const isVisibleRef = useRef(true);
   const spritesReadyCountRef = useRef(0);
+  const groundColorRef = useRef('#c4b5a0');
 
   useEffect(() => {
     // Load images asynchronously without blocking render
@@ -181,6 +182,14 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1 } = {}) => {
     };
 
     loadImagesProgressive();
+  }, []);
+
+  // Grab the ground color from CSS variable if available
+  useEffect(() => {
+    const cssColor = getComputedStyle(document.documentElement).getPropertyValue('--ground-color');
+    if (cssColor) {
+      groundColorRef.current = cssColor.trim() || groundColorRef.current;
+    }
   }, []);
 
   useEffect(() => {
@@ -652,6 +661,13 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1 } = {}) => {
         ctx.restore();
       });
 
+      // Recolor everything to a solid ground tone while preserving silhouettes
+      ctx.save();
+      ctx.globalCompositeOperation = 'source-in';
+      ctx.fillStyle = groundColorRef.current || '#c4b5a0';
+      ctx.fillRect(0, 0, W, H);
+      ctx.restore();
+
       animationRef.current = requestAnimationFrame(drawFrame);
     };
 
@@ -724,6 +740,13 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1 } = {}) => {
         
         ctx.restore();
       });
+
+      // Recolor static render to solid ground tone
+      ctx.save();
+      ctx.globalCompositeOperation = 'source-in';
+      ctx.fillStyle = groundColorRef.current || '#c4b5a0';
+      ctx.fillRect(0, 0, W, H);
+      ctx.restore();
     }
 
     const handleResize = () => {

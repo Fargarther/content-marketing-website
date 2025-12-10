@@ -207,6 +207,8 @@ export default function GroundNav({ totalWidth, groundHeight, viewportHeight }) 
       cvs.height = h * dpr;
       cvs.style.width = `${w}px`;
       cvs.style.height = `${h}px`;
+      // Reset transform before applying device scaling to avoid compound scaling on resize
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.scale(dpr, dpr);
       return { w, h };
     };
@@ -299,9 +301,10 @@ export default function GroundNav({ totalWidth, groundHeight, viewportHeight }) 
     };
     
     window.addEventListener('carousel-gust', handleCarouselGust);
-    window.addEventListener('resize', () => {
+    const handleResize = () => {
       ({ w, h } = resize());
-    });
+    };
+    window.addEventListener('resize', handleResize);
     
     return () => {
       cancelAnimationFrame(rafRef.current);
@@ -310,6 +313,7 @@ export default function GroundNav({ totalWidth, groundHeight, viewportHeight }) 
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerUp);
       window.removeEventListener('pointercancel', onPointerUp);
+      window.removeEventListener('resize', handleResize);
     };
   }, [rockPositions, drawRocks]);
 
