@@ -213,7 +213,7 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1 } = {}) => {
     if (cssColor) {
       groundColorRef.current = cssColor.trim() || groundColorRef.current;
     }
-    const cssHeight = getComputedStyle(document.documentElement).getPropertyValue('--ground-nav-height');
+    const cssHeight = getComputedStyle(document.documentElement).getPropertyValue('--ground-height');
     const parsedHeight = parseFloat(cssHeight);
     if (!Number.isNaN(parsedHeight)) {
       groundHeightRef.current = parsedHeight;
@@ -227,7 +227,7 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1 } = {}) => {
     const ctx = canvas.getContext('2d');
     const updateCanvasSize = () => {
       const W = Math.max(window.innerWidth * spanCount, window.innerWidth);
-      const H = 240; // Taller canvas to avoid clipping tips
+      const H = 260; // Taller canvas to avoid clipping tips and allow sway
       const dpr = Math.min(window.devicePixelRatio || 1, 1.5); // Cap DPR for performance
       
       canvas.width = W * dpr;
@@ -642,26 +642,29 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1 } = {}) => {
           ctx.rotate(base + lean + blade._passiveLP + gust);
           ctx.globalAlpha = blade.opacity;
 
-          const bladeH = Math.min(H * blade.scale, H * 0.98);
+          // Allow blades to approach the top of the band
+          const maxBladeH = H * 1.05;
+          const bladeH = Math.min(maxBladeH, H * blade.scale);
           const bladeAspect = blade.bladeImage.width / blade.bladeImage.height;
           const bladeW = Math.max(6, bladeH * bladeAspect);
           ctx.drawImage(
             blade.bladeImage,
             -bladeW / 2,
-            -bladeH + 10, // push blades down into the soil band
+            -bladeH + 6, // slight overlap into soil band
             bladeW,
             bladeH
           );
 
           if (blade.budImage && blade.budImage.complete) {
-            const targetBudH = Math.max(bladeH * 1.78, H * 0.92);
-            const budH = Math.min(Math.round(targetBudH), Math.floor(H - 2));
+            const maxBudH = H * 1.1;
+            const targetBudH = Math.max(bladeH * 1.5, H * 0.7);
+            const budH = Math.min(targetBudH, maxBudH);
             const budAspect = blade.budImage.width / blade.budImage.height;
             const budW = Math.max(6, budH * budAspect);
             ctx.drawImage(
               blade.budImage,
               -budW / 2,
-              -budH + 10, // push seed heads down similarly
+              -budH + 6, // keep seed heads within canvas
               budW,
               budH
             );
@@ -744,7 +747,8 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1 } = {}) => {
         
         if (blade.bladeImage && blade.bladeImage.complete) {
           // Draw leaf blade (static rendering) - ensure anchored at bottom
-          const bladeH = Math.min(H * blade.scale, H * 0.98);
+          const maxBladeH = H * 1.05;
+          const bladeH = Math.min(maxBladeH, H * blade.scale);
           const bladeAspect = blade.bladeImage.width / blade.bladeImage.height;
           const bladeW = Math.max(6, bladeH * bladeAspect);
           
@@ -752,16 +756,16 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1 } = {}) => {
           ctx.drawImage(
             blade.bladeImage, 
             -bladeW / 2, 
-            -bladeH + 3,  // 3px overlap into ground
+            -bladeH + 6,  // overlap into ground
             bladeW, 
             bladeH
           );
           
           // Draw bud (static rendering)
           if (blade.budImage && blade.budImage.complete) {
-            // Force to minimum 92% of canvas height
-            const targetBudH = Math.max(bladeH * 1.78, H * 0.92);
-            const budH = Math.min(Math.round(targetBudH), Math.floor(H - 2));
+            const maxBudH = H * 1.1;
+            const targetBudH = Math.max(bladeH * 1.5, H * 0.7);
+            const budH = Math.min(targetBudH, maxBudH);
             const budAspect = blade.budImage.width / blade.budImage.height;
             const budW = Math.max(6, budH * budAspect);
             
@@ -769,7 +773,7 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1 } = {}) => {
             ctx.drawImage(
               blade.budImage,
               -budW / 2,
-              -budH + 12,  // deeper overlap into ground
+              -budH + 6,  // overlap into ground
               budW,
               budH
             );
