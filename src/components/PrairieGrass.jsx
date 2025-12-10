@@ -227,7 +227,7 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1 } = {}) => {
     const ctx = canvas.getContext('2d');
     const updateCanvasSize = () => {
       const W = Math.max(window.innerWidth * spanCount, window.innerWidth);
-      const H = 180; // Increased height to prevent seed head cutoff
+      const H = 240; // Taller canvas to avoid clipping tips
       const dpr = Math.min(window.devicePixelRatio || 1, 1.5); // Cap DPR for performance
       
       canvas.width = W * dpr;
@@ -251,12 +251,12 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1 } = {}) => {
       const budImages = grassManifest.buds.map(b => imageCache[`bud_${b.name}`] || null);
       const groundH = groundHeightRef.current || 140;
       const baseBaseline = groundH * 0.78;
-      const riseScale = (H / groundH) * 0.8; // scale ridge rise into canvas height (stronger lift)
+      const riseScale = (H / groundH) * 0.75; // scale ridge rise into canvas height
       const ridgeAt = (x) => sampleRidgeY(x / width, groundH, window.innerHeight || 800);
       const baseYForX = (x) => {
         const ridgeY = ridgeAt(x);
         const rise = baseBaseline - ridgeY;
-        const y = (H - 1) - rise * riseScale;
+        const y = (H - 4) - rise * riseScale; // keep baseline near bottom
         return Math.max(0, Math.min(H - 1, y));
       };
       
@@ -648,7 +648,7 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1 } = {}) => {
           ctx.drawImage(
             blade.bladeImage,
             -bladeW / 2,
-            -bladeH + 12, // push blades down into the soil band
+            -bladeH + 10, // push blades down into the soil band
             bladeW,
             bladeH
           );
@@ -661,7 +661,7 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1 } = {}) => {
             ctx.drawImage(
               blade.budImage,
               -budW / 2,
-              -budH + 12, // push seed heads down similarly
+              -budH + 10, // push seed heads down similarly
               budW,
               budH
             );
