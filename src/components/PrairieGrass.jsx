@@ -117,26 +117,20 @@ function drawBladePlaceholder(ctx, blade) {
   ctx.restore();
 }
 
-// Sample the ridge curve used by GroundNav so grass can sit on the hill profile
+// Rolling ridge sample to match GroundNav
 function sampleRidgeY(normalizedX, groundHeight = 140, viewportHeight = 800) {
   const h = groundHeight;
   const baseY = h * 0.78;
+  const amp = Math.min(h * 0.22, Math.max(30, (viewportHeight || 800) * 0.12));
   const t = Math.min(Math.max(normalizedX, 0), 1);
-  const plateauStart = 0.44;
-  const plateauEnd = 0.72;
-  const maxLift = Math.min(baseY - 12, Math.max(h * 0.8, (viewportHeight || 800) * 0.5));
 
-  let lift = 0;
-  if (t < plateauStart) {
-    lift = maxLift * (t / plateauStart);
-  } else if (t > plateauEnd) {
-    lift = maxLift * (1 - (t - plateauEnd) / (1 - plateauEnd));
-  } else {
-    lift = maxLift;
-  }
+  const yOffset =
+    Math.sin(t * Math.PI * 2) * amp * 0.55 +
+    Math.sin(t * Math.PI * 4 + 1.2) * amp * 0.18;
 
-  const noise = (Math.sin(t * 28) + Math.sin(t * 57) * 0.55 + Math.sin(t * 101) * 0.35) * 3.5;
-  return baseY - lift + noise;
+  const noise = (Math.sin(t * 19) + Math.sin(t * 37) * 0.6) * 2.2;
+
+  return baseY - yOffset + noise;
 }
 
 const PrairieGrass = ({ breeze = 'medium', spanCount = 1 } = {}) => {

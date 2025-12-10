@@ -128,7 +128,7 @@ export default function Home() {
     };
   }, []);
 
-  const groundVisualHeight = 140; // keep baseline where it was; hill rises within this band
+  const groundVisualHeight = 100;
 
   return (
     <div

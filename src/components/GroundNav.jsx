@@ -1,46 +1,43 @@
-import React, { useEffect, useRef, useState, useCallback } from "react";
+﻿import React, { useEffect, useRef, useState, useCallback } from "react";
 import { navLinks } from "../data/navLinks";
 import { rocks as rockData, generatePebbleVertices, getRockColor } from "../data/rocks";
 import "./GroundNav.css";
 
 const ENABLE_ROCK_DRAG = true; // Enable gentle drag for front rocks only
 
-// Generate a gently noisy uphill → plateau → downhill ridge
+// Generate a gently rolling ridge for the top of the ground band
 const createRidgePath = (width, groundHeight = 180, viewportHeight = 800) => {
   const h = groundHeight;
-  const baseY = h * 0.78; // keep baseline low
+  const baseY = h * 0.78;
+  const amp = Math.min(h * 0.22, Math.max(30, (viewportHeight || 800) * 0.12));
   const pts = [];
-  const segs = 48; // more segments for micro irregularity
-  const plateauStart = 0.44;
-  const plateauEnd = 0.72;
-  const maxLift = Math.min(baseY - 12, Math.max(h * 0.8, viewportHeight * 0.5)); // crest toward half viewport while baseline stays put
+  const segs = 48;
 
   for (let i = 0; i <= segs; i++) {
     const t = i / segs;
     const x = t * width;
 
-    // Shape: rise → plateau → fall
-    let lift = 0;
-    if (t < plateauStart) {
-      lift = maxLift * (t / plateauStart);
-    } else if (t > plateauEnd) {
-      lift = maxLift * (1 - (t - plateauEnd) / (1 - plateauEnd));
-    } else {
-      lift = maxLift;
-    }
+    // Two-layer sine for soft hills (no sharp plateau)
+    const yOffset =
+      Math.sin(t * Math.PI * 2) * amp * 0.55 +
+      Math.sin(t * Math.PI * 4 + 1.2) * amp * 0.18;
 
-    // Gentle noise for bumps
-    const noise = (Math.sin(t * 28) + Math.sin(t * 57) * 0.55 + Math.sin(t * 101) * 0.35) * 3.5;
-    const y = baseY - lift + noise;
+    // Gentle micro-noise
+    const noise = (Math.sin(t * 19) + Math.sin(t * 37) * 0.6) * 2.2;
+
+    const y = baseY - yOffset + noise;
     pts.push({ x, y });
   }
 
   const move = `M${pts[0].x},${pts[0].y}`;
-  const curves = pts.slice(1).map((p, i) => {
-    const prev = pts[i];
-    const dx = p.x - prev.x;
-    return `C ${prev.x + dx / 3},${prev.y} ${prev.x + (2 * dx) / 3},${p.y} ${p.x},${p.y}`;
-  }).join(" ");
+  const curves = pts
+    .slice(1)
+    .map((p, i) => {
+      const prev = pts[i];
+      const dx = p.x - prev.x;
+      return `C ${prev.x + dx / 3},${prev.y} ${prev.x + (2 * dx) / 3},${p.y} ${p.x},${p.y}`;
+    })
+    .join(" ");
 
   return `${move} ${curves} L ${width},${h} L 0,${h} Z`;
 };
@@ -358,3 +355,5 @@ export default function GroundNav({ totalWidth, groundHeight, viewportHeight }) 
     </div>
   );
 }
+
+

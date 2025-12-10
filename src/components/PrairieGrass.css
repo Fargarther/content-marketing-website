@@ -1,7 +1,7 @@
 .prairie-grass-container {
   position: absolute;
-  /* align the grass band with the ground height used by GroundNav */
-  bottom: var(--ground-height, 120px);
+  /* align to ground height with a slight nudge into the ridge */
+  bottom: calc(var(--ground-height, 120px) - 12px);
   left: 0;
   width: calc(var(--panel-count, 1) * 100vw);
   height: 260px; /* allow full blade height so tips don't clip */
