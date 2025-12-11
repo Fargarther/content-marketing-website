@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useCallback, useState } from 'react';
 import GroundNav from '../components/GroundNav';
 import PrairieGrass from '../components/PrairieGrass';
+import Windmill from '../components/Windmill';
 import Sky from '../components/Sky';
+import { PANEL_COUNT, GROUND_VISUAL_HEIGHT } from '../config/worldConfig';
 import './Home.css';
 
 export default function Home() {
-  const PANEL_COUNT = 5;
   const trackRef = useRef(null);
   const touchRef = useRef(null);
   const [totalWidth, setTotalWidth] = useState(
@@ -104,7 +105,7 @@ export default function Home() {
     update();
     window.addEventListener('resize', update);
     return () => window.removeEventListener('resize', update);
-  }, [PANEL_COUNT, viewportHeight]);
+  }, [viewportHeight]);
 
   // Scroll to the hashed section when nav updates
   useEffect(() => {
@@ -128,15 +129,13 @@ export default function Home() {
     };
   }, []);
 
-  const groundVisualHeight = 100;
-
   return (
     <div
       className="horizontal-shell"
       style={{
         '--panel-count': PANEL_COUNT,
-        '--ground-nav-height': `${groundVisualHeight}px`,
-        '--ground-height': `${groundVisualHeight}px`,
+        '--ground-nav-height': `${GROUND_VISUAL_HEIGHT}px`,
+        '--ground-height': `${GROUND_VISUAL_HEIGHT}px`,
       }}
     >
       <div className="scroll-track" ref={trackRef} onWheel={handleWheel}>
@@ -147,6 +146,8 @@ export default function Home() {
               Prairie Grass prototype.
             </h1>
           </div>
+          {/* Windmill Fixed to first panel visually, or effectively part of the landscape */}
+          <Windmill />
         </section>
 
         <section className="panel projects-panel" id="blog">
@@ -182,7 +183,7 @@ export default function Home() {
       {/* GroundNav moved outside to enforce z-index layering (Sky < Grass < Ground) */}
       <GroundNav
         totalWidth={totalWidth}
-        groundHeight={groundVisualHeight}
+        groundHeight={GROUND_VISUAL_HEIGHT}
         viewportHeight={viewportHeight}
         trackRef={trackRef}
       />
