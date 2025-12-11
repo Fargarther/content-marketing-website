@@ -87,7 +87,8 @@
   font-weight: 700;
 }
 
-h1, h2 {
+h1,
+h2 {
   margin: 0;
   letter-spacing: -0.02em;
 }

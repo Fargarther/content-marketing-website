@@ -43,7 +43,7 @@
   align-items: center;
   justify-content: center;
   padding: 0 40px;
-  pointer-events: auto;          /* links + rocks are interactive */
+  pointer-events: auto;          /* links remain interactive */
 }
 
 .nav-list {
@@ -56,7 +56,7 @@
   width: 100%;
   max-width: 800px;
   position: relative;
-  z-index: 2;                    /* above rocks canvas */
+  z-index: 2;                    /* above ground texture */
 }
 
 .nav-list li {
@@ -90,10 +90,4 @@
   background: rgba(255,255,255,0.45);
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   transform: translateY(-1px);
-}
-
-.ground-rocks {
-  position: absolute;
-  inset: 0;
-  z-index: 1;                    /* behind links */
 }

@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useCallback, useState } from 'react';
 import GroundNav from '../components/GroundNav';
 import PrairieGrass from '../components/PrairieGrass';
+import Sky from '../components/Sky';
 import './Home.css';
 
 export default function Home() {
-  const PANEL_COUNT = 4;
+  const PANEL_COUNT = 5;
   const trackRef = useRef(null);
   const touchRef = useRef(null);
   const [totalWidth, setTotalWidth] = useState(
@@ -172,13 +173,22 @@ export default function Home() {
           </div>
         </section>
 
-        <PrairieGrass spanCount={PANEL_COUNT} scrollVelocityRef={velocityRef} trackRef={trackRef} />
-        <GroundNav
-          totalWidth={totalWidth}
-          groundHeight={groundVisualHeight}
-          viewportHeight={viewportHeight}
-        />
+        <section className="panel spacer-panel" style={{ pointerEvents: 'none' }} />
+
       </div>
+
+      <PrairieGrass spanCount={PANEL_COUNT} scrollVelocityRef={velocityRef} trackRef={trackRef} />
+
+      {/* GroundNav moved outside to enforce z-index layering (Sky < Grass < Ground) */}
+      <GroundNav
+        totalWidth={totalWidth}
+        groundHeight={groundVisualHeight}
+        viewportHeight={viewportHeight}
+        trackRef={trackRef}
+      />
+
+      {/* Pass totalWidth to Sky to help it scale speeds if needed, though we hardcoded them */}
+      <Sky scrollVelocityRef={velocityRef} trackRef={trackRef} />
     </div>
   );
 }
