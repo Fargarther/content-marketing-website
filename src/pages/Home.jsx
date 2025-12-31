@@ -1,12 +1,11 @@
 import React, { useEffect, useRef, useCallback, useState } from 'react';
 import GroundNav from '../components/GroundNav';
 import PrairieGrass from '../components/PrairieGrass';
-import Windmill from '../components/Windmill';
 import Sky from '../components/Sky';
-import { PANEL_COUNT, GROUND_VISUAL_HEIGHT } from '../config/worldConfig';
 import './Home.css';
 
 export default function Home() {
+  const PANEL_COUNT = 5;
   const trackRef = useRef(null);
   const touchRef = useRef(null);
   const [totalWidth, setTotalWidth] = useState(
@@ -17,6 +16,25 @@ export default function Home() {
   );
   const velocityRef = useRef(0);
   const animFrameRef = useRef(null);
+
+  // Shared Mutable Scroll State to avoid layout thrashing
+  // Format: { current: 0 } -> we pass this object reference to children
+  const scrollStateRef = useRef({ scrollLeft: 0 });
+
+  // Update the shared ref whenever the track scrolls
+  // We use a passive listener attached to the ref callback or effect
+  useEffect(() => {
+    const track = trackRef.current;
+    if (!track) return;
+
+    const onScroll = () => {
+      // Update the shared value
+      scrollStateRef.current.scrollLeft = track.scrollLeft;
+    };
+
+    track.addEventListener('scroll', onScroll, { passive: true });
+    return () => track.removeEventListener('scroll', onScroll);
+  }, []);
 
   // Translate wheel movement into horizontal scroll on the track
   const handleWheel = useCallback((e) => {
@@ -105,7 +123,7 @@ export default function Home() {
     update();
     window.addEventListener('resize', update);
     return () => window.removeEventListener('resize', update);
-  }, [viewportHeight]);
+  }, [PANEL_COUNT, viewportHeight]);
 
   // Scroll to the hashed section when nav updates
   useEffect(() => {
@@ -129,13 +147,15 @@ export default function Home() {
     };
   }, []);
 
+  const groundVisualHeight = 100;
+
   return (
     <div
       className="horizontal-shell"
       style={{
         '--panel-count': PANEL_COUNT,
-        '--ground-nav-height': `${GROUND_VISUAL_HEIGHT}px`,
-        '--ground-height': `${GROUND_VISUAL_HEIGHT}px`,
+        '--ground-nav-height': `${groundVisualHeight}px`,
+        '--ground-height': `${groundVisualHeight}px`,
       }}
     >
       <div className="scroll-track" ref={trackRef} onWheel={handleWheel}>
@@ -146,8 +166,6 @@ export default function Home() {
               Prairie Grass prototype.
             </h1>
           </div>
-          {/* Windmill Fixed to first panel visually, or effectively part of the landscape */}
-          <Windmill />
         </section>
 
         <section className="panel projects-panel" id="blog">
@@ -178,18 +196,18 @@ export default function Home() {
 
       </div>
 
-      <PrairieGrass spanCount={PANEL_COUNT} scrollVelocityRef={velocityRef} trackRef={trackRef} />
+      <PrairieGrass spanCount={PANEL_COUNT} scrollVelocityRef={velocityRef} trackRef={trackRef} scrollStateRef={scrollStateRef} />
 
       {/* GroundNav moved outside to enforce z-index layering (Sky < Grass < Ground) */}
       <GroundNav
         totalWidth={totalWidth}
-        groundHeight={GROUND_VISUAL_HEIGHT}
+        groundHeight={groundVisualHeight}
         viewportHeight={viewportHeight}
         trackRef={trackRef}
       />
 
       {/* Pass totalWidth to Sky to help it scale speeds if needed, though we hardcoded them */}
-      <Sky scrollVelocityRef={velocityRef} trackRef={trackRef} />
+      <Sky scrollVelocityRef={velocityRef} trackRef={trackRef} scrollStateRef={scrollStateRef} />
     </div>
   );
 }

@@ -3,7 +3,7 @@
   height: 100vh;
   width: 100vw;
   overflow: hidden;
-  background: #FDFCF5;
+  background: radial-gradient(circle, #F8F0D0 0%, #E6D6AC 100%);
 }
 
 .scroll-track {

@@ -2,7 +2,6 @@ import React, { useRef, useEffect } from 'react';
 import { spriteUrl } from '../sprites/grass';
 import { sampleWindField } from '../utils/valueNoise1D';
 import grassManifest from '../data/grassManifest.json';
-import { GRASS_CHUNK_SIZE } from '../config/worldConfig';
 import './PrairieGrass.css';
 
 // Configuration constants for tuning organic motion
@@ -14,7 +13,7 @@ const NOISE_AMP = 0.008;
 // Chunking Configuration
 // We divide the world into chunks of roughly 1 screen width (e.g., 1920px).
 // This allows us to quickly query "which bucket of blades is visible?"
-const CHUNK_SIZE = GRASS_CHUNK_SIZE;
+const CHUNK_SIZE = 2000;
 
 // Progressive rendering constants
 const PLACEHOLDER_ALPHA = 0.55;
@@ -115,7 +114,7 @@ function sampleRidgeY(normalizedX, groundHeight = 140) {
   return baseY;
 }
 
-const PrairieGrass = ({ breeze = 'medium', spanCount = 1, scrollVelocityRef, trackRef } = {}) => {
+const PrairieGrass = ({ breeze = 'medium', spanCount = 1, scrollVelocityRef, trackRef, scrollStateRef } = {}) => {
   const canvasRef = useRef(null);
   const pointerRef = useRef({ x: null, y: null });
   const timeRef = useRef(0);
@@ -137,7 +136,7 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1, scrollVelocityRef, tra
   useEffect(() => {
     // Load images asynchronously
     const loadImagesProgressive = () => {
-      const imageCache = {};
+      const imageCache = window.grassImageCache || {};
       window.grassImageCache = imageCache;
 
       const bladeNames = grassManifest.blades.map(b => b.name);
@@ -250,9 +249,9 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1, scrollVelocityRef, tra
       // Note: Density logic relies on loop. Since we're iterating world width, apply density normally.
 
       const layers = [
-        { density: 45, opacity: 0.5, zIndex: 0, speedFactor: 0.6 },
-        { density: 30, opacity: 0.85, zIndex: 1, speedFactor: 1.0 },
-        { density: 18, opacity: 1.0, zIndex: 2, speedFactor: 1.4 }
+        { density: 70, opacity: 0.5, zIndex: 0, speedFactor: 0.6 }, // Was 45
+        { density: 50, opacity: 0.85, zIndex: 1, speedFactor: 1.0 }, // Was 30
+        { density: 35, opacity: 1.0, zIndex: 2, speedFactor: 1.4 }  // Was 18
       ];
 
       let totalBladesCreated = 0;
@@ -391,7 +390,7 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1, scrollVelocityRef, tra
       const drift = -0.005 * Math.sin(t * 0.05) * BREEZE;
       const windBase = ultraLow + drift + Math.sin(t) * 0.014 * BREEZE + Math.sin(t * 0.7) * 0.009 * BREEZE;
 
-      const scrollLeft = trackRef?.current?.scrollLeft || 0;
+      const scrollLeft = scrollStateRef?.current?.scrollLeft || 0;
       const viewportW = canvas.width / Math.min(window.devicePixelRatio || 1, 1.5);
 
       // Spatial Chunking Logic
@@ -543,8 +542,48 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1, scrollVelocityRef, tra
       chunksRef.current = initializeGrass(ns.totalW);
     };
 
+    // Gust Handler
+    const handleCarouselGust = (e) => {
+      const focusX = e.detail?.x ?? window.innerWidth / 2; // Screen space
+      const s = e.detail?.strength ?? 1;
+      const dir = e.detail?.direction ?? 1;
+
+      // Gusts are local to screen, so we need to reverse-map to world X if we want to find blades?
+      // Or just iterate visible chunks!
+      const scrollLeft = trackRef?.current?.scrollLeft || 0;
+      // ... Calculate visible chunks same as drawFrame ...
+      // Simplified: Iterate ALL chunks? No, expensive. 
+      // Iterate visible chunks for gust interaction.
+      // For now, let's skip complex gust logic (it's rare) or just do it simple:
+      // If gust happens, we might miss off-screen blades, which is fine!
+
+      const safetyPad = 400;
+      const minWorldX = Math.max(0, scrollLeft * 0.6 - safetyPad);
+      const maxWorldX = scrollLeft * 1.4 + window.innerWidth + safetyPad;
+      const startChunk = Math.floor(minWorldX / CHUNK_SIZE);
+      const endChunk = Math.floor(maxWorldX / CHUNK_SIZE);
+
+      for (let cI = startChunk; cI <= endChunk; cI++) {
+        const chunk = chunksRef.current[cI];
+        if (!chunk) continue;
+        chunk.forEach(blade => {
+          const drawX = blade.x - (scrollLeft * blade.speedFactor);
+          const dx = drawX - focusX;
+          // ... apply gust math ...
+          const radius = 320;
+          const sigma = radius * 0.65;
+          const weight = Math.exp(-(dx * dx) / (2 * sigma * sigma));
+          const rand = 0.9 + (blade.seed * 0.2);
+          const scaleFactor = blade.heightReact * blade.variability;
+          const seedReduction = blade.budImage ? 0.5 : 1.0;
+          blade.swayBoost += 0.18 * s * weight * rand * scaleFactor * seedReduction;
+          blade.gustAngle += dir * 0.15 * weight * rand * scaleFactor * seedReduction;
+        });
+      }
+    };
 
     window.addEventListener('resize', handleResize);
+    window.addEventListener('carousel-gust', handleCarouselGust);
 
     // Start Loop
     const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -559,6 +598,7 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1, scrollVelocityRef, tra
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
       if (observerRef.current && canvas) observerRef.current.unobserve(canvas);
       window.removeEventListener('resize', handleResize);
+      window.removeEventListener('carousel-gust', handleCarouselGust);
     };
 
   }, [breeze]); // Re-init on breeze change? Maybe overkill but safe.
