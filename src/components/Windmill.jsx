@@ -177,14 +177,14 @@ export default function Windmill({ scrollStateRef } = {}) {
           const radius = Math.max(rect.width, rect.height) * 0.55;
 
           if (distance <= radius) {
-            const maxAngle = 18;
-            const horizontal = (dx / rect.width) * maxAngle * 1.2;
-            const vertical = (dy / rect.height) * maxAngle * 0.8;
-            targetAngle = Math.max(-maxAngle, Math.min(maxAngle, horizontal + vertical));
+            const angleDeg = (Math.atan2(dy, dx) * 180) / Math.PI;
+            targetAngle = angleDeg;
           }
         }
 
-        const nextAngle = hoverAngleRef.current + (targetAngle - hoverAngleRef.current) * 0.12;
+        const current = hoverAngleRef.current;
+        const delta = ((targetAngle - current + 540) % 360) - 180;
+        const nextAngle = current + delta * 0.12;
         hoverAngleRef.current = nextAngle;
 
         wrap.style.setProperty('--windmill-blades-hover-rot', `${nextAngle.toFixed(2)}deg`);
