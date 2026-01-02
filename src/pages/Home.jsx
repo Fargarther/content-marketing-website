@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useCallback, useState } from 'react';
 import GroundNav from '../components/GroundNav';
 import PrairieGrass from '../components/PrairieGrass';
 import Sky from '../components/Sky';
+import Windmill from '../components/Windmill';
 import './Home.css';
 
 export default function Home() {
@@ -196,6 +197,7 @@ export default function Home() {
 
       </div>
 
+      <Windmill scrollStateRef={scrollStateRef} />
       <PrairieGrass spanCount={PANEL_COUNT} scrollVelocityRef={velocityRef} trackRef={trackRef} scrollStateRef={scrollStateRef} />
 
       {/* GroundNav moved outside to enforce z-index layering (Sky < Grass < Ground) */}

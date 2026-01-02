@@ -1,0 +1,72 @@
+.windmill {
+  position: fixed;
+  left: var(--windmill-x, 28%);
+  bottom: calc(var(--windmill-ground-height, var(--ground-height, 120px)) + var(--windmill-ground-offset, 0px));
+  --windmill-scale: 2.5;
+  --windmill-hub-offset-x: calc(0.11% - 5px);
+  --windmill-hub-offset-y: -0.56%;
+  width: calc(clamp(220px, 22vw, 360px) * var(--windmill-scale));
+  z-index: 4;
+  pointer-events: none;
+  transform: translate(calc(-50% + var(--windmill-scroll-offset, 0px)), var(--windmill-base-trim, 0%));
+  transform-origin: bottom center;
+}
+
+.windmill-assembly {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+}
+
+.windmill-base {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.windmill-blades-wrap {
+  position: absolute;
+  left: calc(var(--windmill-hub-x, 45.2%) + var(--windmill-hub-offset-x, 0%));
+  top: calc(var(--windmill-hub-y, 24.2%) + var(--windmill-hub-offset-y, 0%));
+  width: var(--windmill-blades-size, 34%);
+  height: var(--windmill-blades-size, 34%);
+  transform: translate(-50%, -50%) rotate(var(--windmill-blades-hover-rot, 0deg));
+  transform-origin: 50% 50%;
+  animation: windmill-teeter 9s ease-in-out infinite;
+  will-change: transform;
+}
+
+.windmill-blades {
+  width: 100%;
+  height: 100%;
+  display: block;
+  transform-origin: 50% 50%;
+}
+
+@keyframes windmill-teeter {
+  from {
+    transform: translate(-50%, -50%) rotate(var(--windmill-blades-hover-rot, 0deg)) rotate(-10deg);
+  }
+  50% {
+    transform: translate(-50%, -50%) rotate(var(--windmill-blades-hover-rot, 0deg)) rotate(10deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(var(--windmill-blades-hover-rot, 0deg)) rotate(-10deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .windmill-blades-wrap {
+    animation: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .windmill {
+    left: var(--windmill-x-mobile, 24%);
+    width: calc(clamp(180px, 40vw, 260px) * var(--windmill-scale));
+  }
+}
