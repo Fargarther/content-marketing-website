@@ -1,4 +1,4 @@
-.prairie-grass-container {
+.prairie-grass-layer {
   position: fixed;
   /* align to ground height with a slight nudge into the ridge */
   bottom: calc(var(--ground-height, 120px) - 24px);
@@ -7,21 +7,33 @@
   height: 260px;
   /* allow full blade height so tips don't clip */
   pointer-events: none;
-  /* let clicks reach underlying content */
-  /* let clicks reach underlying content */
-  z-index: 999;
+}
+
+.prairie-grass-layer-back {
+  z-index: 3;
+}
+
+.prairie-grass-layer-front {
+  z-index: 6;
 }
 
 .prairie-grass {
   width: 100%;
   height: 100%;
+  filter: none;
+  mix-blend-mode: normal;
+  opacity: 1;
+  background: transparent;
+}
+
+.prairie-grass-back {
+  pointer-events: none;
+}
+
+.prairie-grass-front {
   pointer-events: auto;
   /* allow hover/touch to sway blades */
   touch-action: none;
   /* capture touch drags for custom handling */
   cursor: default;
-  filter: none;
-  mix-blend-mode: normal;
-  opacity: 1;
-  background: transparent;
 }

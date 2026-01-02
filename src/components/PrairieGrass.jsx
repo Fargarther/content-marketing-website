@@ -115,7 +115,8 @@ function sampleRidgeY(normalizedX, groundHeight = 140) {
 }
 
 const PrairieGrass = ({ breeze = 'medium', spanCount = 1, scrollVelocityRef, trackRef, scrollStateRef } = {}) => {
-  const canvasRef = useRef(null);
+  const backCanvasRef = useRef(null);
+  const frontCanvasRef = useRef(null);
   const pointerRef = useRef({ x: null, y: null });
   const timeRef = useRef(0);
   const lastTimeRef = useRef(0);
@@ -185,10 +186,13 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1, scrollVelocityRef, tra
   }, []);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    const backCanvas = backCanvasRef.current;
+    const frontCanvas = frontCanvasRef.current;
+    if (!backCanvas || !frontCanvas) return;
 
-    const ctx = canvas.getContext('2d');
+    const backCtx = backCanvas.getContext('2d');
+    const frontCtx = frontCanvas.getContext('2d');
+    if (!backCtx || !frontCtx) return;
 
     // Update Canvas to match Viewport, NOT World
     const updateCanvasSize = () => {
@@ -196,12 +200,17 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1, scrollVelocityRef, tra
       const H = 260;
       const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
 
-      canvas.width = W * dpr;
-      canvas.height = H * dpr;
-      canvas.style.width = `${W}px`;
-      canvas.style.height = `${H}px`;
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.scale(dpr, dpr);
+      const sizeCanvas = (targetCanvas, targetCtx) => {
+        targetCanvas.width = W * dpr;
+        targetCanvas.height = H * dpr;
+        targetCanvas.style.width = `${W}px`;
+        targetCanvas.style.height = `${H}px`;
+        targetCtx.setTransform(1, 0, 0, 1, 0, 0);
+        targetCtx.scale(dpr, dpr);
+      };
+
+      sizeCanvas(backCanvas, backCtx);
+      sizeCanvas(frontCanvas, frontCtx);
 
       // Total world width for blade generation
       const totalW = Math.max(window.innerWidth * spanCount, window.innerWidth);
@@ -383,7 +392,8 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1, scrollVelocityRef, tra
         return;
       }
 
-      ctx.clearRect(0, 0, W, H);
+      backCtx.clearRect(0, 0, W, H);
+      frontCtx.clearRect(0, 0, W, H);
 
       // Wind Math
       const ultraLow = Math.sin(t * 0.12) * 0.009 * BREEZE;
@@ -391,7 +401,7 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1, scrollVelocityRef, tra
       const windBase = ultraLow + drift + Math.sin(t) * 0.014 * BREEZE + Math.sin(t * 0.7) * 0.009 * BREEZE;
 
       const scrollLeft = scrollStateRef?.current?.scrollLeft || 0;
-      const viewportW = canvas.width / Math.min(window.devicePixelRatio || 1, 1.5);
+      const viewportW = backCanvas.width / Math.min(window.devicePixelRatio || 1, 1.5);
 
       // Spatial Chunking Logic
       // Blades move by: drawX = blade.x - scroll * speedFactor.
@@ -479,6 +489,7 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1, scrollVelocityRef, tra
           blade.angle += blade.velocity;
 
           // Draw
+          const ctx = blade.zIndex === 2 ? frontCtx : backCtx;
           ctx.save();
           if (blade.bladeImage && blade.bladeImage.complete) {
             ctx.translate(drawX, blade.baseY);
@@ -520,11 +531,13 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1, scrollVelocityRef, tra
       }
 
       // Recolor
-      ctx.save();
-      ctx.globalCompositeOperation = 'source-in';
-      ctx.fillStyle = groundColorRef.current || '#c4b5a0';
-      ctx.fillRect(0, 0, W, H);
-      ctx.restore();
+      [backCtx, frontCtx].forEach((ctx) => {
+        ctx.save();
+        ctx.globalCompositeOperation = 'source-in';
+        ctx.fillStyle = groundColorRef.current || '#c4b5a0';
+        ctx.fillRect(0, 0, W, H);
+        ctx.restore();
+      });
 
       animationRef.current = requestAnimationFrame(drawFrame);
     };
@@ -533,7 +546,7 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1, scrollVelocityRef, tra
     observerRef.current = new IntersectionObserver(entries => {
       entries.forEach(e => isVisibleRef.current = e.isIntersecting);
     }, { threshold: 0.1 });
-    if (canvas) observerRef.current.observe(canvas);
+    if (frontCanvas) observerRef.current.observe(frontCanvas);
 
     const handleResize = () => {
       const ns = updateCanvasSize();
@@ -596,7 +609,7 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1, scrollVelocityRef, tra
 
     return () => {
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
-      if (observerRef.current && canvas) observerRef.current.unobserve(canvas);
+      if (observerRef.current && frontCanvas) observerRef.current.unobserve(frontCanvas);
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('carousel-gust', handleCarouselGust);
     };
@@ -612,17 +625,26 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1, scrollVelocityRef, tra
   const handleLeave = () => { pointerRef.current.x = null; pointerRef.current.y = null; };
 
   return (
-    <div className="prairie-grass-container">
-      <canvas
-        ref={canvasRef}
-        className="prairie-grass"
-        aria-hidden="true"
-        onMouseMove={handlePointer}
-        onMouseLeave={handleLeave}
-        onTouchMove={handlePointer}
-        onTouchEnd={handleLeave}
-      />
-    </div>
+    <>
+      <div className="prairie-grass-layer prairie-grass-layer-back">
+        <canvas
+          ref={backCanvasRef}
+          className="prairie-grass prairie-grass-back"
+          aria-hidden="true"
+        />
+      </div>
+      <div className="prairie-grass-layer prairie-grass-layer-front">
+        <canvas
+          ref={frontCanvasRef}
+          className="prairie-grass prairie-grass-front"
+          aria-hidden="true"
+          onMouseMove={handlePointer}
+          onMouseLeave={handleLeave}
+          onTouchMove={handlePointer}
+          onTouchEnd={handleLeave}
+        />
+      </div>
+    </>
   );
 };
 
