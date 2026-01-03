@@ -1,5 +1,5 @@
 // src/components/Home/Spotlight/RecipeCard/CardFront.jsx
-import React from 'react';
+import React, { memo } from 'react';
 import styled from 'styled-components';
 import RatingSystem from './RatingSystem';
 
@@ -49,4 +49,4 @@ const CardFront = ({ title, category, time, text, rating, onRatingChange, expand
   );
 };
 
-export default CardFront;
+export default memo(CardFront);

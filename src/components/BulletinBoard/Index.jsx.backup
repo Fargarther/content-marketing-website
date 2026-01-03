@@ -38,7 +38,6 @@ document.head.appendChild(style);
 function Spotlight() {
   const boardRef = useRef(null);
   const decorationsRef = useRef(null);
-  const resizeTimeoutRef = useRef(null);
   const [boardWidth, setBoardWidth] = useState(0);
   const [newCardIds, setNewCardIds] = useState(new Set());
   const [expandedCards, setExpandedCards] = useState(new Set());
@@ -49,32 +48,17 @@ function Spotlight() {
   });
   const [isDragOver, setIsDragOver] = useState(false);
 
-  // Update board width on resize with debouncing
+  // Update board width on resize
   useEffect(() => {
     const updateBoardWidth = () => {
-      if (resizeTimeoutRef.current) {
-        clearTimeout(resizeTimeoutRef.current);
+      if (boardRef.current) {
+        setBoardWidth(boardRef.current.offsetWidth);
       }
-
-      resizeTimeoutRef.current = setTimeout(() => {
-        if (boardRef.current) {
-          setBoardWidth(boardRef.current.offsetWidth);
-        }
-      }, 150); // Wait 150ms after last resize
     };
 
-    // Initial measurement
-    if (boardRef.current) {
-      setBoardWidth(boardRef.current.offsetWidth);
-    }
-
+    updateBoardWidth();
     window.addEventListener('resize', updateBoardWidth);
-    return () => {
-      window.removeEventListener('resize', updateBoardWidth);
-      if (resizeTimeoutRef.current) {
-        clearTimeout(resizeTimeoutRef.current);
-      }
-    };
+    return () => window.removeEventListener('resize', updateBoardWidth);
   }, []);
 
   // Save pinned cards to localStorage whenever they change
@@ -121,16 +105,13 @@ function Spotlight() {
             y: (boardHeight - rotatedBox.height) / 2
           };
 
-          // Batch state updates using RAF
-          requestAnimationFrame(() => {
-            setCardPositions(prev => ({
-              ...prev,
-              [newCard.id]: pos
-            }));
-            setNewCardIds(prev => new Set([...prev, newCard.id]));
-          });
+          setCardPositions(prev => ({
+            ...prev,
+            [newCard.id]: pos
+          }));
 
-          // Animation cleanup
+          // Animation
+          setNewCardIds(prev => new Set([...prev, newCard.id]));
           setTimeout(() => {
             setNewCardIds(prev => {
               const newSet = new Set(prev);
@@ -220,7 +201,7 @@ function Spotlight() {
   }, [handleCardMouseDown, pinnedCards]);
 
   // Handle adding a new card
-  const handleAddCard = useCallback(() => {
+  const handleAddCard = () => {
     const newCard = addNewCard();
     if (newCard && boardRef.current) {
       const boardWidth = boardRef.current.offsetWidth;
@@ -228,16 +209,13 @@ function Spotlight() {
       const rotatedBox = getRotatedBoundingBox(CARD_DIMENSIONS.width, CARD_DIMENSIONS.height, newCard.rotate);
       const pos = getRandomPosition(boardWidth, boardHeight, rotatedBox.width, rotatedBox.height);
 
-      // Batch state updates together using RAF
-      requestAnimationFrame(() => {
-        setCardPositions(prev => ({
-          ...prev,
-          [newCard.id]: { x: pos.x, y: pos.y }
-        }));
-        setNewCardIds(prev => new Set([...prev, newCard.id]));
-      });
+      setCardPositions(prev => ({
+        ...prev,
+        [newCard.id]: { x: pos.x, y: pos.y }
+      }));
 
-      // Animation cleanup
+      // Animation
+      setNewCardIds(prev => new Set([...prev, newCard.id]));
       setTimeout(() => {
         setNewCardIds(prev => {
           const newSet = new Set(prev);
@@ -246,10 +224,10 @@ function Spotlight() {
         });
       }, 600);
     }
-  }, [addNewCard]);
+  };
 
   // Handle shuffle - only shuffle unpinned cards
-  const handleShuffle = useCallback(() => {
+  const handleShuffle = () => {
     updateCardRotations();
 
     if (!boardRef.current) return;
@@ -257,24 +235,22 @@ function Spotlight() {
     const boardWidth = boardRef.current.offsetWidth;
     const boardHeight = boardRef.current.offsetHeight;
 
-    setCardPositions(prevPositions => {
-      const newPositions = { ...prevPositions };
+    const newPositions = { ...cardPositions };
 
-      cards.forEach(card => {
-        // Skip pinned cards
-        if (!pinnedCards.has(card.id)) {
-          const rotatedBox = getRotatedBoundingBox(CARD_DIMENSIONS.width, CARD_DIMENSIONS.height, card.rotate);
-          const pos = getRandomPosition(boardWidth, boardHeight, rotatedBox.width, rotatedBox.height);
-          newPositions[card.id] = pos;
-        }
-      });
-
-      return newPositions;
+    cards.forEach(card => {
+      // Skip pinned cards
+      if (!pinnedCards.has(card.id)) {
+        const rotatedBox = getRotatedBoundingBox(CARD_DIMENSIONS.width, CARD_DIMENSIONS.height, card.rotate);
+        const pos = getRandomPosition(boardWidth, boardHeight, rotatedBox.width, rotatedBox.height);
+        newPositions[card.id] = pos;
+      }
     });
-  }, [updateCardRotations, cards, pinnedCards, setCardPositions]);
+
+    setCardPositions(newPositions);
+  };
 
   // Handle clear with cleanup - now also clears decorations
-  const handleClear = useCallback(() => {
+  const handleClear = () => {
     // Clear recipe cards
     clearAllCards();
     setNewCardIds(new Set());
@@ -285,7 +261,7 @@ function Spotlight() {
     if (decorationsRef.current) {
       decorationsRef.current.clearAll();
     }
-  }, [clearAllCards]);
+  };
 
   return (
     <SpotlightSection id="spotlight" data-observe>

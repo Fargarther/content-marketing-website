@@ -201,12 +201,12 @@ const useDragAndDrop = (cards, setCards, boardRef) => {
     if (activeCard !== null) {
       const handleGlobalMove = (e) => handleMouseMove(e);
       const handleGlobalUp = () => handleMouseUp();
-
+      
       document.addEventListener('mousemove', handleGlobalMove);
-      document.addEventListener('mouseup', handleGlobalUp, { passive: true });
+      document.addEventListener('mouseup', handleGlobalUp);
       document.addEventListener('touchmove', handleGlobalMove, { passive: false });
-      document.addEventListener('touchend', handleGlobalUp, { passive: true });
-
+      document.addEventListener('touchend', handleGlobalUp);
+      
       return () => {
         document.removeEventListener('mousemove', handleGlobalMove);
         document.removeEventListener('mouseup', handleGlobalUp);

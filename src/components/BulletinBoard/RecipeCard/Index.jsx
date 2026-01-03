@@ -290,4 +290,21 @@ const RecipeCard = ({
   );
 };
 
-export default memo(RecipeCard);
+// Custom comparison function to prevent unnecessary re-renders
+const arePropsEqual = (prevProps, nextProps) => {
+  return (
+    prevProps.card.id === nextProps.card.id &&
+    prevProps.position.x === nextProps.position.x &&
+    prevProps.position.y === nextProps.position.y &&
+    prevProps.isDragging === nextProps.isDragging &&
+    prevProps.isNew === nextProps.isNew &&
+    prevProps.isPinned === nextProps.isPinned &&
+    prevProps.rating === nextProps.rating &&
+    prevProps.comments?.length === nextProps.comments?.length &&
+    prevProps.boardWidth === nextProps.boardWidth &&
+    prevProps.card.rotate === nextProps.card.rotate &&
+    prevProps.card.zIndex === nextProps.card.zIndex
+  );
+};
+
+export default memo(RecipeCard, arePropsEqual);

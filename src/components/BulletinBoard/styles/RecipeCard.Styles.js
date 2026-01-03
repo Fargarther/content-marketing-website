@@ -19,7 +19,7 @@ const paperTexture = `
 
 export const CardContainer = styled.div`
   position: absolute;
-  width: ${props => props.$isExpanded ? '455px' : '325px'}; 
+  width: ${props => props.$isExpanded ? '455px' : '325px'};
   height: ${props => props.$isExpanded ? 'auto' : '195px'};
   min-height: ${props => props.$isExpanded ? '390px' : '195px'};
   left: 0;
@@ -29,12 +29,13 @@ export const CardContainer = styled.div`
   --card-rotate: ${props => `${props.$rotate}deg`};
   transform: translate3d(var(--card-x), var(--card-y), 0) rotate(var(--card-rotate));
   transform-origin: center center;
-  transition: ${props => props.$isDragging ? 'none' : 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'};
+  transition: ${props => props.$isDragging ? 'none' : 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1), height 0.3s cubic-bezier(0.4, 0, 0.2, 1), min-height 0.3s cubic-bezier(0.4, 0, 0.2, 1)'};
   z-index: ${props => props.$isExpanded ? 1000 : props.$isDragging ? 100 : props.$zIndex};
   perspective: 1500px;
   cursor: ${props => props.$isPinned ? 'not-allowed' : props.$isDragging ? 'grabbing' : 'grab'};
   opacity: ${props => props.$isPinned ? 0.98 : 1};
-  will-change: transform;
+  will-change: ${props => props.$isDragging ? 'transform' : 'auto'};
+  contain: layout style paint;
   
   /* Account for buttons extending beyond card boundaries */
   margin-left: 13px; /* Half the button width that extends left */
@@ -163,8 +164,8 @@ export const CardSide = styled.div`
   padding: 16px 16px 16px 36px;
   transform: ${props => props.$back ? 'rotateY(180deg)' : 'rotateY(0deg)'};
   overflow-y: ${props => props.$back ? 'auto' : 'visible'};
-  will-change: transform;
   pointer-events: auto;
+  contain: layout style;
 
   &:before {
     content: '';

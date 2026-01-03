@@ -1,5 +1,5 @@
 // src/components/Home/Spotlight/RecipeCard/CardBack.jsx
-import React from 'react';
+import React, { memo } from 'react';
 import styled from 'styled-components';
 
 const ImageContainer = styled.div`
@@ -47,8 +47,8 @@ const ImageCaption = styled.p`
 const CardBack = ({ title, image, imageAlt, category }) => {
   return (
     <ImageContainer>
-      <RecipeImage 
-        src={image || '/api/placeholder/300/300'} 
+      <RecipeImage
+        src={image || '/api/placeholder/300/300'}
         alt={imageAlt || title}
       />
       <ImageOverlay>
@@ -59,4 +59,4 @@ const CardBack = ({ title, image, imageAlt, category }) => {
   );
 };
 
-export default CardBack;
+export default memo(CardBack);

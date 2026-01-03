@@ -1,5 +1,5 @@
 // src/components/Home/Spotlight/RecipeCard/RatingSystem.jsx
-import React from 'react';
+import React, { memo } from 'react';
 import styled from 'styled-components';
 
 const RatingContainer = styled.div`
@@ -48,4 +48,4 @@ const RatingSystem = ({ rating, onRate }) => {
   );
 };
 
-export default RatingSystem;
+export default memo(RatingSystem);
