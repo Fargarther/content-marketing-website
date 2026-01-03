@@ -1,0 +1,22 @@
+export const postItMessages = [
+  { text: "Salt early,\nsalt often", font: "Georgia, serif", style: "italic" },
+  { text: "A watched pot\neventually boils\n(be patient)", font: "Playfair Display, serif", style: "normal" },
+  { text: "TASTE\nAS YOU\nGO", font: "Impact, sans-serif", style: "normal" },
+  { text: "mise en place\n= inner peace", font: "Courier New, monospace", style: "normal" },
+  { text: "When in doubt,\nadd butter", font: "Comic Sans MS, cursive", style: "normal" },
+  { text: "The secret ingredient\nis always\nlove", font: "Brush Script MT, cursive", style: "normal" },
+  { text: "Sharp knives\nsave lives", font: "Arial Black, sans-serif", style: "normal" },
+  { text: "Season\nfearlessly", font: "Trebuchet MS, sans-serif", style: "normal" },
+  { text: "Good food\ntakes time", font: "Times New Roman, serif", style: "italic" },
+  { text: "Trust the\nprocess", font: "Verdana, sans-serif", style: "normal" },
+  { text: "Cook with\nwhat you have", font: "Palatino, serif", style: "normal" },
+  { text: "Every meal is\na memory", font: "Garamond, serif", style: "italic" },
+  { text: "ACID\nBALANCES\nFAT", font: "Franklin Gothic Medium, sans-serif", style: "normal" },
+  { text: "Simmer down\n& carry on", font: "Book Antiqua, serif", style: "normal" },
+  { text: "Life's too short\nfor bad coffee", font: "Lucida Console, monospace", style: "normal" },
+  { text: "embrace\nthe\nchaos", font: "Arial Narrow, sans-serif", style: "italic" },
+  { text: "Recipes are\nguidelines,\nnot rules", font: "Tahoma, sans-serif", style: "normal" },
+  { text: "burnt edges\n=\nextra flavor", font: "Courier New, monospace", style: "normal" },
+  { text: "Feed people\nwell", font: "Georgia, serif", style: "bold" },
+  { text: "Kitchen dance\nparties\nencouraged", font: "Comic Sans MS, cursive", style: "normal" }
+];

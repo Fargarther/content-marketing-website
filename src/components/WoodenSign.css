@@ -1,0 +1,45 @@
+.wooden-sign-container {
+    position: fixed;
+    /* Position it relative to the 'projects' area or specific spot */
+    left: var(--sign-x, 2600px);
+    /* Adjust based on where you want it horizontally in the world */
+    bottom: calc(var(--sign-ground-height, var(--ground-height, 120px)) - 20px);
+    width: 180px;
+    z-index: 20;
+    /* Above grass (z=6) */
+    transform: translate(var(--sign-scroll-offset, 0px), 0);
+    cursor: pointer;
+    will-change: transform;
+    /* transition: filter 0.2s ease;  Removed transform transition to fix scroll lag */
+    transform-origin: bottom center;
+}
+
+.wooden-sign-image {
+    width: 100%;
+    height: auto;
+    display: block;
+    filter: drop-shadow(2px 4px 6px rgba(0, 0, 0, 0.4));
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.wooden-sign-container:hover .wooden-sign-image {
+    transform: scale(1.05) rotate(2deg);
+    filter: drop-shadow(4px 8px 12px rgba(0, 0, 0, 0.5)) brightness(1.1);
+}
+
+.wooden-sign-container:focus {
+    outline: none;
+}
+
+.wooden-sign-container:focus .wooden-sign-image {
+    transform: scale(1.05);
+    filter: drop-shadow(0 0 0 4px rgba(255, 255, 255, 0.5));
+}
+
+@media (max-width: 768px) {
+    .wooden-sign-container {
+        width: 140px;
+        left: var(--sign-x-mobile, 1200px);
+        /* Adjust for mobile layout */
+    }
+}

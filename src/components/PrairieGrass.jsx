@@ -114,13 +114,16 @@ function sampleRidgeY(normalizedX, groundHeight = 140) {
   return baseY;
 }
 
-const PrairieGrass = ({ breeze = 'medium', spanCount = 1, scrollVelocityRef, trackRef, scrollStateRef } = {}) => {
+const PrairieGrass = ({ breeze = 'medium', spanCount = 1, scrollVelocityRef, trackRef, scrollStateRef, isPaused = false } = {}) => {
   const backCanvasRef = useRef(null);
   const frontCanvasRef = useRef(null);
   const pointerRef = useRef({ x: null, y: null });
   const timeRef = useRef(0);
   const lastTimeRef = useRef(0);
   const animationRef = useRef(null);
+  const isPausedRef = useRef(isPaused);
+  const startAnimationRef = useRef(null);
+  const stopAnimationRef = useRef(null);
 
   // Ref holds the chunks: { index: [blades] }
   // We use an object or Map for sparse storage, though array is fine if continuous.
@@ -130,9 +133,19 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1, scrollVelocityRef, tra
 
   const observerRef = useRef(null);
   const isVisibleRef = useRef(true);
+  const pageVisibleRef = useRef(true);
   const spritesReadyCountRef = useRef(0);
   const groundColorRef = useRef('#c4b5a0');
   const groundHeightRef = useRef(140);
+
+  useEffect(() => {
+    isPausedRef.current = isPaused;
+    if (isPaused) {
+      if (stopAnimationRef.current) stopAnimationRef.current();
+    } else if (startAnimationRef.current) {
+      startAnimationRef.current();
+    }
+  }, [isPaused]);
 
   useEffect(() => {
     // Load images asynchronously
@@ -387,6 +400,11 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1, scrollVelocityRef, tra
       timeRef.current = (timeRef.current + cdt) % 1000000000;
       const t = timeRef.current; // seconds
 
+      if (isPausedRef.current || !pageVisibleRef.current) {
+        animationRef.current = null;
+        return;
+      }
+
       if (!isVisibleRef.current) {
         animationRef.current = requestAnimationFrame(drawFrame);
         return;
@@ -539,7 +557,11 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1, scrollVelocityRef, tra
         ctx.restore();
       });
 
-      animationRef.current = requestAnimationFrame(drawFrame);
+      if (!isPausedRef.current) {
+        animationRef.current = requestAnimationFrame(drawFrame);
+      } else {
+        animationRef.current = null;
+      }
     };
 
     // Observers & Events
@@ -600,18 +622,51 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1, scrollVelocityRef, tra
 
     // Start Loop
     const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (!prefersReduced) {
-      animationRef.current = requestAnimationFrame(drawFrame);
-    } else {
-      drawFrame(0);
-      cancelAnimationFrame(animationRef.current);
+    const stopAnimation = () => {
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+      animationRef.current = null;
+    };
+
+    const startAnimation = () => {
+      if (isPausedRef.current) return;
+      if (prefersReduced) {
+        drawFrame(0);
+        stopAnimation();
+        return;
+      }
+      if (!pageVisibleRef.current) return;
+      if (!animationRef.current) {
+        lastTimeRef.current = 0;
+        animationRef.current = requestAnimationFrame(drawFrame);
+      }
+    };
+
+    startAnimationRef.current = startAnimation;
+    stopAnimationRef.current = stopAnimation;
+
+    pageVisibleRef.current = !document.hidden;
+    if (!isPausedRef.current) {
+      startAnimation();
     }
 
+    const handleVisibility = () => {
+      pageVisibleRef.current = !document.hidden;
+      if (!pageVisibleRef.current) {
+        stopAnimation();
+        return;
+      }
+      if (!isPausedRef.current) startAnimation();
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
     return () => {
-      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+      stopAnimation();
       if (observerRef.current && frontCanvas) observerRef.current.unobserve(frontCanvas);
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('carousel-gust', handleCarouselGust);
+      document.removeEventListener('visibilitychange', handleVisibility);
+      startAnimationRef.current = null;
+      stopAnimationRef.current = null;
     };
 
   }, [breeze]); // Re-init on breeze change? Maybe overkill but safe.

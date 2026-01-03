@@ -1,14 +1,17 @@
-import React, { useEffect, useRef, useCallback, useState } from 'react';
+import React, { useEffect, useRef, useCallback, useState, lazy, Suspense } from 'react';
 import GroundNav from '../components/GroundNav';
 import PrairieGrass from '../components/PrairieGrass';
 import Sky from '../components/Sky';
 import Windmill from '../components/Windmill';
+import WoodenSign from '../components/WoodenSign';
+const BulletinBoardModal = lazy(() => import('../components/BulletinBoard/BulletinBoardModal'));
 import './Home.css';
 
 export default function Home() {
   const PANEL_COUNT = 5;
   const trackRef = useRef(null);
   const touchRef = useRef(null);
+  const [isBoardOpen, setIsBoardOpen] = useState(false);
   const [totalWidth, setTotalWidth] = useState(
     typeof window !== 'undefined' ? window.innerWidth * PANEL_COUNT : 0
   );
@@ -43,6 +46,8 @@ export default function Home() {
     if (!track) return;
     if (track.scrollWidth <= track.clientWidth) return;
     if (e.ctrlKey) return; // let zoom gestures through
+    if (isBoardOpen) return;
+
     const delta = Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
     if (delta === 0) return;
     const max = track.scrollWidth - track.clientWidth;
@@ -76,7 +81,7 @@ export default function Home() {
       animFrameRef.current = requestAnimationFrame(step);
     }
     e.preventDefault();
-  }, []);
+  }, [isBoardOpen]);
 
   // Touch/pan: convert vertical or horizontal drags into horizontal scroll
   useEffect(() => {
@@ -85,12 +90,14 @@ export default function Home() {
 
     const onTouchStart = (e) => {
       if (track.scrollWidth <= track.clientWidth) return;
+      if (isBoardOpen) return;
       const t = e.touches[0];
       touchRef.current = { x: t.clientX, y: t.clientY };
     };
 
     const onTouchMove = (e) => {
       if (!touchRef.current || track.scrollWidth <= track.clientWidth) return;
+      if (isBoardOpen) return;
       const t = e.touches[0];
       const dx = t.clientX - touchRef.current.x;
       const dy = t.clientY - touchRef.current.y;
@@ -113,7 +120,7 @@ export default function Home() {
       track.removeEventListener('touchend', onTouchEnd);
       track.removeEventListener('touchcancel', onTouchEnd);
     };
-  }, []);
+  }, [isBoardOpen]);
 
   // Track total width for synced ground/grass
   useEffect(() => {
@@ -153,6 +160,7 @@ export default function Home() {
   return (
     <div
       className="horizontal-shell"
+      data-board-open={isBoardOpen ? 'true' : 'false'}
       style={{
         '--panel-count': PANEL_COUNT,
         '--ground-nav-height': `${groundVisualHeight}px`,
@@ -197,8 +205,15 @@ export default function Home() {
 
       </div>
 
-      <Windmill scrollStateRef={scrollStateRef} />
-      <PrairieGrass spanCount={PANEL_COUNT} scrollVelocityRef={velocityRef} trackRef={trackRef} scrollStateRef={scrollStateRef} />
+      <Windmill trackRef={trackRef} />
+      <WoodenSign trackRef={trackRef} onClick={() => setIsBoardOpen(true)} />
+      <PrairieGrass
+        spanCount={PANEL_COUNT}
+        scrollVelocityRef={velocityRef}
+        trackRef={trackRef}
+        scrollStateRef={scrollStateRef}
+        isPaused={isBoardOpen}
+      />
 
       {/* GroundNav moved outside to enforce z-index layering (Sky < Grass < Ground) */}
       <GroundNav
@@ -209,7 +224,11 @@ export default function Home() {
       />
 
       {/* Pass totalWidth to Sky to help it scale speeds if needed, though we hardcoded them */}
-      <Sky scrollVelocityRef={velocityRef} trackRef={trackRef} scrollStateRef={scrollStateRef} />
+      <Sky trackRef={trackRef} scrollStateRef={scrollStateRef} />
+
+      <Suspense fallback={null}>
+        <BulletinBoardModal isOpen={isBoardOpen} onClose={() => setIsBoardOpen(false)} />
+      </Suspense>
     </div>
   );
 }

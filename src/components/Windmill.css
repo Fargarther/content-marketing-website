@@ -70,3 +70,7 @@
     width: calc(clamp(180px, 40vw, 260px) * var(--windmill-scale));
   }
 }
+
+.horizontal-shell[data-board-open="true"] .windmill-blades-wrap {
+  animation-play-state: paused;
+}

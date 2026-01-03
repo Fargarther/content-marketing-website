@@ -3,13 +3,12 @@ import windmillBase from '../assets/windmill_base.png';
 import windmillBlades from '../assets/windmill_blades.png';
 import './Windmill.css';
 
-export default function Windmill({ scrollStateRef } = {}) {
+export default function Windmill({ trackRef } = {}) {
   const containerRef = useRef(null);
-  const rafRef = useRef(null);
   const bladesWrapRef = useRef(null);
   const hoverRafRef = useRef(null);
   const hoverAngleRef = useRef(0);
-  const pointerRef = useRef({ x: null, y: null });
+  const targetAngleRef = useRef(0);
   const [groundHeight, setGroundHeight] = useState(null);
   const [baseTrim, setBaseTrim] = useState(null);
   const [hubPoint, setHubPoint] = useState(null);
@@ -150,50 +149,68 @@ export default function Windmill({ scrollStateRef } = {}) {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
+    const updateTargetAngle = (clientX, clientY) => {
+      const wrap = bladesWrapRef.current;
+      if (!wrap) return;
+
+      const rect = wrap.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const dx = clientX - centerX;
+      const dy = clientY - centerY;
+      const distance = Math.hypot(dx, dy);
+      const radius = Math.max(rect.width, rect.height) * 0.55;
+
+      if (distance <= radius) {
+        targetAngleRef.current = (Math.atan2(dy, dx) * 180) / Math.PI;
+      } else {
+        targetAngleRef.current = 0;
+      }
+    };
+
+    const step = () => {
+      const wrap = bladesWrapRef.current;
+      if (!wrap) {
+        hoverRafRef.current = null;
+        return;
+      }
+
+      const targetAngle = targetAngleRef.current;
+      const current = hoverAngleRef.current;
+      const delta = ((targetAngle - current + 540) % 360) - 180;
+      const nextAngle = current + delta * 0.12;
+      hoverAngleRef.current = nextAngle;
+
+      wrap.style.setProperty('--windmill-blades-hover-rot', `${nextAngle.toFixed(2)}deg`);
+
+      if (Math.abs(delta) < 0.05) {
+        wrap.style.setProperty('--windmill-blades-hover-rot', `${targetAngle.toFixed(2)}deg`);
+        hoverAngleRef.current = targetAngle;
+        hoverRafRef.current = null;
+        return;
+      }
+
+      hoverRafRef.current = requestAnimationFrame(step);
+    };
+
+    const startHoverRaf = () => {
+      if (hoverRafRef.current) return;
+      hoverRafRef.current = requestAnimationFrame(step);
+    };
+
     const handleMove = (event) => {
-      pointerRef.current = { x: event.clientX, y: event.clientY };
+      updateTargetAngle(event.clientX, event.clientY);
+      startHoverRaf();
     };
 
     const handleLeave = () => {
-      pointerRef.current = { x: null, y: null };
+      targetAngleRef.current = 0;
+      startHoverRaf();
     };
 
     window.addEventListener('mousemove', handleMove);
     window.addEventListener('mouseleave', handleLeave);
 
-    const update = () => {
-      const wrap = bladesWrapRef.current;
-      if (wrap) {
-        const rect = wrap.getBoundingClientRect();
-        const centerX = rect.left + rect.width / 2;
-        const centerY = rect.top + rect.height / 2;
-        const { x, y } = pointerRef.current;
-
-        let targetAngle = 0;
-        if (x !== null && y !== null) {
-          const dx = x - centerX;
-          const dy = y - centerY;
-          const distance = Math.hypot(dx, dy);
-          const radius = Math.max(rect.width, rect.height) * 0.55;
-
-          if (distance <= radius) {
-            const angleDeg = (Math.atan2(dy, dx) * 180) / Math.PI;
-            targetAngle = angleDeg;
-          }
-        }
-
-        const current = hoverAngleRef.current;
-        const delta = ((targetAngle - current + 540) % 360) - 180;
-        const nextAngle = current + delta * 0.12;
-        hoverAngleRef.current = nextAngle;
-
-        wrap.style.setProperty('--windmill-blades-hover-rot', `${nextAngle.toFixed(2)}deg`);
-      }
-
-      hoverRafRef.current = requestAnimationFrame(update);
-    };
-
-    hoverRafRef.current = requestAnimationFrame(update);
     return () => {
       if (hoverRafRef.current) cancelAnimationFrame(hoverRafRef.current);
       window.removeEventListener('mousemove', handleMove);
@@ -202,21 +219,26 @@ export default function Windmill({ scrollStateRef } = {}) {
   }, []);
 
   useEffect(() => {
-    if (typeof window === 'undefined' || !scrollStateRef) return;
+    if (typeof window === 'undefined') return;
+
+    const track = trackRef?.current;
+    if (!track) return;
 
     const update = () => {
-      const scrollLeft = scrollStateRef?.current?.scrollLeft || 0;
+      const scrollLeft = track.scrollLeft || 0;
       if (containerRef.current) {
         containerRef.current.style.setProperty('--windmill-scroll-offset', `${-scrollLeft}px`);
       }
-      rafRef.current = requestAnimationFrame(update);
     };
 
-    rafRef.current = requestAnimationFrame(update);
+    update();
+    track.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', update);
     return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      track.removeEventListener('scroll', update);
+      window.removeEventListener('resize', update);
     };
-  }, [scrollStateRef]);
+  }, [trackRef]);
 
   const style = {};
   if (Number.isFinite(groundHeight)) {
