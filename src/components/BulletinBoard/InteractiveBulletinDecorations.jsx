@@ -374,6 +374,18 @@ const InteractiveBulletinDecorations = forwardRef(({ boardRef }, ref) => {
   const handleDiscardComplete = useCallback((postItId) => {
     setPostIts(prev => prev.filter(p => p.id !== postItId));
   }, []);
+
+  // Add pointer event listeners
+  useEffect(() => {
+    if (draggedItem) {
+      document.addEventListener('pointermove', handlePointerMove);
+      document.addEventListener('pointerup', handlePointerUp);
+      return () => {
+        document.removeEventListener('pointermove', handlePointerMove);
+        document.removeEventListener('pointerup', handlePointerUp);
+      };
+    }
+  }, [draggedItem, handlePointerMove, handlePointerUp]);
   
   // Add specific sticker type
   const addSticker = (stickerType) => {
@@ -455,9 +467,6 @@ const InteractiveBulletinDecorations = forwardRef(({ boardRef }, ref) => {
       <Stickers 
         stickers={stickers}
         onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
         onDoubleClick={deleteSticker}
         draggedItem={draggedItem}
       />
@@ -466,9 +475,6 @@ const InteractiveBulletinDecorations = forwardRef(({ boardRef }, ref) => {
       <PostItNotes
         postIts={postIts}
         onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
         draggedItem={draggedItem}
         onDiscardComplete={handleDiscardComplete}
       />

@@ -36,8 +36,9 @@ const PostItNote = styled.div`
   transform: translate3d(var(--x), var(--y), 0) rotate(var(--r));
   background-color: ${props => props.$color};
   padding: 20px 15px 15px;
-  box-shadow: ${props => props.$isDragging ? 'none' : '0 3px 6px rgba(0,0,0,0.1)'};
+  box-shadow: ${props => (props.$isDragging && !props.$falling) ? 'none' : '0 3px 6px rgba(0,0,0,0.1)'};
   cursor: ${props => props.$isDragging ? 'grabbing' : 'grab'};
+  touch-action: ${props => (props.$isDragging && !props.$falling) ? 'none' : 'auto'};
   z-index: ${props => props.$falling ? 61 : props.$isDragging ? 60 : 5};
   transition: ${props => props.$falling ? 'none' : 'box-shadow 0.2s'};
   animation: ${props => props.$falling ? fallAnimation : 'none'} ${props => props.$fallDuration || 1.2}s cubic-bezier(0.45, 0, 0.55, 1) forwards;
@@ -52,6 +53,7 @@ const PostItNote = styled.div`
   /* Tape effect */
   &:before {
     content: '';
+    display: ${props => (props.$isDragging && !props.$falling) ? 'none' : 'block'};
     position: absolute;
     top: -8px;
     left: 50%;
@@ -65,6 +67,7 @@ const PostItNote = styled.div`
   /* Curl effect */
   &:after {
     content: '';
+    display: ${props => (props.$isDragging && !props.$falling) ? 'none' : 'block'};
     position: absolute;
     bottom: 0;
     right: 0;

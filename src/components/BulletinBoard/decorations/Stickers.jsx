@@ -14,6 +14,7 @@ const Sticker = styled.div`
   transform: translate3d(var(--x), var(--y), 0) rotate(var(--r));
   cursor: move;
   user-select: none;
+  touch-action: ${props => props.$isDragging ? 'none' : 'auto'};
   filter: ${props => props.$isDragging ? 'none' : 'drop-shadow(0 2px 4px rgba(0,0,0,0.15))'};
   opacity: 0.85;
   transition: ${props => props.$isDragging ? 'none' : 'transform 0.2s, opacity 0.2s'};
