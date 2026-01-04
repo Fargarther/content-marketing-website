@@ -83,6 +83,15 @@ export default function Home() {
     e.preventDefault();
   }, [isBoardOpen]);
 
+  // Attach wheel listener with passive: false to allow preventDefault
+  useEffect(() => {
+    const track = trackRef.current;
+    if (!track) return;
+
+    track.addEventListener('wheel', handleWheel, { passive: false });
+    return () => track.removeEventListener('wheel', handleWheel);
+  }, [handleWheel]);
+
   // Touch/pan: convert vertical or horizontal drags into horizontal scroll
   useEffect(() => {
     const track = trackRef.current;
@@ -167,7 +176,7 @@ export default function Home() {
         '--ground-height': `${groundVisualHeight}px`,
       }}
     >
-      <div className="scroll-track" ref={trackRef} onWheel={handleWheel}>
+      <div className="scroll-track" ref={trackRef}>
         <section className="panel hero-panel" id="home">
           <div className="panel-inner">
             <p className="eyebrow">Content Marketing Studio</p>
