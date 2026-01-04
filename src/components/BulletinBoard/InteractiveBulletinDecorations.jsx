@@ -5,6 +5,7 @@ import Stickers from './decorations/Stickers';
 import { SeasonalStickers } from './decorations/stickerData.jsx';
 import PostItNotes from './decorations/PostItNotes';
 import { postItMessages } from './decorations/postItMessages';
+import { useDragProxy } from './useDragProxy';
 
 // Add New Item Button with animated icon
 const AddButton = styled.button`
@@ -125,25 +126,51 @@ const InteractiveBulletinDecorations = forwardRef(({ boardRef }, ref) => {
     const saved = localStorage.getItem('bulletinStickers');
     return saved ? JSON.parse(saved) : [];
   });
-  
+
   const [postIts, setPostIts] = useState(() => {
     // Always start fresh with new wisdom notes on page load
     return [];
   });
-  
-  const [draggedItem, setDraggedItem] = useState(null);
+
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [showStickerMenu, setShowStickerMenu] = useState(false);
-  const dragStartRef = useRef({ x: 0, y: 0 });
-  const velocityRef = useRef({ x: 0, y: 0 });
-  const lastPosRef = useRef({ x: 0, y: 0, time: 0 });
-  const pendingDragRef = useRef(null);
-  const dragRafRef = useRef(null);
-  const draggedItemRef = useRef(null);
-  const draggedElementRef = useRef(null);
-  const dragOriginRef = useRef({ x: 0, y: 0, rotate: 0 });
-  const dragPointerIdRef = useRef(null);
+  const containerRef = useRef(null);
   const saveTimeoutRef = useRef(null);
+
+  // Handle drag commit from proxy system
+  const onCommit = useCallback(({ kind, id, x, y }) => {
+    if (kind === "sticker") {
+      setStickers((prev) =>
+        prev.map((s) => (String(s.id) === String(id) ? { ...s, x, y } : s))
+      );
+      return;
+    }
+    if (kind === "postit") {
+      // For post-its: update position and trigger fall animation
+      setPostIts((prev) =>
+        prev.map((p) =>
+          String(p.id) === String(id)
+            ? {
+                ...p,
+                x,
+                y,
+                falling: true,
+                throwX: 0,
+                throwY: 50,
+                spinAmount: (Math.random() - 0.5) * 20,
+                fallDuration: 1.2,
+              }
+            : p
+        )
+      );
+    }
+  }, []);
+
+  const { onPointerDownCapture } = useDragProxy({
+    boardRef: containerRef,
+    onCommit,
+    enableThrow: true,
+  });
   
   // Expose clear methods to parent component
   useImperativeHandle(ref, () => ({
@@ -206,7 +233,6 @@ const InteractiveBulletinDecorations = forwardRef(({ boardRef }, ref) => {
   
   // Save to localStorage when items change
   useEffect(() => {
-    if (draggedItem?.type === 'sticker') return;
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     saveTimeoutRef.current = setTimeout(() => {
       localStorage.setItem('bulletinStickers', JSON.stringify(stickers));
@@ -214,179 +240,12 @@ const InteractiveBulletinDecorations = forwardRef(({ boardRef }, ref) => {
     return () => {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     };
-  }, [stickers, draggedItem]);
-
-  // Handle pointer down for dragging
-  const handlePointerDown = (e, itemId, itemType) => {
-    if (itemType === 'postit' || e.pointerType !== 'mouse') {
-      e.preventDefault();
-    }
-    e.stopPropagation();
-    
-    const item = itemType === 'sticker' 
-      ? stickers.find(s => s.id === itemId)
-      : postIts.find(p => p.id === itemId);
-    
-    if (!item) return;
-    
-    if (e.currentTarget.setPointerCapture) {
-      e.currentTarget.setPointerCapture(e.pointerId);
-    }
-    dragPointerIdRef.current = e.pointerId;
-    const clientX = e.clientX;
-    const clientY = e.clientY;
-    
-    dragStartRef.current = {
-      x: clientX - item.x,
-      y: clientY - item.y
-    };
-    const nextDraggedItem = { id: itemId, type: itemType };
-    draggedItemRef.current = nextDraggedItem;
-    setDraggedItem(nextDraggedItem);
-    draggedElementRef.current = e.currentTarget;
-    dragOriginRef.current = { x: item.x, y: item.y, rotate: Number(item.rotate) || 0 };
-    
-    // Reset velocity tracking
-    velocityRef.current = { x: 0, y: 0 };
-    lastPosRef.current = { x: clientX, y: clientY, time: Date.now() };
-  };
-  
-  // Handle pointer move
-  const handlePointerMove = useCallback((e) => {
-    if (!draggedItemRef.current) return;
-    if (dragPointerIdRef.current !== null && e.pointerId !== dragPointerIdRef.current) return;
-    if (e.pointerType !== 'mouse') {
-      e.preventDefault();
-    }
-
-    const clientX = e.clientX;
-    const clientY = e.clientY;
-    const currentTime = Date.now();
-    
-    const newX = clientX - dragStartRef.current.x;
-    const newY = clientY - dragStartRef.current.y;
-    
-    // Calculate velocity
-    const timeDiff = currentTime - lastPosRef.current.time;
-    if (timeDiff > 8) { // Only calculate if at least 8ms has passed (~120fps)
-      const vx = (clientX - lastPosRef.current.x) / timeDiff;
-      const vy = (clientY - lastPosRef.current.y) / timeDiff;
-      
-      // Smooth velocity with averaging (more weight on current velocity for responsiveness)
-      velocityRef.current.x = velocityRef.current.x * 0.2 + vx * 0.8;
-      velocityRef.current.y = velocityRef.current.y * 0.2 + vy * 0.8;
-    }
-    
-    lastPosRef.current = { x: clientX, y: clientY, time: currentTime };
-    
-    pendingDragRef.current = { x: newX, y: newY };
-    if (!dragRafRef.current) {
-      dragRafRef.current = requestAnimationFrame(() => {
-        dragRafRef.current = null;
-        const pending = pendingDragRef.current;
-        const element = draggedElementRef.current;
-        const currentItem = draggedItemRef.current;
-        if (!pending || !element || !currentItem) return;
-        element.style.setProperty('--x', `${pending.x}px`);
-        element.style.setProperty('--y', `${pending.y}px`);
-      });
-    }
-  }, []);
-  
-  // Handle pointer up - post-its fall when released
-  const handlePointerUp = useCallback((e) => {
-    if (dragPointerIdRef.current !== null && e.pointerId !== dragPointerIdRef.current) return;
-    const releasedItem = draggedItemRef.current;
-    const pending = pendingDragRef.current;
-    const finalX = pending ? pending.x : dragOriginRef.current.x;
-    const finalY = pending ? pending.y : dragOriginRef.current.y;
-    const element = draggedElementRef.current;
-    if (element && element.releasePointerCapture && dragPointerIdRef.current !== null) {
-      element.releasePointerCapture(dragPointerIdRef.current);
-    }
-
-    if (releasedItem && releasedItem.type === 'postit') {
-      const vx = velocityRef.current.x;
-      const vy = velocityRef.current.y;
-      
-      // Calculate throw power ONCE
-      const calculatedThrowPower = Math.sqrt(vx * vx + vy * vy);
-      
-      // Calculate throw distance based on velocity
-      const throwX = vx * 350; // Slightly reduced for more control
-      const throwY = Math.max(vy * 200, -100); // Reduced vertical movement
-      
-      // Add slight downward bias for gentle releases
-      const adjustedThrowY = calculatedThrowPower < 0.5 ? throwY + 50 : throwY;
-      
-      // Calculate spin based on horizontal velocity (only spin if moving fast enough)
-      const spinThreshold = 0.2; // Lowered for more responsive spinning
-      let spinAmount = 0;
-      
-      if (Math.abs(vx) > spinThreshold) {
-        // Fast movement - calculated spin (direction based on throw direction)
-        // More spin for really fast throws
-        const spinMultiplier = Math.abs(vx) > 1 ? 200 : 150;
-        spinAmount = (30 + Math.abs(vx) * spinMultiplier) * (vx > 0 ? 1 : -1);
-      } else {
-        // Gentle release - very subtle wobble for natural look (±2-8 degrees)
-        const wobble = 2 + Math.random() * 6;
-        spinAmount = Math.random() > 0.5 ? wobble : -wobble;
-      }
-      
-      // Calculate duration based on throw power (faster fall time)
-      const fallDuration = 1.2 + Math.min(calculatedThrowPower * 0.3, 0.5);
-      
-      // Update the post-it with fall animation immediately
-      setPostIts(prev => prev.map(p => 
-        p.id === releasedItem.id 
-          ? { 
-              ...p, 
-              x: finalX,
-              y: finalY,
-              falling: true, 
-              throwX,
-              throwY: adjustedThrowY,
-              spinAmount,
-              fallDuration
-            } 
-          : p
-      ));
-    } else if (releasedItem && releasedItem.type === 'sticker') {
-      setStickers(prev => prev.map(s => 
-        s.id === releasedItem.id ? { ...s, x: finalX, y: finalY } : s
-      ));
-    }
-    
-    if (dragRafRef.current) {
-      cancelAnimationFrame(dragRafRef.current);
-      dragRafRef.current = null;
-    }
-    pendingDragRef.current = null;
-    draggedItemRef.current = null;
-    dragOriginRef.current = { x: 0, y: 0, rotate: 0 };
-    draggedElementRef.current = null;
-    dragPointerIdRef.current = null;
-    setDraggedItem(null);
-    velocityRef.current = { x: 0, y: 0 };
-  }, []);
+  }, [stickers]);
 
   const handleDiscardComplete = useCallback((postItId) => {
     setPostIts(prev => prev.filter(p => p.id !== postItId));
   }, []);
 
-  // Add pointer event listeners
-  useEffect(() => {
-    if (draggedItem) {
-      document.addEventListener('pointermove', handlePointerMove);
-      document.addEventListener('pointerup', handlePointerUp);
-      return () => {
-        document.removeEventListener('pointermove', handlePointerMove);
-        document.removeEventListener('pointerup', handlePointerUp);
-      };
-    }
-  }, [draggedItem, handlePointerMove, handlePointerUp]);
-  
   // Add specific sticker type
   const addSticker = (stickerType) => {
     if (!boardRef?.current) return;
@@ -462,23 +321,27 @@ const InteractiveBulletinDecorations = forwardRef(({ boardRef }, ref) => {
   };
   
   return (
-    <>
+    <div
+      ref={containerRef}
+      onPointerDownCapture={onPointerDownCapture}
+      style={{
+        position: 'absolute',
+        inset: 0,
+        pointerEvents: 'auto',
+      }}
+    >
       {/* Render Stickers */}
-      <Stickers 
+      <Stickers
         stickers={stickers}
-        onPointerDown={handlePointerDown}
         onDoubleClick={deleteSticker}
-        draggedItem={draggedItem}
       />
-      
+
       {/* Render Post-its */}
       <PostItNotes
         postIts={postIts}
-        onPointerDown={handlePointerDown}
-        draggedItem={draggedItem}
         onDiscardComplete={handleDiscardComplete}
       />
-      
+
       {/* Add Button */}
       <AddButton 
         onClick={() => {
@@ -515,7 +378,7 @@ const InteractiveBulletinDecorations = forwardRef(({ boardRef }, ref) => {
           ))}
         </StickerGrid>
       </AddMenu>
-    </>
+    </div>
   );
 });
 
