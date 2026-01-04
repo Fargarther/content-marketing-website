@@ -4,7 +4,7 @@ import styled from 'styled-components';
 import BulletinBoard from './BulletinBoard';
 import RecipeCard from './RecipeCard/Index';
 import ControlBar from './ControlBar';
-import InteractiveBulletinDecorations from './InteractiveBulletinDecorations';
+import { InteractiveBulletinDecorationsV2 as InteractiveBulletinDecorations } from '../BulletinBoardV2';
 import useDragAndDrop from './hooks/useDragAndDrop';
 import useCardManagement from './hooks/useCardManagement';
 import { recipeData } from '../../data/recipes';
