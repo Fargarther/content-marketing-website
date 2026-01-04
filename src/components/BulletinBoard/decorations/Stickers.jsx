@@ -16,7 +16,7 @@ const Sticker = styled.div`
   user-select: none;
   filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
   opacity: 0.85;
-  transition: transform 0.2s, opacity 0.2s;
+  transition: ${props => props.$isDragging ? 'none' : 'transform 0.2s, opacity 0.2s'};
   z-index: ${props => props.$isDragging ? 50 : 4};
   will-change: transform;
   

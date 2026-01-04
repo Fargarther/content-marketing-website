@@ -1,5 +1,5 @@
 // src/components/Home/Spotlight/InteractiveBulletinDecorations.jsx
-import React, { useState, useEffect, useRef, useImperativeHandle, forwardRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useImperativeHandle, forwardRef, useCallback, useLayoutEffect } from 'react';
 import styled from 'styled-components';
 import Stickers from './decorations/Stickers';
 import { SeasonalStickers } from './decorations/stickerData.jsx';
@@ -140,6 +140,9 @@ const InteractiveBulletinDecorations = forwardRef(({ boardRef }, ref) => {
   const pendingDragRef = useRef(null);
   const dragRafRef = useRef(null);
   const draggedItemRef = useRef(null);
+  const draggedElementRef = useRef(null);
+  const dragOriginRef = useRef({ x: 0, y: 0, rotate: 0 });
+  const dragCleanupRef = useRef(null);
   const saveTimeoutRef = useRef(null);
   
   // Expose clear methods to parent component
@@ -212,6 +215,14 @@ const InteractiveBulletinDecorations = forwardRef(({ boardRef }, ref) => {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     };
   }, [stickers, draggedItem]);
+
+  useLayoutEffect(() => {
+    if (!draggedItem && dragCleanupRef.current) {
+      const element = dragCleanupRef.current;
+      element.style.transform = '';
+      dragCleanupRef.current = null;
+    }
+  }, [draggedItem]);
   
   // Handle mouse down for dragging
   const handleMouseDown = (e, itemId, itemType) => {
@@ -234,6 +245,8 @@ const InteractiveBulletinDecorations = forwardRef(({ boardRef }, ref) => {
     const nextDraggedItem = { id: itemId, type: itemType };
     draggedItemRef.current = nextDraggedItem;
     setDraggedItem(nextDraggedItem);
+    draggedElementRef.current = e.currentTarget;
+    dragOriginRef.current = { x: item.x, y: item.y, rotate: Number(item.rotate) || 0 };
     
     // Reset velocity tracking
     velocityRef.current = { x: 0, y: 0 };
@@ -269,17 +282,13 @@ const InteractiveBulletinDecorations = forwardRef(({ boardRef }, ref) => {
       dragRafRef.current = requestAnimationFrame(() => {
         dragRafRef.current = null;
         const pending = pendingDragRef.current;
+        const element = draggedElementRef.current;
         const currentItem = draggedItemRef.current;
-        if (!pending || !currentItem) return;
-        if (currentItem.type === 'sticker') {
-          setStickers(prev => prev.map(s => 
-            s.id === currentItem.id ? { ...s, x: pending.x, y: pending.y } : s
-          ));
-        } else {
-          setPostIts(prev => prev.map(p => 
-            p.id === currentItem.id ? { ...p, x: pending.x, y: pending.y } : p
-          ));
-        }
+        if (!pending || !element || !currentItem) return;
+        const origin = dragOriginRef.current;
+        const deltaX = pending.x - origin.x;
+        const deltaY = pending.y - origin.y;
+        element.style.transform = `translate3d(${deltaX}px, ${deltaY}px, 0) rotate(${origin.rotate}deg)`;
       });
     }
   }, []);
@@ -287,6 +296,10 @@ const InteractiveBulletinDecorations = forwardRef(({ boardRef }, ref) => {
   // Handle mouse up - post-its fall when released
   const handleMouseUp = useCallback(() => {
     const releasedItem = draggedItemRef.current;
+    const pending = pendingDragRef.current;
+    const finalX = pending ? pending.x : dragOriginRef.current.x;
+    const finalY = pending ? pending.y : dragOriginRef.current.y;
+
     if (releasedItem && releasedItem.type === 'postit') {
       const vx = velocityRef.current.x;
       const vy = velocityRef.current.y;
@@ -324,6 +337,8 @@ const InteractiveBulletinDecorations = forwardRef(({ boardRef }, ref) => {
         p.id === releasedItem.id 
           ? { 
               ...p, 
+              x: finalX,
+              y: finalY,
               falling: true, 
               throwX,
               throwY: adjustedThrowY,
@@ -337,26 +352,21 @@ const InteractiveBulletinDecorations = forwardRef(({ boardRef }, ref) => {
       setTimeout(() => {
         setPostIts(prev => prev.filter(p => p.id !== releasedItem.id));
       }, (fallDuration * 1000) + 100);
+    } else if (releasedItem && pending) {
+      setStickers(prev => prev.map(s => 
+        s.id === releasedItem.id ? { ...s, x: finalX, y: finalY } : s
+      ));
     }
     
     if (dragRafRef.current) {
       cancelAnimationFrame(dragRafRef.current);
       dragRafRef.current = null;
     }
-    if (pendingDragRef.current && releasedItem) {
-      const pending = pendingDragRef.current;
-      if (releasedItem.type === 'sticker') {
-        setStickers(prev => prev.map(s => 
-          s.id === releasedItem.id ? { ...s, x: pending.x, y: pending.y } : s
-        ));
-      } else {
-        setPostIts(prev => prev.map(p => 
-          p.id === releasedItem.id ? { ...p, x: pending.x, y: pending.y } : p
-        ));
-      }
-    }
     pendingDragRef.current = null;
     draggedItemRef.current = null;
+    dragOriginRef.current = { x: 0, y: 0, rotate: 0 };
+    dragCleanupRef.current = draggedElementRef.current;
+    draggedElementRef.current = null;
     setDraggedItem(null);
     velocityRef.current = { x: 0, y: 0 };
   }, []);

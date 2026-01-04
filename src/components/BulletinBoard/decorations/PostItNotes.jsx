@@ -7,18 +7,18 @@ import styled, { keyframes } from 'styled-components';
 // Falling animation with directional movement - starts immediately
 const fallAnimation = keyframes`
   from {
-    transform: translate(0, 0) rotate(var(--rotate));
+    transform: translate3d(0, 0, 0) rotate(var(--rotate));
     opacity: 1;
   }
   15% {
-    transform: translate(calc(var(--throwX) * 0.2), calc(var(--throwY) * 0.15)) rotate(calc(var(--rotate) + var(--spinAmount) * 0.1));
+    transform: translate3d(calc(var(--throwX) * 0.2), calc(var(--throwY) * 0.15), 0) rotate(calc(var(--rotate) + var(--spinAmount) * 0.1));
     opacity: 1;
   }
   80% {
     opacity: 0.8;
   }
   to {
-    transform: translate(calc(var(--throwX) * 1.2), calc(100vh + var(--throwY))) rotate(calc(var(--rotate) + var(--spinAmount)));
+    transform: translate3d(calc(var(--throwX) * 1.2), calc(100vh + var(--throwY)), 0) rotate(calc(var(--rotate) + var(--spinAmount)));
     opacity: 0;
   }
 `;
