@@ -70,120 +70,61 @@ const useDragAndDrop = (cards, setCards, boardRef) => {
     }
   }, [boardRef, cards, setCardPositions]);
 
-  const handleCardMouseDown = useCallback((e, cardId) => {
-    e.preventDefault();
-    
-    // Don't initiate drag if clicking on interactive elements
-    if (e.target.classList.contains('star') || 
-        e.target.classList.contains('flip-indicator') ||
-        e.target.classList.contains('expand-button') ||
-        e.target.classList.contains('comments-button') ||
-        e.target.classList.contains('pin-button') ||
-        e.target.closest('.pin-button')) {
-      return;
-    }
-    
-    // Bring card to front
-    setCards(prevCards => 
-      prevCards.map(card => ({
-        ...card,
-        zIndex: card.id === cardId 
-          ? Math.max(...prevCards.map(c => c.zIndex)) + 1 
-          : card.zIndex
-      }))
-    );
-    
-    // Record starting position
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    
-    // Get board rect for calculations
-    const board = boardRef.current;
-    const boardRect = board.getBoundingClientRect();
-    boardRectRef.current = boardRect;
-    boardSizeRef.current = { width: board.offsetWidth, height: board.offsetHeight };
-    
-    // Get current card position (accounting for the margin-left)
-    const currentPos = positionsRef.current[cardId] || { x: 0, y: 0 };
-    const activeCardData = cards.find(card => card.id === cardId);
-    if (!activeCardData) return;
-    const rotatedBox = getRotatedBoundingBox(CARD_DIMENSIONS.width, CARD_DIMENSIONS.height, activeCardData.rotate);
-    dragMetaRef.current = {
-      widthDiff: (rotatedBox.width - CARD_DIMENSIONS.width) / 2,
-      heightDiff: (rotatedBox.height - CARD_DIMENSIONS.height) / 2,
-      cardWidth: CARD_DIMENSIONS.width,
-      cardHeight: CARD_DIMENSIONS.height
-    };
-    
-    // Calculate cursor position relative to card's top-left corner
-    // Add 13px to account for the margin-left on CardContainer
-    const offsetX = clientX - boardRect.left - currentPos.x - 13;
-    const offsetY = clientY - boardRect.top - currentPos.y;
-    
-    dragStartPosRef.current = { x: offsetX, y: offsetY };
-    activeCardRef.current = cardId;
-    setActiveCard(cardId);
-  }, [setCards, boardRef, cards]);
-
-  const handleMouseMove = useCallback((e) => {
+  // FULLY IMPERATIVE drag handlers - NO React state updates during drag!
+  const handleMouseMoveImperative = (e) => {
     if (!activeCardRef.current || !boardRef.current) return;
-    
+
     e.preventDefault();
-    
+
     const boardRect = boardRectRef.current;
     if (!boardRect) return;
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    
+
     const { widthDiff, heightDiff, cardWidth, cardHeight } = dragMetaRef.current;
-    
+
     // Calculate new position relative to the board
-    // Subtract 13px to account for the margin-left offset
     let x = clientX - boardRect.left - dragStartPosRef.current.x - 13;
     let y = clientY - boardRect.top - dragStartPosRef.current.y;
-    
+
     // Apply boundary constraints
     const boardWidth = boardSizeRef.current.width;
     const boardHeight = boardSizeRef.current.height;
-    
-    // Simple boundaries that match getRandomPosition
+
     const minX = 10 + widthDiff;
     const minY = 0 + heightDiff;
     const maxX = boardWidth - cardWidth - 80 - widthDiff;
     const maxY = boardHeight - cardHeight - 100 - heightDiff;
-    
-    // Constrain positions to the boundary area
+
     x = Math.max(minX, Math.min(x, maxX));
     y = Math.max(minY, Math.min(y, maxY));
-    
-    // Update card position
-    pendingPosRef.current = { x, y };
-    if (!rafRef.current) {
-      rafRef.current = requestAnimationFrame(() => {
-        rafRef.current = null;
-        const nextPos = pendingPosRef.current;
-        const cardId = activeCardRef.current;
-        if (!nextPos || !cardId) return;
-        setCardPositions(prevPositions => {
-          const currentPos = prevPositions[cardId];
-          if (currentPos && currentPos.x === nextPos.x && currentPos.y === nextPos.y) {
-            return prevPositions;
-          }
-          return {
-            ...prevPositions,
-            [cardId]: nextPos
-          };
-        });
-      });
-    }
-  }, [boardRef, setCardPositions]);
 
-  const handleMouseUp = useCallback(() => {
-    const cardId = activeCardRef.current;
-    if (rafRef.current) {
-      cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
+    pendingPosRef.current = { x, y };
+
+    // Direct DOM update - bypasses React completely
+    const cardElement = document.querySelector(`[data-card-id="${activeCardRef.current}"]`);
+    if (cardElement) {
+      cardElement.style.setProperty('--card-x', `${x}px`);
+      cardElement.style.setProperty('--card-y', `${y}px`);
     }
+  };
+
+  const handleMouseUpImperative = () => {
+    const cardId = activeCardRef.current;
+
+    // Remove event listeners FIRST
+    document.removeEventListener('mousemove', handleMouseMoveImperative);
+    document.removeEventListener('mouseup', handleMouseUpImperative);
+    document.removeEventListener('touchmove', handleMouseMoveImperative);
+    document.removeEventListener('touchend', handleMouseUpImperative);
+
+    // Remove dragging class
+    const cardElement = document.querySelector(`[data-card-id="${cardId}"]`);
+    if (cardElement) {
+      cardElement.style.cursor = 'grab';
+    }
+
+    // Sync final position to React state (only update that matters)
     if (cardId && pendingPosRef.current) {
       const nextPos = pendingPosRef.current;
       setCardPositions(prevPositions => ({
@@ -191,30 +132,82 @@ const useDragAndDrop = (cards, setCards, boardRef) => {
         [cardId]: nextPos
       }));
     }
+
     pendingPosRef.current = null;
     activeCardRef.current = null;
     setActiveCard(null);
-  }, [setCardPositions]);
+  };
 
-  // Register global mouse events for better drag experience
-  useEffect(() => {
-    if (activeCard !== null) {
-      const handleGlobalMove = (e) => handleMouseMove(e);
-      const handleGlobalUp = () => handleMouseUp();
+  const handleCardMouseDown = useCallback((e, cardId) => {
+    e.preventDefault();
 
-      document.addEventListener('mousemove', handleGlobalMove);
-      document.addEventListener('mouseup', handleGlobalUp, { passive: true });
-      document.addEventListener('touchmove', handleGlobalMove, { passive: false });
-      document.addEventListener('touchend', handleGlobalUp, { passive: true });
-
-      return () => {
-        document.removeEventListener('mousemove', handleGlobalMove);
-        document.removeEventListener('mouseup', handleGlobalUp);
-        document.removeEventListener('touchmove', handleGlobalMove);
-        document.removeEventListener('touchend', handleGlobalUp);
-      };
+    // Don't initiate drag if clicking on interactive elements
+    if (e.target.classList.contains('star') ||
+        e.target.classList.contains('flip-indicator') ||
+        e.target.classList.contains('expand-button') ||
+        e.target.classList.contains('comments-button') ||
+        e.target.classList.contains('pin-button') ||
+        e.target.closest('.pin-button')) {
+      return;
     }
-  }, [activeCard, handleMouseMove, handleMouseUp]);
+
+    // Get card element immediately
+    const cardElement = document.querySelector(`[data-card-id="${cardId}"]`);
+    if (!cardElement) return;
+
+    // Set dragging cursor immediately via DOM
+    cardElement.style.cursor = 'grabbing';
+
+    // Bring card to front via DOM (instant visual feedback)
+    const maxZ = Math.max(...cards.map(c => c.zIndex), 0) + 1;
+    cardElement.style.zIndex = maxZ;
+
+    // Update React state for z-index (non-blocking, happens in background)
+    setCards(prevCards =>
+      prevCards.map(card => ({
+        ...card,
+        zIndex: card.id === cardId ? maxZ : card.zIndex
+      }))
+    );
+
+    // Record starting position
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+    // Get board rect for calculations
+    const board = boardRef.current;
+    const boardRect = board.getBoundingClientRect();
+    boardRectRef.current = boardRect;
+    boardSizeRef.current = { width: board.offsetWidth, height: board.offsetHeight };
+
+    // Get current card position
+    const currentPos = positionsRef.current[cardId] || { x: 0, y: 0 };
+    const activeCardData = cards.find(card => card.id === cardId);
+    if (!activeCardData) return;
+
+    const rotatedBox = getRotatedBoundingBox(CARD_DIMENSIONS.width, CARD_DIMENSIONS.height, activeCardData.rotate);
+    dragMetaRef.current = {
+      widthDiff: (rotatedBox.width - CARD_DIMENSIONS.width) / 2,
+      heightDiff: (rotatedBox.height - CARD_DIMENSIONS.height) / 2,
+      cardWidth: CARD_DIMENSIONS.width,
+      cardHeight: CARD_DIMENSIONS.height
+    };
+
+    const offsetX = clientX - boardRect.left - currentPos.x - 13;
+    const offsetY = clientY - boardRect.top - currentPos.y;
+
+    dragStartPosRef.current = { x: offsetX, y: offsetY };
+    activeCardRef.current = cardId;
+
+    // Add event listeners IMPERATIVELY - no React state change!
+    document.addEventListener('mousemove', handleMouseMoveImperative);
+    document.addEventListener('mouseup', handleMouseUpImperative);
+    document.addEventListener('touchmove', handleMouseMoveImperative, { passive: false });
+    document.addEventListener('touchend', handleMouseUpImperative);
+
+    // Set activeCard for isDragging prop (deferred, non-critical)
+    setActiveCard(cardId);
+  }, [setCards, boardRef, cards, setCardPositions]);
 
   // Shuffle all card positions considering rotation
   const shufflePositions = useCallback(() => {

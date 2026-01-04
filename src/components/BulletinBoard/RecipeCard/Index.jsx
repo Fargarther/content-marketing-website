@@ -140,6 +140,7 @@ const RecipeCard = ({
   
   return (
     <CardContainer
+      data-card-id={card.id}
       className={isNew ? 'new-card' : ''}
       $isDragging={isDragging}
       $isExpanded={isExpanded}
