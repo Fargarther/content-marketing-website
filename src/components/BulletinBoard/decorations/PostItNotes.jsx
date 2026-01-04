@@ -42,7 +42,8 @@ const PostItNote = styled.div`
   z-index: ${props => props.$falling ? 61 : props.$isDragging ? 60 : 5};
   transition: ${props => props.$falling ? 'none' : 'box-shadow 0.2s'};
   animation: ${props => props.$falling ? fallAnimation : 'none'} ${props => props.$fallDuration || 1.2}s cubic-bezier(0.45, 0, 0.55, 1) forwards;
-  will-change: transform;
+  pointer-events: ${props => props.$falling ? 'none' : 'auto'};
+  will-change: transform, opacity;
   
   &:hover {
     box-shadow: ${props => props.$falling ? '0 3px 6px rgba(0,0,0,0.1)' : '0 4px 8px rgba(0,0,0,0.15)'};
@@ -87,7 +88,7 @@ const PostItText = styled.div`
   transform: rotate(${props => props.$textRotate}deg);
 `;
 
-const PostItNotes = ({ postIts, onMouseDown, draggedItem }) => {
+const PostItNotes = ({ postIts, onMouseDown, draggedItem, onDiscardComplete }) => {
   return (
     <>
       {postIts.map(postIt => (
@@ -106,6 +107,11 @@ const PostItNotes = ({ postIts, onMouseDown, draggedItem }) => {
           $spinAmount={postIt.spinAmount}
           $fallDuration={postIt.fallDuration}
           onMouseDown={(e) => onMouseDown(e, postIt.id, 'postit')}
+          onAnimationEnd={() => {
+            if (postIt.falling && onDiscardComplete) {
+              onDiscardComplete(postIt.id);
+            }
+          }}
         >
           <PostItText
             $font={postIt.font}

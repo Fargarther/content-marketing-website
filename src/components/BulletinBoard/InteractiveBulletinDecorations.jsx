@@ -347,11 +347,6 @@ const InteractiveBulletinDecorations = forwardRef(({ boardRef }, ref) => {
             } 
           : p
       ));
-      
-      // Remove it after animation completes
-      setTimeout(() => {
-        setPostIts(prev => prev.filter(p => p.id !== releasedItem.id));
-      }, (fallDuration * 1000) + 100);
     } else if (releasedItem && pending) {
       setStickers(prev => prev.map(s => 
         s.id === releasedItem.id ? { ...s, x: finalX, y: finalY } : s
@@ -369,6 +364,10 @@ const InteractiveBulletinDecorations = forwardRef(({ boardRef }, ref) => {
     draggedElementRef.current = null;
     setDraggedItem(null);
     velocityRef.current = { x: 0, y: 0 };
+  }, []);
+
+  const handleDiscardComplete = useCallback((postItId) => {
+    setPostIts(prev => prev.filter(p => p.id !== postItId));
   }, []);
   
   // Add mouse event listeners
@@ -472,6 +471,7 @@ const InteractiveBulletinDecorations = forwardRef(({ boardRef }, ref) => {
         postIts={postIts}
         onMouseDown={handleMouseDown}
         draggedItem={draggedItem}
+        onDiscardComplete={handleDiscardComplete}
       />
       
       {/* Add Button */}
