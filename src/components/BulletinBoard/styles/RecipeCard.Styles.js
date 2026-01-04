@@ -35,7 +35,7 @@ export const CardContainer = styled.div`
   cursor: ${props => props.$isPinned ? 'not-allowed' : props.$isDragging ? 'grabbing' : 'grab'};
   opacity: ${props => props.$isPinned ? 0.98 : 1};
   will-change: ${props => props.$isDragging ? 'transform' : 'auto'};
-  contain: layout style paint;
+  contain: layout style;
   
   /* Account for buttons extending beyond card boundaries */
   margin-left: 13px; /* Half the button width that extends left */
