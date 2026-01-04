@@ -9,12 +9,12 @@ const Sticker = styled.div`
   position: absolute;
   width: ${props => props.$size}px;
   height: ${props => props.$size}px;
-  left: ${props => props.$x}px;
-  top: ${props => props.$y}px;
-  transform: rotate(${props => props.$rotate}deg);
+  left: 0;
+  top: 0;
+  transform: translate3d(var(--x), var(--y), 0) rotate(var(--r));
   cursor: move;
   user-select: none;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
+  filter: ${props => props.$isDragging ? 'none' : 'drop-shadow(0 2px 4px rgba(0,0,0,0.15))'};
   opacity: 0.85;
   transition: ${props => props.$isDragging ? 'none' : 'transform 0.2s, opacity 0.2s'};
   z-index: ${props => props.$isDragging ? 50 : 4};
@@ -22,7 +22,7 @@ const Sticker = styled.div`
   
   &:hover {
     opacity: 1;
-    transform: rotate(${props => props.$rotate}deg) scale(1.1);
+    transform: translate3d(var(--x), var(--y), 0) rotate(var(--r)) scale(1.1);
   }
   
   svg {
@@ -31,18 +31,19 @@ const Sticker = styled.div`
   }
 `;
 
-const Stickers = ({ stickers, onMouseDown, onDoubleClick, draggedItem }) => {
+const Stickers = ({ stickers, onPointerDown, onPointerMove, onPointerUp, onPointerCancel, onDoubleClick, draggedItem }) => {
   return (
     <>
       {stickers.map(sticker => (
         <Sticker
           key={sticker.id}
           $size={sticker.size}
-          $x={sticker.x}
-          $y={sticker.y}
-          $rotate={sticker.rotate}
           $isDragging={draggedItem?.id === sticker.id}
-          onMouseDown={(e) => onMouseDown(e, sticker.id, 'sticker')}
+          style={{ '--x': `${sticker.x}px`, '--y': `${sticker.y}px`, '--r': `${sticker.rotate}deg` }}
+          onPointerDown={(e) => onPointerDown(e, sticker.id, 'sticker')}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerCancel}
           onDoubleClick={() => onDoubleClick(sticker.id)}
           title="Drag to move, double-click to delete"
         >

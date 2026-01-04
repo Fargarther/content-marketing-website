@@ -1,5 +1,5 @@
 // src/components/Home/Spotlight/InteractiveBulletinDecorations.jsx
-import React, { useState, useEffect, useRef, useImperativeHandle, forwardRef, useCallback, useLayoutEffect } from 'react';
+import React, { useState, useEffect, useRef, useImperativeHandle, forwardRef, useCallback } from 'react';
 import styled from 'styled-components';
 import Stickers from './decorations/Stickers';
 import { SeasonalStickers } from './decorations/stickerData.jsx';
@@ -142,7 +142,7 @@ const InteractiveBulletinDecorations = forwardRef(({ boardRef }, ref) => {
   const draggedItemRef = useRef(null);
   const draggedElementRef = useRef(null);
   const dragOriginRef = useRef({ x: 0, y: 0, rotate: 0 });
-  const dragCleanupRef = useRef(null);
+  const dragPointerIdRef = useRef(null);
   const saveTimeoutRef = useRef(null);
   
   // Expose clear methods to parent component
@@ -216,17 +216,11 @@ const InteractiveBulletinDecorations = forwardRef(({ boardRef }, ref) => {
     };
   }, [stickers, draggedItem]);
 
-  useLayoutEffect(() => {
-    if (!draggedItem && dragCleanupRef.current) {
-      const element = dragCleanupRef.current;
-      element.style.transform = '';
-      dragCleanupRef.current = null;
+  // Handle pointer down for dragging
+  const handlePointerDown = (e, itemId, itemType) => {
+    if (itemType === 'postit' || e.pointerType !== 'mouse') {
+      e.preventDefault();
     }
-  }, [draggedItem]);
-  
-  // Handle mouse down for dragging
-  const handleMouseDown = (e, itemId, itemType) => {
-    e.preventDefault();
     e.stopPropagation();
     
     const item = itemType === 'sticker' 
@@ -235,6 +229,10 @@ const InteractiveBulletinDecorations = forwardRef(({ boardRef }, ref) => {
     
     if (!item) return;
     
+    if (e.currentTarget.setPointerCapture) {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    }
+    dragPointerIdRef.current = e.pointerId;
     const clientX = e.clientX;
     const clientY = e.clientY;
     
@@ -253,9 +251,13 @@ const InteractiveBulletinDecorations = forwardRef(({ boardRef }, ref) => {
     lastPosRef.current = { x: clientX, y: clientY, time: Date.now() };
   };
   
-  // Handle mouse move
-  const handleMouseMove = useCallback((e) => {
+  // Handle pointer move
+  const handlePointerMove = useCallback((e) => {
     if (!draggedItemRef.current) return;
+    if (dragPointerIdRef.current !== null && e.pointerId !== dragPointerIdRef.current) return;
+    if (e.pointerType !== 'mouse') {
+      e.preventDefault();
+    }
 
     const clientX = e.clientX;
     const clientY = e.clientY;
@@ -285,20 +287,23 @@ const InteractiveBulletinDecorations = forwardRef(({ boardRef }, ref) => {
         const element = draggedElementRef.current;
         const currentItem = draggedItemRef.current;
         if (!pending || !element || !currentItem) return;
-        const origin = dragOriginRef.current;
-        const deltaX = pending.x - origin.x;
-        const deltaY = pending.y - origin.y;
-        element.style.transform = `translate3d(${deltaX}px, ${deltaY}px, 0) rotate(${origin.rotate}deg)`;
+        element.style.setProperty('--x', `${pending.x}px`);
+        element.style.setProperty('--y', `${pending.y}px`);
       });
     }
   }, []);
   
-  // Handle mouse up - post-its fall when released
-  const handleMouseUp = useCallback(() => {
+  // Handle pointer up - post-its fall when released
+  const handlePointerUp = useCallback((e) => {
+    if (dragPointerIdRef.current !== null && e.pointerId !== dragPointerIdRef.current) return;
     const releasedItem = draggedItemRef.current;
     const pending = pendingDragRef.current;
     const finalX = pending ? pending.x : dragOriginRef.current.x;
     const finalY = pending ? pending.y : dragOriginRef.current.y;
+    const element = draggedElementRef.current;
+    if (element && element.releasePointerCapture && dragPointerIdRef.current !== null) {
+      element.releasePointerCapture(dragPointerIdRef.current);
+    }
 
     if (releasedItem && releasedItem.type === 'postit') {
       const vx = velocityRef.current.x;
@@ -347,7 +352,7 @@ const InteractiveBulletinDecorations = forwardRef(({ boardRef }, ref) => {
             } 
           : p
       ));
-    } else if (releasedItem && pending) {
+    } else if (releasedItem && releasedItem.type === 'sticker') {
       setStickers(prev => prev.map(s => 
         s.id === releasedItem.id ? { ...s, x: finalX, y: finalY } : s
       ));
@@ -360,8 +365,8 @@ const InteractiveBulletinDecorations = forwardRef(({ boardRef }, ref) => {
     pendingDragRef.current = null;
     draggedItemRef.current = null;
     dragOriginRef.current = { x: 0, y: 0, rotate: 0 };
-    dragCleanupRef.current = draggedElementRef.current;
     draggedElementRef.current = null;
+    dragPointerIdRef.current = null;
     setDraggedItem(null);
     velocityRef.current = { x: 0, y: 0 };
   }, []);
@@ -369,18 +374,6 @@ const InteractiveBulletinDecorations = forwardRef(({ boardRef }, ref) => {
   const handleDiscardComplete = useCallback((postItId) => {
     setPostIts(prev => prev.filter(p => p.id !== postItId));
   }, []);
-  
-  // Add mouse event listeners
-  useEffect(() => {
-    if (draggedItem) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-      return () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-      };
-    }
-  }, [draggedItem, handleMouseMove, handleMouseUp]);
   
   // Add specific sticker type
   const addSticker = (stickerType) => {
@@ -461,7 +454,10 @@ const InteractiveBulletinDecorations = forwardRef(({ boardRef }, ref) => {
       {/* Render Stickers */}
       <Stickers 
         stickers={stickers}
-        onMouseDown={handleMouseDown}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
         onDoubleClick={deleteSticker}
         draggedItem={draggedItem}
       />
@@ -469,7 +465,10 @@ const InteractiveBulletinDecorations = forwardRef(({ boardRef }, ref) => {
       {/* Render Post-its */}
       <PostItNotes
         postIts={postIts}
-        onMouseDown={handleMouseDown}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
         draggedItem={draggedItem}
         onDiscardComplete={handleDiscardComplete}
       />
