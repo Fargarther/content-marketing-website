@@ -6,7 +6,7 @@ import Windmill from '../components/Windmill';
 import WoodenSign from '../components/WoodenSign';
 import './Home.css';
 
-export default function Home() {
+export default function Home({ onNavigate }) {
   const PANEL_COUNT = 5;
   const trackRef = useRef(null);
   const touchRef = useRef(null);
@@ -160,6 +160,15 @@ export default function Home() {
   }, []);
 
   const groundVisualHeight = 100;
+  const handleSignClick = useCallback(() => {
+    if (onNavigate) {
+      onNavigate('/bulletin-board');
+      return;
+    }
+    if (typeof window !== 'undefined') {
+      window.location.href = '/bulletin-board';
+    }
+  }, [onNavigate]);
 
   return (
     <div
@@ -209,7 +218,7 @@ export default function Home() {
       </div>
 
       <Windmill trackRef={trackRef} />
-      <WoodenSign trackRef={trackRef} />
+      <WoodenSign trackRef={trackRef} onClick={handleSignClick} />
       <PrairieGrass
         spanCount={PANEL_COUNT}
         scrollVelocityRef={velocityRef}

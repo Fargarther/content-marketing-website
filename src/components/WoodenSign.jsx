@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import woodenSignImg from '../assets/wooden_sign.png';
 import './WoodenSign.css';
 
-export default function WoodenSign({ trackRef }) {
+export default function WoodenSign({ trackRef, onClick }) {
     const containerRef = useRef(null);
     const [groundHeight, setGroundHeight] = useState(null);
 
@@ -52,12 +52,15 @@ export default function WoodenSign({ trackRef }) {
     }
 
     return (
-        <div
+        <button
+            type="button"
             className="wooden-sign-container"
             ref={containerRef}
             style={style}
+            onClick={onClick}
+            aria-label="Open the bulletin board"
         >
             <img src={woodenSignImg} alt="Recipes Sign" className="wooden-sign-image" />
-        </div>
+        </button>
     );
 }

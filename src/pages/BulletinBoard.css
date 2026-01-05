@@ -1,0 +1,62 @@
+.bulletin-board-page {
+  --recipe-tray-height: 220px;
+  min-height: 100vh;
+  background: radial-gradient(circle at top, rgba(250, 245, 235, 0.9), rgba(231, 219, 201, 0.95));
+  color: #3b2f22;
+  padding: 32px 24px calc(var(--recipe-tray-height) + 32px);
+  box-sizing: border-box;
+}
+
+.bulletin-board-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  max-width: 1080px;
+  margin: 0 auto 24px;
+}
+
+.bulletin-board-back {
+  border: 1px solid rgba(90, 63, 36, 0.4);
+  background: rgba(255, 250, 240, 0.9);
+  color: #5a3f24;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.bulletin-board-back:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(90, 63, 36, 0.2);
+}
+
+.bulletin-board-eyebrow {
+  margin: 0 0 4px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: rgba(90, 63, 36, 0.7);
+}
+
+.bulletin-board-title {
+  margin: 0;
+  font-size: 28px;
+}
+
+.bulletin-board-content {
+  max-width: 1080px;
+  margin: 0 auto;
+}
+
+@media (max-width: 768px) {
+  .bulletin-board-page {
+    padding: 24px 16px 40px;
+  }
+
+  .bulletin-board-title {
+    font-size: 24px;
+  }
+}

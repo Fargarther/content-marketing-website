@@ -9,7 +9,8 @@
       "Bash(rm:*)",
       "Bash(del \"C:\\Users\\benso\\OneDrive\\Documents\\content-marketing-website\\src\\hooks\\useCarouselWheel.js\")",
       "Bash(git checkout:*)",
-      "Bash(cp:*)"
+      "Bash(cp:*)",
+      "Bash(dir:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"
