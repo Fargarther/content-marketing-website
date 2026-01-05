@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import woodenSignImg from '../assets/wooden_sign.png';
 import './WoodenSign.css';
 
-export default function WoodenSign({ onClick, trackRef }) {
+export default function WoodenSign({ trackRef }) {
     const containerRef = useRef(null);
     const [groundHeight, setGroundHeight] = useState(null);
 
@@ -56,15 +56,6 @@ export default function WoodenSign({ onClick, trackRef }) {
             className="wooden-sign-container"
             ref={containerRef}
             style={style}
-            onClick={onClick}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    onClick();
-                }
-            }}
-            aria-label="Open Recipes Bulletin Board"
         >
             <img src={woodenSignImg} alt="Recipes Sign" className="wooden-sign-image" />
         </div>
