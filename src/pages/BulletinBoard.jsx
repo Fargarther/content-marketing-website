@@ -1,5 +1,5 @@
 import React from 'react';
-import BulletinBoardSection, { RecipeTray } from '../../components/BulletinBoard';
+import BulletinBoardSection, { RecipePortfolio } from '../../components/BulletinBoard';
 import './BulletinBoard.css';
 
 export default function BulletinBoardPage({ onNavigate }) {
@@ -31,7 +31,7 @@ export default function BulletinBoardPage({ onNavigate }) {
       <main className="bulletin-board-content">
         <BulletinBoardSection />
       </main>
-      <RecipeTray />
+      <RecipePortfolio />
     </div>
   );
 }

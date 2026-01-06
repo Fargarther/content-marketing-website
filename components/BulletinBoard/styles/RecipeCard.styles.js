@@ -1,5 +1,5 @@
 // src/components/Home/Spotlight/styles/RecipeCard.styles.js
-import styled, { keyframes } from 'styled-components';
+import styled, { keyframes, css } from 'styled-components';
 
 // Paper texture for the aged look
 const paperTexture = `
@@ -44,14 +44,16 @@ const pinnedShake = keyframes`
 `;
 
 const getCardAnimation = ({ $isNew, $isShaking }) => {
-  const animations = [];
+  if ($isNew && $isShaking) {
+    return css`${cardPulse} 0.6s ease-out, ${pinnedShake} 0.3s`;
+  }
   if ($isNew) {
-    animations.push(`${cardPulse} 0.6s ease-out`);
+    return css`${cardPulse} 0.6s ease-out`;
   }
   if ($isShaking) {
-    animations.push(`${pinnedShake} 0.3s`);
+    return css`${pinnedShake} 0.3s`;
   }
-  return animations.length > 0 ? animations.join(', ') : 'none';
+  return 'none';
 };
 
 export const CardContainer = styled.div`
