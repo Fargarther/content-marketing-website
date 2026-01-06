@@ -3,7 +3,7 @@ export const recipeData = [
     // Focaccias
     {
       id: 'architectural-00-semolina',
-      title: 'Architectural 00-Semolina Focaccia',
+      title: 'Focaccia',
       category: 'Artisan',
       time: '24-48 hr fermentation',
       price: '$24',

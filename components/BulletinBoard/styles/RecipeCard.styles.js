@@ -358,6 +358,11 @@ export const ExpandedContent = styled.div`
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
   padding: 21px 21px 21px 41px;
   position: relative;
+  max-height: 65vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-sizing: border-box;
+  -webkit-overflow-scrolling: touch;
   
   &:before {
     content: '';
@@ -370,6 +375,20 @@ export const ExpandedContent = styled.div`
     border-radius: 4px;
     box-shadow: inset 0 0 30px rgba(200, 180, 120, 0.15);
     pointer-events: none;
+  }
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: rgba(210, 190, 150, 0.2);
+    border-radius: 3px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background-color: rgba(166, 124, 82, 0.5);
+    border-radius: 3px;
   }
 `;
 

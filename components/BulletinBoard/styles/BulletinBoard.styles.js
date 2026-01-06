@@ -3,7 +3,7 @@ import styled from 'styled-components';
 
 export const BulletinBoardContainer = styled.div`
   position: relative;
-  height: 1000px;
+  height: 900px;
   width: 200%;
   margin: 2rem 0;
   left: 50%;

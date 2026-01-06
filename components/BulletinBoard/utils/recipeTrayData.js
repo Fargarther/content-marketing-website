@@ -9,7 +9,7 @@ export const recipeTrayCategories = [
 export const recipeTrayData = [
   {
     id: 'breads-architectural-00',
-    title: 'Architectural 00-Semolina Focaccia',
+    title: 'Focaccia',
     category: 'Breads',
     time: '24-48 hr',
     text: 'Defined crumb, crisp base, and supple interior built for toppings.',
