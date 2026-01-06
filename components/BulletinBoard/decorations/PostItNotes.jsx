@@ -5,21 +5,12 @@ import styled, { keyframes } from 'styled-components';
 
 // Post-it wisdom and quotes
 
-// Falling animation with directional movement - starts immediately
-const fallAnimation = keyframes`
+// Fade only; movement handled in JS for a continuous sling.
+const fadeOut = keyframes`
   from {
-    transform: translate3d(var(--x), var(--y), 0) rotate(var(--rotate));
     opacity: 1;
-  }
-  15% {
-    transform: translate3d(calc(var(--x) + (var(--throwX) * 0.2)), calc(var(--y) + (var(--throwY) * 0.15)), 0) rotate(calc(var(--rotate) + (var(--spinAmount) * 0.1)));
-    opacity: 1;
-  }
-  80% {
-    opacity: 0.8;
   }
   to {
-    transform: translate3d(calc(var(--x) + (var(--throwX) * 1.2)), calc(var(--y) + 100vh + var(--throwY)), 0) rotate(calc(var(--rotate) + var(--spinAmount)));
     opacity: 0;
   }
 `;
@@ -29,9 +20,6 @@ const PostItNote = styled.div`
   --x: ${props => props.$x}px;
   --y: ${props => props.$y}px;
   --rotate: ${props => props.$rotate}deg;
-  --throwX: ${props => props.$throwX || 0}px;
-  --throwY: ${props => props.$throwY || 0}px;
-  --spinAmount: ${props => props.$spinAmount || 0}deg;
   position: absolute;
   width: ${props => props.$width}px;
   min-height: ${props => props.$height}px;
@@ -44,9 +32,10 @@ const PostItNote = styled.div`
   cursor: ${props => props.$isDragging ? 'grabbing' : 'grab'};
   z-index: ${props => props.$falling ? 61 : props.$isDragging ? 60 : 5};
   transition: ${props => props.$falling || props.$isDragging ? 'none' : 'box-shadow 0.2s'};
-  animation: ${props => props.$falling ? fallAnimation : 'none'} ${props => props.$fallDuration || 1.2}s cubic-bezier(0.45, 0, 0.55, 1) forwards;
+  animation: ${props => props.$falling ? fadeOut : 'none'} ${props => props.$fallDuration || 1.2}s ease-out forwards;
   contain: layout style;
   will-change: ${props => (props.$falling || props.$isDragging) ? 'transform' : 'auto'};
+  pointer-events: ${props => props.$falling ? 'none' : 'auto'};
   
   &:hover {
     box-shadow: ${props => props.$falling ? '0 3px 6px rgba(0,0,0,0.1)' : '0 4px 8px rgba(0,0,0,0.15)'};
@@ -107,15 +96,8 @@ const PostItNotes = ({ postIts, onMouseDown, draggedItem, getPostItRef }) => {
           $color={postIt.color}
           $isDragging={draggedItem?.id === postIt.id}
           $falling={postIt.falling}
-          $throwX={postIt.throwX}
-          $throwY={postIt.throwY}
-          $spinAmount={postIt.spinAmount}
           $fallDuration={postIt.fallDuration}
           ref={getPostItRef ? getPostItRef(postIt.id) : undefined}
-          style={{
-            '--x': `${postIt.x}px`,
-            '--y': `${postIt.y}px`,
-          }}
           onMouseDown={(e) => onMouseDown(e, postIt.id, 'postit')}
         >
           <PostItText

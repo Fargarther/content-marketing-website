@@ -114,7 +114,7 @@ function sampleRidgeY(normalizedX, groundHeight = 140) {
   return baseY;
 }
 
-const PrairieGrass = ({ breeze = 'medium', spanCount = 1, scrollVelocityRef, trackRef, scrollStateRef, isPaused = false } = {}) => {
+const PrairieGrass = ({ breeze = 'medium', spanCount = 1, scrollVelocityRef, trackRef, scrollStateRef, isPaused = false, onWheel } = {}) => {
   const backCanvasRef = useRef(null);
   const frontCanvasRef = useRef(null);
   const pointerRef = useRef({ x: null, y: null });
@@ -678,6 +678,18 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1, scrollVelocityRef, tra
     pointerRef.current.y = t.clientY - rect.top;
   };
   const handleLeave = () => { pointerRef.current.x = null; pointerRef.current.y = null; };
+
+  useEffect(() => {
+    const canvas = frontCanvasRef.current;
+    if (!canvas || !onWheel) return;
+
+    const handle = (event) => onWheel(event);
+    canvas.addEventListener('wheel', handle, { passive: false });
+
+    return () => {
+      canvas.removeEventListener('wheel', handle);
+    };
+  }, [onWheel]);
 
   return (
     <>

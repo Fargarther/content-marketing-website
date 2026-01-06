@@ -224,6 +224,7 @@ export default function Home({ onNavigate }) {
         scrollVelocityRef={velocityRef}
         trackRef={trackRef}
         scrollStateRef={scrollStateRef}
+        onWheel={handleWheel}
       />
 
       {/* GroundNav moved outside to enforce z-index layering (Sky < Grass < Ground) */}

@@ -141,6 +141,8 @@ const InteractiveBulletinDecorations = forwardRef(({ boardRef }, ref) => {
   const dragPositionRef = useRef({ x: 0, y: 0 });
   const pendingPointRef = useRef(null);
   const rafRef = useRef(null);
+  const throwRafRef = useRef(null);
+  const throwingRef = useRef(new Map());
 
   const velocityRef = useRef({ x: 0, y: 0 });
   const lastPosRef = useRef({ x: 0, y: 0, time: 0 });
@@ -201,6 +203,11 @@ const InteractiveBulletinDecorations = forwardRef(({ boardRef }, ref) => {
     clearAll: () => {
       setStickers([]);
       setPostIts([]);
+      throwingRef.current.clear();
+      if (throwRafRef.current) {
+        cancelAnimationFrame(throwRafRef.current);
+        throwRafRef.current = null;
+      }
       postItsInitializedRef.current = true;
       if (typeof window !== 'undefined') {
         window.localStorage.removeItem('bulletinStickers');
@@ -320,6 +327,85 @@ const InteractiveBulletinDecorations = forwardRef(({ boardRef }, ref) => {
     }
   }, []);
 
+  const getNow = useCallback(() => (
+    typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now()
+  ), []);
+
+  const stepThrow = useCallback((timestamp) => {
+    throwRafRef.current = null;
+    if (throwingRef.current.size === 0) return;
+
+    const removals = [];
+
+    throwingRef.current.forEach((motion, id) => {
+      const element = postItElementsRef.current.get(id);
+      if (!element) {
+        removals.push(id);
+        return;
+      }
+
+      const dt = Math.min(32, Math.max(0, timestamp - motion.lastTime));
+      motion.lastTime = timestamp;
+
+      const friction = Math.pow(motion.drag, dt / 16.6667);
+      motion.vx *= friction;
+      motion.vy = motion.vy * friction + motion.gravity * dt;
+      motion.x += motion.vx * dt;
+      motion.y += motion.vy * dt;
+      motion.rotation += motion.spin * dt;
+
+      element.style.setProperty('--x', `${motion.x}px`);
+      element.style.setProperty('--y', `${motion.y}px`);
+      element.style.setProperty('--rotate', `${motion.rotation}deg`);
+
+      const elapsed = timestamp - motion.startTime;
+      if (
+        motion.y > motion.maxY ||
+        motion.x < motion.minX ||
+        motion.x > motion.maxX ||
+        motion.y < motion.minY ||
+        elapsed > motion.maxDuration
+      ) {
+        removals.push(id);
+      }
+    });
+
+    if (removals.length > 0) {
+      const removalSet = new Set(removals);
+      removals.forEach((id) => throwingRef.current.delete(id));
+      setPostIts((prev) => prev.filter((postIt) => !removalSet.has(postIt.id)));
+    }
+
+    if (throwingRef.current.size > 0) {
+      throwRafRef.current = requestAnimationFrame(stepThrow);
+    }
+  }, [setPostIts]);
+
+  const startThrow = useCallback((id, startX, startY, vx, vy, rotation, spin, bounds) => {
+    const now = getNow();
+    throwingRef.current.set(id, {
+      x: startX,
+      y: startY,
+      vx,
+      vy,
+      rotation,
+      spin,
+      drag: bounds.drag,
+      gravity: bounds.gravity,
+      minX: bounds.minX,
+      maxX: bounds.maxX,
+      minY: bounds.minY,
+      maxY: bounds.maxY,
+      maxDuration: bounds.maxDuration,
+      startTime: now,
+      lastTime: now
+    });
+
+    if (!throwRafRef.current) {
+      throwRafRef.current = requestAnimationFrame(stepThrow);
+    }
+  }, [getNow, stepThrow]);
+
   // Handle mouse move
   const handleMouseMove = useCallback((event) => {
     if (!draggedItemRef.current) return;
@@ -353,6 +439,11 @@ const InteractiveBulletinDecorations = forwardRef(({ boardRef }, ref) => {
     const dragItem = draggedItemRef.current;
     if (!dragItem) return;
 
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+
     let finalPosition = dragPositionRef.current;
     if (pendingPointRef.current) {
       finalPosition = {
@@ -362,43 +453,56 @@ const InteractiveBulletinDecorations = forwardRef(({ boardRef }, ref) => {
       dragPositionRef.current = finalPosition;
     }
 
+    const releaseElement = dragItem.type === 'sticker'
+      ? stickerElementsRef.current.get(dragItem.id)
+      : postItElementsRef.current.get(dragItem.id);
+
+    if (releaseElement) {
+      releaseElement.style.setProperty('--x', `${finalPosition.x}px`);
+      releaseElement.style.setProperty('--y', `${finalPosition.y}px`);
+    }
+
     if (dragItem.type === 'sticker') {
       setStickers(prev => prev.map(sticker =>
         sticker.id === dragItem.id ? { ...sticker, x: finalPosition.x, y: finalPosition.y } : sticker
       ));
     } else {
-      const vx = velocityRef.current.x;
-      const vy = velocityRef.current.y;
+      const baseVx = velocityRef.current.x;
+      const baseVy = velocityRef.current.y;
+      const maxSpeed = 2.4;
+      const minDownSpeed = 0.15;
 
-      // Calculate throw power ONCE
-      const calculatedThrowPower = Math.sqrt(vx * vx + vy * vy);
+      let vx = Math.max(-maxSpeed, Math.min(maxSpeed, baseVx));
+      let vy = Math.max(-maxSpeed, Math.min(maxSpeed, baseVy));
 
-      // Calculate throw distance based on velocity
-      const throwX = vx * 350; // Slightly reduced for more control
-      const throwY = Math.max(vy * 200, -100); // Reduced vertical movement
-
-      // Add slight downward bias for gentle releases
-      const adjustedThrowY = calculatedThrowPower < 0.5 ? throwY + 50 : throwY;
-
-      // Calculate spin based on horizontal velocity (only spin if moving fast enough)
-      const spinThreshold = 0.2; // Lowered for more responsive spinning
-      let spinAmount = 0;
-
-      if (Math.abs(vx) > spinThreshold) {
-        // Fast movement - calculated spin (direction based on throw direction)
-        // More spin for really fast throws
-        const spinMultiplier = Math.abs(vx) > 1 ? 200 : 150;
-        spinAmount = (30 + Math.abs(vx) * spinMultiplier) * (vx > 0 ? 1 : -1);
-      } else {
-        // Gentle release - very subtle wobble for natural look (2-8 degrees)
-        const wobble = 2 + Math.random() * 6;
-        spinAmount = Math.random() > 0.5 ? wobble : -wobble;
+      if (Math.abs(vx) < 0.04) {
+        vx = 0;
       }
 
-      // Calculate duration based on throw power (faster fall time)
-      const fallDuration = 1.2 + Math.min(calculatedThrowPower * 0.3, 0.5);
+      if (vy > -0.1) {
+        vy = Math.max(vy, minDownSpeed);
+      }
 
-      // Update the post-it with fall animation immediately
+      const speed = Math.hypot(vx, vy);
+      let spin = vx * 0.25;
+      if (Math.abs(spin) < 0.08) {
+        const wobble = 0.04 + Math.random() * 0.08;
+        spin = Math.random() > 0.5 ? wobble : -wobble;
+      }
+      spin = Math.max(-0.4, Math.min(0.4, spin));
+
+      const durationMs = Math.min(2200, 1300 + speed * 500);
+      const fallDuration = durationMs / 1000;
+
+      const boundsRect = boardRef?.current?.getBoundingClientRect();
+      const maxX = boundsRect ? boundsRect.width + 200 : window.innerWidth + 200;
+      const maxY = boundsRect ? boundsRect.height + 200 : window.innerHeight + 200;
+      const minX = -200;
+      const minY = -300;
+
+      const postItData = postItsRef.current.find((entry) => entry.id === dragItem.id);
+      const startRotate = postItData ? postItData.rotate : 0;
+
       setPostIts(prev => prev.map(postIt =>
         postIt.id === dragItem.id
           ? {
@@ -406,18 +510,20 @@ const InteractiveBulletinDecorations = forwardRef(({ boardRef }, ref) => {
               x: finalPosition.x,
               y: finalPosition.y,
               falling: true,
-              throwX,
-              throwY: adjustedThrowY,
-              spinAmount,
               fallDuration
             }
           : postIt
       ));
 
-      // Remove it after animation completes
-      setTimeout(() => {
-        setPostIts(prev => prev.filter(postIt => postIt.id !== dragItem.id));
-      }, (fallDuration * 1000) + 100);
+      startThrow(dragItem.id, finalPosition.x, finalPosition.y, vx, vy, startRotate, spin, {
+        drag: 0.985,
+        gravity: 0.0016,
+        minX,
+        maxX,
+        minY,
+        maxY,
+        maxDuration: durationMs
+      });
     }
 
     draggedItemRef.current = null;
@@ -451,6 +557,9 @@ const InteractiveBulletinDecorations = forwardRef(({ boardRef }, ref) => {
     return () => {
       if (rafRef.current) {
         cancelAnimationFrame(rafRef.current);
+      }
+      if (throwRafRef.current) {
+        cancelAnimationFrame(throwRafRef.current);
       }
     };
   }, []);
