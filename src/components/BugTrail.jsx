@@ -2,11 +2,11 @@ import React, { useEffect, useRef } from 'react';
 import './BugTrail.css';
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
-const DEFAULT_TEXT = 'Follow the bug trail to Recipes';
+const DEFAULT_TEXT = 'Hungry?';
 
-const buildPath = (width, baseHeight, endDrop, calloutWidth, calloutHeight, isMobile) => {
-  const startX = Math.round(calloutWidth - (isMobile ? 8 : 12));
-  const startY = Math.round(calloutHeight + (isMobile ? 8 : 14));
+const buildPath = (width, baseHeight, endDrop, labelWidth, labelHeight, isMobile) => {
+  const startX = Math.round(labelWidth - (isMobile ? 6 : 10));
+  const startY = Math.round(labelHeight + (isMobile ? 8 : 12));
 
   // Simple, playful curve: Drop down, undulate slightly, then arc to sign
   // P1: Drop down from callout
@@ -22,10 +22,10 @@ const buildPath = (width, baseHeight, endDrop, calloutWidth, calloutHeight, isMo
   const p3y = Math.round(baseHeight * 0.45);
 
   // End: Swoop down to sign top-left corner
-  const endC1x = Math.round(width * 0.85);
+  const endC1x = Math.round(width * 0.9);
   const endC1y = Math.round(baseHeight * 0.65 + endDrop * 0.5);
 
-  const endX = Math.round(width * 0.98);
+  const endX = Math.round(width * 1.02);
   const endY = Math.round(baseHeight * 0.76 + endDrop);
 
   return [
@@ -43,11 +43,11 @@ export default function BugTrail({ trackRef, text = DEFAULT_TEXT }) {
   const tailPathRef = useRef(null);
   const tailMaskRef = useRef(null);
   const bugRef = useRef(null);
-  const calloutRef = useRef(null);
+  const bugRotateRef = useRef(null);
+  const arrowRef = useRef(null);
   const lengthRef = useRef(0);
   const layoutRef = useRef(null);
   const rafRef = useRef(null);
-  const visibleRef = useRef(false);
 
   const updateLayout = () => {
     if (typeof window === 'undefined') return;
@@ -57,16 +57,20 @@ export default function BugTrail({ trackRef, text = DEFAULT_TEXT }) {
     const signX = isMobile ? 1200 : 2550; // Tuned match
     const width = isMobile
       ? Math.round(clamp(viewportWidth * 0.9, 260, 360))
-      : 1350;
+      : 1420;
     const baseHeight = isMobile
       ? Math.round(clamp(viewportWidth * 0.55, 200, 280))
       : 400;
     const endDrop = isMobile ? 140 : 180;
     const height = baseHeight + endDrop;
     const left = signX - width;
-    const top = isMobile ? 90 : 150;
-    const calloutWidth = isMobile ? Math.round(width * 0.7) : 340;
-    const calloutHeight = isMobile ? 74 : 96;
+    const top = (isMobile ? 90 : 150) + 100;
+    const labelWidth = Math.round(clamp(
+      text.length * (isMobile ? 12 : 14),
+      isMobile ? 90 : 110,
+      isMobile ? 180 : 220
+    ));
+    const labelHeight = isMobile ? 26 : 32;
     const targetLeft = isMobile ? 16 : 40;
     const endScroll = signX - width - targetLeft;
     const scrollRange = viewportWidth * (isMobile ? 0.7 : 0.9);
@@ -77,8 +81,8 @@ export default function BugTrail({ trackRef, text = DEFAULT_TEXT }) {
       height,
       left,
       top,
-      calloutWidth,
-      calloutHeight,
+      labelWidth,
+      labelHeight,
       startScroll,
       endScroll,
       endDrop,
@@ -90,13 +94,11 @@ export default function BugTrail({ trackRef, text = DEFAULT_TEXT }) {
       containerRef.current.style.setProperty('--trail-top', `${top}px`);
       containerRef.current.style.setProperty('--trail-width', `${width}px`);
       containerRef.current.style.setProperty('--trail-height', `${height}px`);
-      containerRef.current.style.setProperty('--trail-callout-width', `${calloutWidth}px`);
-      containerRef.current.style.setProperty('--trail-callout-height', `${calloutHeight}px`);
-      containerRef.current.style.setProperty('--trail-text-steps', `${Math.max(12, text.length)}`);
-      containerRef.current.style.setProperty('--trail-text-width', `${Math.max(12, text.length)}ch`);
+      containerRef.current.style.setProperty('--trail-label-width', `${labelWidth}px`);
+      containerRef.current.style.setProperty('--trail-label-height', `${labelHeight}px`);
     }
 
-    const pathD = buildPath(width, baseHeight, endDrop, calloutWidth, calloutHeight, isMobile);
+    const pathD = buildPath(width, baseHeight, endDrop, labelWidth, labelHeight, isMobile);
     if (pathRef.current) {
       pathRef.current.setAttribute('d', pathD);
     }
@@ -160,21 +162,29 @@ export default function BugTrail({ trackRef, text = DEFAULT_TEXT }) {
       }
     }
 
-    if (bugRef.current && length > 0) {
+    if (bugRef.current && bugRotateRef.current && length > 0) {
       const pos = pathRef.current.getPointAtLength(length * progress);
       const next = pathRef.current.getPointAtLength(Math.min(length, length * progress + 1));
       const angle = Math.atan2(next.y - pos.y, next.x - pos.x) * 180 / Math.PI;
-      bugRef.current.setAttribute('transform', `translate(${pos.x} ${pos.y}) rotate(${angle})`);
+      bugRef.current.setAttribute('transform', `translate(${pos.x} ${pos.y})`);
+      bugRotateRef.current.setAttribute('transform', `rotate(${angle})`);
       bugRef.current.style.opacity = progress === 0 ? '0' : '1';
     }
 
-    if (calloutRef.current) {
-      const shouldShow = progress > 0.05;
-      if (visibleRef.current !== shouldShow) {
-        visibleRef.current = shouldShow;
-        calloutRef.current.classList.toggle('is-visible', shouldShow);
-      }
+    if (arrowRef.current && length > 0) {
+      const endPos = pathRef.current.getPointAtLength(length);
+      const prevPos = pathRef.current.getPointAtLength(Math.max(0, length - 1));
+      const endAngle = Math.atan2(endPos.y - prevPos.y, endPos.x - prevPos.x) * 180 / Math.PI;
+      const arrowRevealStart = 0.85;
+      const arrowOpacity = clamp(
+        (progress - arrowRevealStart) / (1 - arrowRevealStart),
+        0,
+        1
+      );
+      arrowRef.current.setAttribute('transform', `translate(${endPos.x} ${endPos.y}) rotate(${endAngle})`);
+      arrowRef.current.style.opacity = `${arrowOpacity}`;
     }
+
   };
 
   useEffect(() => {
@@ -209,9 +219,7 @@ export default function BugTrail({ trackRef, text = DEFAULT_TEXT }) {
 
   return (
     <div className="bug-trail" ref={containerRef}>
-      <div className="bug-trail-callout" ref={calloutRef}>
-        <span className="bug-trail-text">{text}</span>
-      </div>
+      <div className="bug-trail-label">{text}</div>
       <svg
         ref={svgRef}
         className="bug-trail-svg"
@@ -247,11 +255,16 @@ export default function BugTrail({ trackRef, text = DEFAULT_TEXT }) {
           d=""
           mask="url(#bug-trail-tail-mask)"
         />
+        <g ref={arrowRef} className="bug-trail-arrow">
+          <path d="M -10 -5 L 0 0 L -10 5" />
+        </g>
         <g ref={bugRef} className="bug-trail-bug">
-          <circle className="bug-body" cx="0" cy="0" r="6" />
-          <circle className="bug-head" cx="8" cy="-3" r="3" />
-          <line className="bug-antenna" x1="9" y1="-6" x2="14" y2="-12" />
-          <line className="bug-antenna" x1="6" y1="-6" x2="10" y2="-12" />
+          <g ref={bugRotateRef} className="bug-trail-bug-rot">
+            <circle className="bug-body" cx="0" cy="0" r="6" />
+            <circle className="bug-head" cx="8" cy="-3" r="3" />
+            <line className="bug-antenna" x1="9" y1="-6" x2="14" y2="-12" />
+            <line className="bug-antenna" x1="6" y1="-6" x2="10" y2="-12" />
+          </g>
         </g>
       </svg>
     </div>

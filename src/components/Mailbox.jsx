@@ -5,8 +5,10 @@ import './Mailbox.css';
 
 export default function Mailbox({ trackRef }) {
   const containerRef = useRef(null);
+  const hingeRef = useRef(null);
   const [groundHeight, setGroundHeight] = useState(null);
-  const [flagUp, setFlagUp] = useState(false);
+  const [isHovering, setIsHovering] = useState(false);
+  const [rotation, setRotation] = useState(0);
 
   // Sync ground height for vertical positioning
   useEffect(() => {
@@ -48,6 +50,30 @@ export default function Mailbox({ trackRef }) {
     };
   }, [trackRef]);
 
+  const handleMouseMove = (e) => {
+    if (!hingeRef.current) return;
+
+    const hingeRect = hingeRef.current.getBoundingClientRect();
+    // Pivot point is at bottom-left of the hinge
+    const pivotX = hingeRect.left;
+    const pivotY = hingeRect.bottom;
+
+    // Calculate angle from pivot to mouse
+    const dx = e.clientX - pivotX;
+    const dy = e.clientY - pivotY;
+    let angle = Math.atan2(-dy, dx) * (180 / Math.PI);
+
+    // Clamp rotation between 0 and 90 degrees
+    angle = Math.max(0, Math.min(90, angle));
+
+    setRotation(angle);
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovering(false);
+    setRotation(0);
+  };
+
   const style = {};
   if (Number.isFinite(groundHeight)) {
     style['--mailbox-ground-height'] = `${groundHeight}px`;
@@ -55,14 +81,22 @@ export default function Mailbox({ trackRef }) {
 
   return (
     <div
-      className={`mailbox-container ${flagUp ? 'flag-up' : ''}`}
+      className={`mailbox-container ${isHovering ? 'is-hovering' : ''}`}
       ref={containerRef}
       style={style}
-      onMouseEnter={() => setFlagUp(true)}
-      onMouseLeave={() => setFlagUp(false)}
+      onMouseEnter={() => setIsHovering(true)}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
     >
       <img src={mailboxImg} alt="Mailbox" className="mailbox-image" />
-      <img src={hingeImg} alt="" className="mailbox-hinge" aria-hidden="true" />
+      <img
+        ref={hingeRef}
+        src={hingeImg}
+        alt=""
+        className="mailbox-hinge"
+        style={{ transform: `rotate(${rotation}deg)` }}
+        aria-hidden="true"
+      />
     </div>
   );
 }
