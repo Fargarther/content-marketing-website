@@ -245,7 +245,7 @@ const RecipeCard = ({
                     fontSize: '14px',
                     paddingLeft: '16px',
                     position: 'relative',
-                    fontFamily: 'Courier New, monospace',
+                    fontFamily: 'var(--font-body)',
                     color: '#59483b'
                   }}>
                     <span style={{
@@ -266,7 +266,7 @@ const RecipeCard = ({
                     marginBottom: '6px',
                     fontSize: '14px',
                     lineHeight: '1.4',
-                    fontFamily: 'Courier New, monospace',
+                    fontFamily: 'var(--font-body)',
                     color: '#59483b'
                   }}>
                     {step}

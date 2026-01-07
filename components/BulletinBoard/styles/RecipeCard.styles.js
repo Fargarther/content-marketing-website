@@ -398,7 +398,7 @@ export const ExpandedSection = styled.div`
   border-top: 1px solid rgba(200, 180, 120, 0.3);
   
   h4 {
-    font-family: 'Courier New', monospace;
+    font-family: var(--font-display);
     font-size: 12px;
     color: #59483b;
     margin: 0 0 10px 0;

@@ -121,7 +121,7 @@ const CategoryTab = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'Courier New', monospace;
+  font-family: var(--font-mono);
   font-weight: 600;
   font-size: 13px;
   color: ${props => props.$active ? '#fff' : 'rgba(255, 255, 255, 0.9)'};
@@ -183,7 +183,7 @@ const SearchInput = styled.input`
   border: 1px solid rgba(210, 190, 150, 0.6);
   border-radius: 4px;
   background: rgba(255, 254, 245, 0.9);
-  font-family: 'Courier New', monospace;
+  font-family: var(--font-mono);
   font-size: 13px;
   color: #59483b;
 
@@ -200,7 +200,7 @@ const ClearButton = styled.button`
   color: #8a7248;
   padding: 4px 10px;
   border-radius: 12px;
-  font-family: 'Courier New', monospace;
+  font-family: var(--font-mono);
   font-size: 11px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -214,7 +214,7 @@ const ClearButton = styled.button`
 
 const ResultCount = styled.div`
   margin-left: auto;
-  font-family: 'Courier New', monospace;
+  font-family: var(--font-mono);
   font-size: 11px;
   color: rgba(90, 63, 36, 0.7);
 `;
@@ -235,7 +235,7 @@ const FilterGroup = styled.div`
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
-  font-family: 'Courier New', monospace;
+  font-family: var(--font-mono);
   font-size: 11px;
   color: #8a7248;
 `;
@@ -252,7 +252,7 @@ const FilterChip = styled.button`
   color: ${props => props.$active ? '#fff' : '#59483b'};
   border-radius: 14px;
   padding: 3px 10px;
-  font-family: 'Courier New', monospace;
+  font-family: var(--font-mono);
   font-size: 11px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -270,7 +270,7 @@ const ClearFiltersButton = styled.button`
   color: #e76f51;
   border-radius: 12px;
   padding: 3px 10px;
-  font-family: 'Courier New', monospace;
+  font-family: var(--font-mono);
   font-size: 11px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -329,7 +329,7 @@ const DeckCard = styled.div`
 `;
 
 const DeckTitle = styled.div`
-  font-family: 'Courier New', monospace;
+  font-family: var(--font-display);
   font-size: 14px;
   font-weight: 700;
   color: #59483b;
@@ -337,7 +337,7 @@ const DeckTitle = styled.div`
 `;
 
 const DeckMeta = styled.div`
-  font-family: 'Courier New', monospace;
+  font-family: var(--font-mono);
   font-size: 11px;
   color: rgba(90, 63, 36, 0.7);
   text-align: center;
@@ -351,7 +351,7 @@ const DeckTags = styled.div`
 `;
 
 const DeckTag = styled.span`
-  font-family: 'Courier New', monospace;
+  font-family: var(--font-mono);
   font-size: 9px;
   color: #8a7248;
   background: rgba(210, 190, 150, 0.25);
@@ -360,7 +360,7 @@ const DeckTag = styled.span`
 `;
 
 const EmptyMessage = styled.div`
-  font-family: 'Courier New', monospace;
+  font-family: var(--font-mono);
   font-size: 14px;
   color: #8a7248;
   font-style: italic;
@@ -446,8 +446,8 @@ const RecipePortfolio = () => {
     ghostElement.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
     ghostElement.style.transform = 'rotate(-2deg)';
     ghostElement.innerHTML = `
-      <div style="font-family: 'Courier New', monospace; font-size: 14px; color: #59483b; font-weight: bold;">${recipe.title}</div>
-      <div style="font-family: 'Courier New', monospace; font-size: 11px; color: #8a7248; margin-top: 4px;">${recipe.category} - ${recipe.time}</div>
+      <div style="font-family: var(--font-display); font-size: 14px; color: #59483b; font-weight: bold;">${recipe.title}</div>
+      <div style="font-family: var(--font-mono); font-size: 11px; color: #8a7248; margin-top: 4px;">${recipe.category} - ${recipe.time}</div>
     `;
 
     document.body.appendChild(ghostElement);

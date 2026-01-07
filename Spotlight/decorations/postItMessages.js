@@ -1,8 +1,8 @@
 export const postItMessages = [
   { text: "Salt early,\nsalt often", font: "Georgia, serif", style: "italic" },
-  { text: "A watched pot\neventually boils\n(be patient)", font: "Playfair Display, serif", style: "normal" },
+  { text: "A watched pot\neventually boils\n(be patient)", font: "var(--font-display)", style: "normal" },
   { text: "TASTE\nAS YOU\nGO", font: "Impact, sans-serif", style: "normal" },
-  { text: "mise en place\n= inner peace", font: "Courier New, monospace", style: "normal" },
+  { text: "mise en place\n= inner peace", font: "var(--font-mono)", style: "normal" },
   { text: "When in doubt,\nadd butter", font: "Comic Sans MS, cursive", style: "normal" },
   { text: "The secret ingredient\nis always\nlove", font: "Brush Script MT, cursive", style: "normal" },
   { text: "Sharp knives\nsave lives", font: "Arial Black, sans-serif", style: "normal" },
@@ -16,7 +16,7 @@ export const postItMessages = [
   { text: "Life's too short\nfor bad coffee", font: "Lucida Console, monospace", style: "normal" },
   { text: "embrace\nthe\nchaos", font: "Arial Narrow, sans-serif", style: "italic" },
   { text: "Recipes are\nguidelines,\nnot rules", font: "Tahoma, sans-serif", style: "normal" },
-  { text: "burnt edges\n=\nextra flavor", font: "Courier New, monospace", style: "normal" },
+  { text: "burnt edges\n=\nextra flavor", font: "var(--font-mono)", style: "normal" },
   { text: "Feed people\nwell", font: "Georgia, serif", style: "bold" },
   { text: "Kitchen dance\nparties\nencouraged", font: "Comic Sans MS, cursive", style: "normal" }
 ];

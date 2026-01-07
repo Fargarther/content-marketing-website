@@ -4,7 +4,7 @@ import styled from 'styled-components';
 
 const CommentsContainer = styled.div`
   padding: 12px;
-  font-family: 'Courier New', monospace;
+  font-family: var(--font-body);
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -40,7 +40,7 @@ const FilterContainer = styled.div`
 `;
 
 const FilterButton = styled.button`
-  font-family: 'Courier New', monospace;
+  font-family: var(--font-mono);
   font-size: 11px;
   padding: 4px 8px;
   border: 1px solid ${props => props.$active ? '#b38c42' : 'rgba(200, 180, 120, 0.5)'};
@@ -61,7 +61,7 @@ const SearchInput = styled.input`
   padding: 6px 8px;
   border: 1px solid rgba(200, 180, 120, 0.5);
   border-radius: 3px;
-  font-family: 'Courier New', monospace;
+  font-family: var(--font-mono);
   font-size: 11px;
   color: #59483b;
   background: rgba(255, 254, 245, 0.8);
@@ -107,6 +107,7 @@ const Comment = styled.div`
 `;
 
 const CommentAuthor = styled.div`
+  font-family: var(--font-mono);
   font-size: 11px;
   font-weight: bold;
   color: #8a7248;
@@ -120,6 +121,7 @@ const CommentText = styled.div`
 `;
 
 const CommentTime = styled.div`
+  font-family: var(--font-mono);
   font-size: 10px;
   color: #a09080;
   margin-top: 4px;
@@ -145,7 +147,7 @@ const CommentInput = styled.textarea`
   padding: 8px;
   border: 1px solid rgba(200, 180, 120, 0.5);
   border-radius: 4px;
-  font-family: 'Courier New', monospace;
+  font-family: var(--font-mono);
   font-size: 12px;
   color: #59483b;
   background: rgba(255, 254, 245, 0.8);
@@ -168,7 +170,7 @@ const SubmitButton = styled.button`
   border: none;
   padding: 6px 12px;
   border-radius: 4px;
-  font-family: 'Courier New', monospace;
+  font-family: var(--font-mono);
   font-size: 12px;
   font-weight: bold;
   cursor: pointer;
@@ -191,6 +193,7 @@ const SubmitButton = styled.button`
 `;
 
 const CommentCounter = styled.div`
+  font-family: var(--font-mono);
   font-size: 10px;
   color: #8a7248;
   text-align: right;

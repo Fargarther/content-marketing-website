@@ -35,13 +35,14 @@ const TrayHeader = styled.div`
 
 const TrayTitle = styled.h3`
   margin: 0;
-  font-family: 'Courier New', monospace;
+  font-family: var(--font-display);
   font-size: 18px;
   color: #5a3f24;
 `;
 
 const TrayHint = styled.p`
   margin: 0;
+  font-family: var(--font-mono);
   font-size: 12px;
   color: rgba(90, 63, 36, 0.7);
   letter-spacing: 0.6px;
@@ -63,6 +64,7 @@ const CategoryColumn = styled.div`
 `;
 
 const CategoryTitle = styled.div`
+  font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
@@ -111,12 +113,14 @@ const RecipeRow = styled.div`
 `;
 
 const RecipeTitle = styled.div`
+  font-family: var(--font-display);
   font-size: 14px;
   font-weight: 600;
   color: #4f3822;
 `;
 
 const RecipeMeta = styled.div`
+  font-family: var(--font-mono);
   font-size: 11px;
   color: rgba(90, 63, 36, 0.7);
 `;
@@ -133,6 +137,7 @@ const TrayAddButton = styled.button`
   color: #5a3f24;
   border-radius: 999px;
   padding: 2px 10px;
+  font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 600;
   cursor: pointer;

@@ -4,6 +4,12 @@
   box-sizing: border-box;
 }
 
+:root {
+  --font-display: "IM Fell English SC", serif;
+  --font-body: "Vollkorn", serif;
+  --font-mono: "IBM Plex Mono", monospace;
+}
+
 html, body {
   height: 100%;
   overflow-x: hidden;
@@ -13,7 +19,7 @@ html, body {
 body {
   background: #FDFCF5;
   color: #3a3a3a;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  font-family: var(--font-body);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -26,10 +32,23 @@ body {
   background: #FDFCF5;
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1, h2, h3, h4, h5, h6,
+.display,
+.section-title {
+  font-family: var(--font-display);
   font-weight: 600;
   line-height: 1.2;
+  letter-spacing: 0.02em;
   color: #3a3a3a;
+}
+
+.meta,
+.label,
+.tag,
+.badge,
+.timestamp,
+.recipe-card-meta {
+  font-family: var(--font-mono);
 }
 
 p {

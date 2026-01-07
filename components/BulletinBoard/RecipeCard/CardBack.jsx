@@ -31,14 +31,14 @@ const ImageOverlay = styled.div`
 `;
 
 const ImageTitle = styled.h4`
-  font-family: 'Courier New', monospace;
+  font-family: var(--font-display);
   font-size: 14px;
   margin: 0;
   text-shadow: 0 1px 3px rgba(0,0,0,0.5);
 `;
 
 const ImageCaption = styled.p`
-  font-family: 'Courier New', monospace;
+  font-family: var(--font-mono);
   font-size: 11px;
   margin: 4px 0 0;
   opacity: 0.9;

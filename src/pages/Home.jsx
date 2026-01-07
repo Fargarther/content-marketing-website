@@ -5,6 +5,7 @@ import Sky from '../components/Sky';
 import Windmill from '../components/Windmill';
 import WoodenSign from '../components/WoodenSign';
 import BugTrail from '../components/BugTrail';
+import Mailbox from '../components/Mailbox';
 import './Home.css';
 
 export default function Home({ onNavigate }) {
@@ -183,9 +184,9 @@ export default function Home({ onNavigate }) {
       <div className="scroll-track" ref={trackRef}>
         <section className="panel hero-panel" id="home">
           <div className="panel-inner">
-            <p className="eyebrow">Content Marketing Studio</p>
+            <p className="eyebrow">Communications Specialist</p>
             <h1>
-              Prairie Grass prototype.
+              Alex Benson
             </h1>
           </div>
         </section>
@@ -221,6 +222,7 @@ export default function Home({ onNavigate }) {
       <Windmill trackRef={trackRef} />
       <BugTrail trackRef={trackRef} />
       <WoodenSign trackRef={trackRef} onClick={handleSignClick} />
+      <Mailbox trackRef={trackRef} />
       <PrairieGrass
         spanCount={PANEL_COUNT}
         scrollVelocityRef={velocityRef}

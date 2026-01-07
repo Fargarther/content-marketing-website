@@ -21,7 +21,7 @@ const Star = styled.span`
 `;
 
 const RatingText = styled.span`
-  font-family: 'Courier New', monospace;
+  font-family: var(--font-mono);
   font-size: 12px;
   color: #8a7248;
   margin-left: 8px;

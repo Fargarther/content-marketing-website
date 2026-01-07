@@ -71,7 +71,7 @@ const MenuButton = styled.button`
   padding: 8px 16px;
   border-radius: 4px;
   cursor: pointer;
-  font-family: 'Courier New', monospace;
+  font-family: var(--font-mono);
   font-size: 14px;
   transition: all 0.2s;
   white-space: nowrap;
