@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import woodenSignImg from '../assets/wooden_sign.png';
+import woodenSignImg from '../assets/wooden_sign.svg';
 import './WoodenSign.css';
 
 export default function WoodenSign({ trackRef, onClick }) {

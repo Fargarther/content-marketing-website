@@ -7,9 +7,9 @@
     /* Position it relative to the 'projects' area or specific spot */
     left: var(--sign-x, 2600px);
     /* Adjust based on where you want it horizontally in the world */
-    bottom: calc(var(--sign-ground-height, var(--ground-height, 120px)) - 20px);
-    width: 180px;
-    z-index: 20;
+    bottom: calc(var(--sign-ground-height, var(--ground-height, 120px)) - 138px);
+    width: clamp(480px, 32vw, 640px);
+    z-index: 5;
     /* Above grass (z=6) */
     transform: translate(var(--sign-scroll-offset, 0px), 0);
     cursor: pointer;
@@ -42,8 +42,9 @@
 
 @media (max-width: 768px) {
     .wooden-sign-container {
-        width: 140px;
+        width: clamp(360px, 84vw, 480px);
         left: var(--sign-x-mobile, 1200px);
+        bottom: calc(var(--sign-ground-height, var(--ground-height, 120px)) - 126px);
         /* Adjust for mobile layout */
     }
 }

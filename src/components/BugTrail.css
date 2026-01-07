@@ -1,0 +1,142 @@
+.bug-trail {
+  position: fixed;
+  left: var(--trail-left, 1200px);
+  top: var(--trail-top, 120px);
+  width: var(--trail-width, 1400px);
+  height: var(--trail-height, 420px);
+  transform: translateX(var(--trail-scroll-offset, 0px));
+  pointer-events: none;
+  z-index: 4;
+}
+
+.bug-trail-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+}
+
+.bug-trail-dots {
+  fill: none;
+  stroke: #3a2f1f;
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-dasharray: 2 14;
+}
+
+.bug-trail-reveal {
+  fill: none;
+  stroke: #ffffff;
+  stroke-width: 7;
+  stroke-linecap: round;
+}
+
+.bug-trail-dots-tail {
+  fill: none;
+  stroke: #3a2f1f;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-dasharray: 1 11;
+  opacity: 0.45;
+}
+
+.bug-trail-tail-reveal {
+  fill: none;
+  stroke: #ffffff;
+  stroke-width: 7;
+  stroke-linecap: round;
+}
+
+.bug-trail-bug {
+  fill: #2f2217;
+  stroke: #2f2217;
+  stroke-width: 1.5;
+  transform-origin: center;
+  opacity: 0;
+}
+
+.bug-trail-callout {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--trail-callout-width, 340px);
+  min-height: var(--trail-callout-height, 96px);
+  padding: 14px 18px;
+  background: rgba(255, 252, 245, 0.92);
+  border: 2px solid #3a2f1f;
+  border-radius: 18px;
+  box-shadow: 0 12px 24px rgba(60, 45, 30, 0.12);
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.bug-trail-callout::after {
+  content: '';
+  position: absolute;
+  right: 24px;
+  bottom: -12px;
+  width: 26px;
+  height: 26px;
+  background: inherit;
+  border-right: 2px solid #3a2f1f;
+  border-bottom: 2px solid #3a2f1f;
+  transform: rotate(45deg);
+}
+
+.bug-trail-callout.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.bug-trail-text {
+  display: inline-block;
+  font-weight: 600;
+  font-size: 1rem;
+  color: #3a2f1f;
+  white-space: nowrap;
+  overflow: hidden;
+  max-width: 0;
+}
+
+.bug-trail-callout.is-visible .bug-trail-text {
+  animation: bug-trail-type 1.2s steps(var(--trail-text-steps, 28)) forwards;
+}
+
+@keyframes bug-trail-type {
+  to {
+    max-width: var(--trail-text-width, 26ch);
+  }
+}
+
+@media (max-width: 768px) {
+  .bug-trail {
+    z-index: 4;
+  }
+
+  .bug-trail-dots {
+    stroke-width: 3;
+    stroke-dasharray: 2 10;
+  }
+
+  .bug-trail-dots-tail {
+    stroke-width: 2;
+    stroke-dasharray: 1 8;
+  }
+
+  .bug-trail-callout {
+    padding: 10px 12px;
+    border-radius: 14px;
+  }
+
+  .bug-trail-callout::after {
+    right: 16px;
+    width: 20px;
+    height: 20px;
+    bottom: -9px;
+  }
+
+  .bug-trail-text {
+    font-size: 0.9rem;
+  }
+}

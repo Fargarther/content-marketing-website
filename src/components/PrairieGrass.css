@@ -31,9 +31,5 @@
 }
 
 .prairie-grass-front {
-  pointer-events: auto;
-  /* allow hover/touch to sway blades */
-  touch-action: none;
-  /* capture touch drags for custom handling */
-  cursor: default;
+  pointer-events: none;
 }

@@ -671,13 +671,50 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1, scrollVelocityRef, tra
 
   }, [breeze]); // Re-init on breeze change? Maybe overkill but safe.
 
-  const handlePointer = (e) => {
-    const t = e.touches ? e.touches[0] : e;
-    const rect = e.currentTarget.getBoundingClientRect();
-    pointerRef.current.x = t.clientX - rect.left;
-    pointerRef.current.y = t.clientY - rect.top;
-  };
-  const handleLeave = () => { pointerRef.current.x = null; pointerRef.current.y = null; };
+  // Track pointer globally so foreground elements can stay clickable.
+  useEffect(() => {
+    const canvas = frontCanvasRef.current;
+    if (!canvas) return;
+
+    const updatePointer = (clientX, clientY) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = clientX - rect.left;
+      const y = clientY - rect.top;
+
+      if (x < 0 || y < 0 || x > rect.width || y > rect.height) {
+        pointerRef.current.x = null;
+        pointerRef.current.y = null;
+        return;
+      }
+
+      pointerRef.current.x = x;
+      pointerRef.current.y = y;
+    };
+
+    const handleMouseMove = (e) => updatePointer(e.clientX, e.clientY);
+    const handleTouchMove = (e) => {
+      if (!e.touches || e.touches.length === 0) return;
+      updatePointer(e.touches[0].clientX, e.touches[0].clientY);
+    };
+    const clearPointer = () => {
+      pointerRef.current.x = null;
+      pointerRef.current.y = null;
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('touchmove', handleTouchMove, { passive: true });
+    window.addEventListener('touchend', clearPointer);
+    window.addEventListener('touchcancel', clearPointer);
+    window.addEventListener('blur', clearPointer);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', clearPointer);
+      window.removeEventListener('touchcancel', clearPointer);
+      window.removeEventListener('blur', clearPointer);
+    };
+  }, []);
 
   useEffect(() => {
     const canvas = frontCanvasRef.current;
@@ -705,10 +742,6 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1, scrollVelocityRef, tra
           ref={frontCanvasRef}
           className="prairie-grass prairie-grass-front"
           aria-hidden="true"
-          onMouseMove={handlePointer}
-          onMouseLeave={handleLeave}
-          onTouchMove={handlePointer}
-          onTouchEnd={handleLeave}
         />
       </div>
     </>

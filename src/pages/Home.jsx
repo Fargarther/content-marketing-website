@@ -4,6 +4,7 @@ import PrairieGrass from '../components/PrairieGrass';
 import Sky from '../components/Sky';
 import Windmill from '../components/Windmill';
 import WoodenSign from '../components/WoodenSign';
+import BugTrail from '../components/BugTrail';
 import './Home.css';
 
 export default function Home({ onNavigate }) {
@@ -218,6 +219,7 @@ export default function Home({ onNavigate }) {
       </div>
 
       <Windmill trackRef={trackRef} />
+      <BugTrail trackRef={trackRef} />
       <WoodenSign trackRef={trackRef} onClick={handleSignClick} />
       <PrairieGrass
         spanCount={PANEL_COUNT}
