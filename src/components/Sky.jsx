@@ -77,7 +77,7 @@ export default function Sky({ trackRef, scrollStateRef }) {
             width: '100vw',
             height: '100vh',
             pointerEvents: 'none',
-            zIndex: 0,
+            zIndex: -1,
             overflow: 'hidden',
         }}>
             {clouds.map((cloud, index) => (

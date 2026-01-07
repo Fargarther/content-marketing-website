@@ -107,6 +107,153 @@ h1 {
   line-height: 1.02;
 }
 
+.hero-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 0.5rem;
+}
+
+.resume-button {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.9rem;
+  padding: 0.6rem 1.2rem;
+  border-radius: 999px;
+  border: 2px solid rgba(90, 63, 36, 0.5);
+  background: rgba(253, 252, 245, 0.9);
+  color: #5a3f24;
+  cursor: pointer;
+  box-shadow: 0 6px 14px rgba(90, 63, 36, 0.15);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.resume-button:hover {
+  transform: translateY(-2px);
+  background: #fff7ea;
+  box-shadow: 0 10px 18px rgba(90, 63, 36, 0.2);
+}
+
+.resume-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(60, 45, 30, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2500;
+  padding: 2rem 1.5rem;
+}
+
+.resume-modal {
+  width: min(92vw, 680px);
+  max-height: min(80vh, 760px);
+  overflow-y: auto;
+  background: #f7f1dd;
+  border: 1px solid rgba(166, 124, 82, 0.5);
+  border-radius: 14px;
+  box-shadow: 0 24px 60px rgba(45, 32, 18, 0.35);
+  padding: 1.5rem 1.75rem 1.8rem;
+  position: relative;
+}
+
+.resume-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 1rem;
+}
+
+.resume-header h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 1.2vw + 1.2rem, 2.2rem);
+  color: #4a3624;
+}
+
+.resume-close {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  border: 1px solid rgba(90, 63, 36, 0.4);
+  background: rgba(255, 255, 255, 0.8);
+  color: #6b4f2c;
+  border-radius: 999px;
+  padding: 0.35rem 0.7rem;
+  cursor: pointer;
+}
+
+.resume-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  color: #4a3b2d;
+}
+
+.resume-lead {
+  font-size: 1.05rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.resume-section h4 {
+  margin: 0 0 0.5rem;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  letter-spacing: 0.02em;
+  color: #5a3f24;
+}
+
+.resume-section ul {
+  margin: 0;
+  padding-left: 1.2rem;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.resume-section li {
+  line-height: 1.4;
+}
+
+.resume-role {
+  display: block;
+  font-weight: 600;
+}
+
+.resume-meta {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: rgba(90, 63, 36, 0.7);
+}
+
+.resume-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.resume-tags span {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.35rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(166, 124, 82, 0.4);
+  color: #5a3f24;
+}
+
+.resume-note {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: rgba(90, 63, 36, 0.7);
+  margin: 0;
+}
+
 h2 {
   font-size: clamp(1.2rem, 1.4vw + 0.9rem, 2rem);
   line-height: 1.2;
@@ -140,5 +287,17 @@ h2 {
 @media (max-width: 640px) {
   .panel {
     padding: 2.5rem 1.25rem;
+  }
+
+  .hero-panel h1 {
+    font-size: clamp(3.4rem, 9vw, 5rem);
+  }
+
+  .hero-panel .eyebrow {
+    font-size: 1.1rem;
+  }
+
+  .resume-modal {
+    padding: 1.25rem;
   }
 }

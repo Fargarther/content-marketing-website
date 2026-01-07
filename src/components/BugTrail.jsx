@@ -8,50 +8,30 @@ const buildPath = (width, baseHeight, endDrop, calloutWidth, calloutHeight, isMo
   const startX = Math.round(calloutWidth - (isMobile ? 8 : 12));
   const startY = Math.round(calloutHeight + (isMobile ? 8 : 14));
 
-  // First curve: from callout down toward loop area
-  const c1x = Math.round(width * 0.18);
-  const c1y = Math.round(baseHeight * 0.85);
-  const c2x = Math.round(width * 0.32);
-  const c2y = Math.round(baseHeight * 0.62);
-  const loopEntryX = Math.round(width * 0.42);
-  const loopEntryY = Math.round(baseHeight * 0.58);
+  // Simple, playful curve: Drop down, undulate slightly, then arc to sign
+  // P1: Drop down from callout
+  const p1x = Math.round(width * 0.15);
+  const p1y = Math.round(baseHeight * 0.6);
 
-  // Loop: a proper loop-de-loop that crosses itself
-  // The loop goes: right -> down -> left (crossing over) -> up -> right to exit
-  const loopRadius = isMobile ? width * 0.08 : width * 0.06;
-  const loopCenterX = loopEntryX + loopRadius * 1.2;
-  const loopCenterY = loopEntryY + loopRadius * 0.8;
+  // P2: Bottom of first dip
+  const p2x = Math.round(width * 0.35);
+  const p2y = Math.round(baseHeight * 0.85);
 
-  // First half of loop: curve down and around to the left
-  const loop1C1x = Math.round(loopEntryX + loopRadius * 1.8);
-  const loop1C1y = Math.round(loopEntryY + loopRadius * 0.2);
-  const loop1C2x = Math.round(loopCenterX + loopRadius * 1.6);
-  const loop1C2y = Math.round(loopCenterY + loopRadius * 1.4);
-  const loopBottomX = Math.round(loopCenterX);
-  const loopBottomY = Math.round(loopCenterY + loopRadius * 1.8);
+  // P3: Peak of hop
+  const p3x = Math.round(width * 0.65);
+  const p3y = Math.round(baseHeight * 0.45);
 
-  // Second half of loop: curve up and cross over the entry path
-  const loop2C1x = Math.round(loopCenterX - loopRadius * 1.6);
-  const loop2C1y = Math.round(loopCenterY + loopRadius * 1.4);
-  const loop2C2x = Math.round(loopEntryX - loopRadius * 0.6);
-  const loop2C2y = Math.round(loopEntryY - loopRadius * 0.8);
-  const loopExitX = Math.round(loopEntryX + loopRadius * 0.8);
-  const loopExitY = Math.round(loopEntryY - loopRadius * 1.2);
+  // End: Swoop down to sign top-left corner
+  const endC1x = Math.round(width * 0.85);
+  const endC1y = Math.round(baseHeight * 0.65 + endDrop * 0.5);
 
-  // Final curve: from loop exit to the sign
-  const endC1x = Math.round(width * 0.58);
-  const endC1y = Math.round(baseHeight * 0.52 + endDrop * 0.3);
-  const endC2x = Math.round(width * 0.82);
-  const endC2y = Math.round(baseHeight * 0.72 + endDrop * 0.85);
   const endX = Math.round(width * 0.98);
   const endY = Math.round(baseHeight * 0.76 + endDrop);
 
   return [
     `M ${startX} ${startY}`,
-    `C ${c1x} ${c1y}, ${c2x} ${c2y}, ${loopEntryX} ${loopEntryY}`,
-    `C ${loop1C1x} ${loop1C1y}, ${loop1C2x} ${loop1C2y}, ${loopBottomX} ${loopBottomY}`,
-    `C ${loop2C1x} ${loop2C1y}, ${loop2C2x} ${loop2C2y}, ${loopExitX} ${loopExitY}`,
-    `C ${endC1x} ${endC1y}, ${endC2x} ${endC2y}, ${endX} ${endY}`,
+    `C ${p1x} ${p1y}, ${p2x} ${p2y}, ${p3x} ${p3y}`,
+    `S ${endC1x} ${endC1y}, ${endX} ${endY}`
   ].join(' ');
 };
 
@@ -74,17 +54,17 @@ export default function BugTrail({ trackRef, text = DEFAULT_TEXT }) {
 
     const viewportWidth = window.innerWidth || 1024;
     const isMobile = viewportWidth <= 768;
-    const signX = isMobile ? 1200 : 2600;
+    const signX = isMobile ? 1200 : 2550; // Tuned match
     const width = isMobile
       ? Math.round(clamp(viewportWidth * 0.9, 260, 360))
-      : 1400;
+      : 1350;
     const baseHeight = isMobile
       ? Math.round(clamp(viewportWidth * 0.55, 200, 280))
-      : 420;
-    const endDrop = isMobile ? 140 : 200;
+      : 400;
+    const endDrop = isMobile ? 140 : 180;
     const height = baseHeight + endDrop;
     const left = signX - width;
-    const top = isMobile ? 90 : 120;
+    const top = isMobile ? 90 : 150;
     const calloutWidth = isMobile ? Math.round(width * 0.7) : 340;
     const calloutHeight = isMobile ? 74 : 96;
     const targetLeft = isMobile ? 16 : 40;

@@ -6,6 +6,7 @@ import './Mailbox.css';
 export default function Mailbox({ trackRef }) {
   const containerRef = useRef(null);
   const [groundHeight, setGroundHeight] = useState(null);
+  const [flagUp, setFlagUp] = useState(false);
 
   // Sync ground height for vertical positioning
   useEffect(() => {
@@ -54,9 +55,11 @@ export default function Mailbox({ trackRef }) {
 
   return (
     <div
-      className="mailbox-container"
+      className={`mailbox-container ${flagUp ? 'flag-up' : ''}`}
       ref={containerRef}
       style={style}
+      onMouseEnter={() => setFlagUp(true)}
+      onMouseLeave={() => setFlagUp(false)}
     >
       <img src={mailboxImg} alt="Mailbox" className="mailbox-image" />
       <img src={hingeImg} alt="" className="mailbox-hinge" aria-hidden="true" />

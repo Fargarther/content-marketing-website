@@ -12,6 +12,7 @@ export default function Home({ onNavigate }) {
   const PANEL_COUNT = 5;
   const trackRef = useRef(null);
   const touchRef = useRef(null);
+  const [resumeOpen, setResumeOpen] = useState(false);
   const [totalWidth, setTotalWidth] = useState(
     typeof window !== 'undefined' ? window.innerWidth * PANEL_COUNT : 0
   );
@@ -161,6 +162,17 @@ export default function Home({ onNavigate }) {
     };
   }, []);
 
+  useEffect(() => {
+    if (!resumeOpen) return;
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setResumeOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [resumeOpen]);
+
   const groundVisualHeight = 100;
   const handleSignClick = useCallback(() => {
     if (onNavigate) {
@@ -188,6 +200,18 @@ export default function Home({ onNavigate }) {
             <h1>
               Alex Benson
             </h1>
+            <div className="hero-actions">
+              <button
+                type="button"
+                className="resume-button"
+                onClick={() => setResumeOpen(true)}
+                aria-haspopup="dialog"
+                aria-expanded={resumeOpen}
+                aria-controls="resume-modal"
+              >
+                Resume
+              </button>
+            </div>
           </div>
         </section>
 
@@ -241,6 +265,74 @@ export default function Home({ onNavigate }) {
 
       {/* Pass totalWidth to Sky to help it scale speeds if needed, though we hardcoded them */}
       <Sky trackRef={trackRef} scrollStateRef={scrollStateRef} />
+
+      {resumeOpen && (
+        <div
+          className="resume-overlay"
+          onClick={() => setResumeOpen(false)}
+          role="presentation"
+        >
+          <div
+            className="resume-modal"
+            id="resume-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="resume-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="resume-header">
+              <h3 id="resume-title">Resume</h3>
+              <button
+                type="button"
+                className="resume-close"
+                onClick={() => setResumeOpen(false)}
+                aria-label="Close resume"
+              >
+                Close
+              </button>
+            </div>
+            <div className="resume-content">
+              <p className="resume-lead">
+                Content marketing and communications specialist focused on brand storytelling,
+                editorial strategy, and growth-ready campaigns.
+              </p>
+              <div className="resume-section">
+                <h4>Recent Roles</h4>
+                <ul>
+                  <li>
+                    <span className="resume-role">Senior Content Strategist</span>
+                    <span className="resume-meta">Company Name - 2022 to Present</span>
+                  </li>
+                  <li>
+                    <span className="resume-role">Content Marketing Lead</span>
+                    <span className="resume-meta">Company Name - 2019 to 2022</span>
+                  </li>
+                </ul>
+              </div>
+              <div className="resume-section">
+                <h4>Focus Areas</h4>
+                <div className="resume-tags">
+                  <span>Editorial Strategy</span>
+                  <span>Brand Voice</span>
+                  <span>Lifecycle Content</span>
+                  <span>SEO + Distribution</span>
+                </div>
+              </div>
+              <div className="resume-section">
+                <h4>Selected Results</h4>
+                <ul>
+                  <li>Grew organic search traffic by 3x over 12 months.</li>
+                  <li>Launched new messaging system across product lines.</li>
+                  <li>Built a quarterly content engine with measurable pipeline impact.</li>
+                </ul>
+              </div>
+              <p className="resume-note">
+                Want the full PDF? Drop it into the project and link it here.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
