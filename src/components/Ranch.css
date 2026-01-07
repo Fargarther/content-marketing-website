@@ -1,0 +1,26 @@
+.ranch-container {
+  position: fixed;
+  /* Position at the very end of the site (panel 5 area) */
+  left: var(--ranch-x, 4800px);
+  bottom: calc(var(--ranch-ground-height, var(--ground-height, 120px)) - 60px);
+  width: clamp(600px, 45vw, 900px);
+  z-index: 3;
+  transform: translateX(var(--ranch-scroll-offset, 0px));
+  pointer-events: none;
+  will-change: transform;
+}
+
+.ranch-image {
+  width: 100%;
+  height: auto;
+  display: block;
+  filter: drop-shadow(4px 8px 16px rgba(0, 0, 0, 0.25));
+}
+
+@media (max-width: 768px) {
+  .ranch-container {
+    width: clamp(300px, 80vw, 500px);
+    left: var(--ranch-x-mobile, 2400px);
+    bottom: calc(var(--ranch-ground-height, var(--ground-height, 120px)) - 40px);
+  }
+}

@@ -8,20 +8,16 @@ const buildPath = (width, baseHeight, endDrop, labelWidth, labelHeight, isMobile
   const startX = Math.round(labelWidth - (isMobile ? 6 : 10));
   const startY = Math.round(labelHeight + (isMobile ? 8 : 12));
 
-  // Simple, playful curve: Drop down, undulate slightly, then arc to sign
-  // P1: Drop down from callout
+  // Simple, playful curve: drop down, undulate slightly, then arc to the sign.
   const p1x = Math.round(width * 0.15);
   const p1y = Math.round(baseHeight * 0.6);
 
-  // P2: Bottom of first dip
   const p2x = Math.round(width * 0.35);
   const p2y = Math.round(baseHeight * 0.85);
 
-  // P3: Peak of hop
   const p3x = Math.round(width * 0.65);
   const p3y = Math.round(baseHeight * 0.45);
 
-  // End: Swoop down to sign top-left corner
   const endC1x = Math.round(width * 0.9);
   const endC1y = Math.round(baseHeight * 0.65 + endDrop * 0.5);
 
@@ -54,7 +50,7 @@ export default function BugTrail({ trackRef, text = DEFAULT_TEXT }) {
 
     const viewportWidth = window.innerWidth || 1024;
     const isMobile = viewportWidth <= 768;
-    const signX = isMobile ? 1200 : 2550; // Tuned match
+    const signX = isMobile ? 1200 : 2550;
     const width = isMobile
       ? Math.round(clamp(viewportWidth * 0.9, 260, 360))
       : 1420;
@@ -184,7 +180,6 @@ export default function BugTrail({ trackRef, text = DEFAULT_TEXT }) {
       arrowRef.current.setAttribute('transform', `translate(${endPos.x} ${endPos.y}) rotate(${endAngle})`);
       arrowRef.current.style.opacity = `${arrowOpacity}`;
     }
-
   };
 
   useEffect(() => {

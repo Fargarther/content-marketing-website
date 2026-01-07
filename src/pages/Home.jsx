@@ -6,6 +6,7 @@ import Windmill from '../components/Windmill';
 import WoodenSign from '../components/WoodenSign';
 import BugTrail from '../components/BugTrail';
 import Mailbox from '../components/Mailbox';
+import Ranch from '../components/Ranch';
 import './Home.css';
 
 export default function Home({ onNavigate }) {
@@ -247,6 +248,7 @@ export default function Home({ onNavigate }) {
       <BugTrail trackRef={trackRef} />
       <WoodenSign trackRef={trackRef} onClick={handleSignClick} />
       <Mailbox trackRef={trackRef} />
+      <Ranch trackRef={trackRef} />
       <PrairieGrass
         spanCount={PANEL_COUNT}
         scrollVelocityRef={velocityRef}
