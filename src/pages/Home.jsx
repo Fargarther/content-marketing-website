@@ -6,14 +6,16 @@ import Windmill from '../components/Windmill';
 import WoodenSign from '../components/WoodenSign';
 import BugTrail from '../components/BugTrail';
 import ContactTrail from '../components/ContactTrail';
+import Barrel from '../components/Barrel';
 import Mailbox from '../components/Mailbox';
 import Ranch from '../components/Ranch';
+import resumeImg from '../Alex_Benson_Resume.png';
 import './Home.css';
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 
 export default function Home({ onNavigate }) {
-  const PANEL_COUNT = 4;
+  const PANEL_COUNT = 5;
   const trackRef = useRef(null);
   const touchRef = useRef(null);
   const ranchWidthRef = useRef(null);
@@ -407,6 +409,13 @@ export default function Home({ onNavigate }) {
               >
                 Resume
               </button>
+              <button
+                type="button"
+                className="resume-button portfolio-button"
+                onClick={() => handleNavClick('#portfolio')}
+              >
+                Portfolio
+              </button>
             </div>
           </div>
         </section>
@@ -436,12 +445,22 @@ export default function Home({ onNavigate }) {
           </div>
         </section>
 
+        <section className="panel portfolio-panel" id="portfolio">
+          <div className="panel-inner compact">
+            <div className="section-header">
+              <p className="eyebrow">Portfolio</p>
+              <h2>Selected work and case studies.</h2>
+            </div>
+          </div>
+        </section>
+
       </div>
 
       <Windmill trackRef={trackRef} />
       <BugTrail trackRef={trackRef} />
       <ContactTrail trackRef={trackRef} />
       <WoodenSign trackRef={trackRef} onClick={handleSignClick} />
+      <Barrel trackRef={trackRef} />
       <Mailbox trackRef={trackRef} />
       <Ranch trackRef={trackRef} />
       <PrairieGrass
@@ -499,53 +518,30 @@ export default function Home({ onNavigate }) {
           >
             <div className="resume-header">
               <h3 id="resume-title">Resume</h3>
-              <button
-                type="button"
-                className="resume-close"
-                onClick={() => setResumeOpen(false)}
-                aria-label="Close resume"
-              >
-                Close
-              </button>
+              <div className="resume-actions">
+                <a
+                  className="resume-download"
+                  href={resumeImg}
+                  download="Alex_Benson_Resume.png"
+                >
+                  Download
+                </a>
+                <button
+                  type="button"
+                  className="resume-close"
+                  onClick={() => setResumeOpen(false)}
+                  aria-label="Close resume"
+                >
+                  Close
+                </button>
+              </div>
             </div>
             <div className="resume-content">
-              <p className="resume-lead">
-                Content marketing and communications specialist focused on brand storytelling,
-                editorial strategy, and growth-ready campaigns.
-              </p>
-              <div className="resume-section">
-                <h4>Recent Roles</h4>
-                <ul>
-                  <li>
-                    <span className="resume-role">Senior Content Strategist</span>
-                    <span className="resume-meta">Company Name - 2022 to Present</span>
-                  </li>
-                  <li>
-                    <span className="resume-role">Content Marketing Lead</span>
-                    <span className="resume-meta">Company Name - 2019 to 2022</span>
-                  </li>
-                </ul>
-              </div>
-              <div className="resume-section">
-                <h4>Focus Areas</h4>
-                <div className="resume-tags">
-                  <span>Editorial Strategy</span>
-                  <span>Brand Voice</span>
-                  <span>Lifecycle Content</span>
-                  <span>SEO + Distribution</span>
-                </div>
-              </div>
-              <div className="resume-section">
-                <h4>Selected Results</h4>
-                <ul>
-                  <li>Grew organic search traffic by 3x over 12 months.</li>
-                  <li>Launched new messaging system across product lines.</li>
-                  <li>Built a quarterly content engine with measurable pipeline impact.</li>
-                </ul>
-              </div>
-              <p className="resume-note">
-                Want the full PDF? Drop it into the project and link it here.
-              </p>
+              <img
+                src={resumeImg}
+                alt="Alex Benson resume"
+                className="resume-image"
+              />
             </div>
           </div>
         </div>
