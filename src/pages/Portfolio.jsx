@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
+import GroundNav from '../components/GroundNav';
 import './Portfolio.css';
 
 const aboutImages = import.meta.glob('../assets/About ME/*.{jpg,JPG,jpeg,JPEG,png,PNG,webp,WEBP,svg,SVG}', {
@@ -59,8 +60,16 @@ const spanPatterns = [
 const tiltPattern = [-1.2, 0.6, -0.4, 1, -0.8, 0.4, -0.6, 0.8, -1];
 const liftPattern = [0, -6, 4, -2, 6, -4, 2, -5, 3];
 
-export default function Portfolio() {
+export default function Portfolio({ onNavigate }) {
   const [activeItem, setActiveItem] = useState(null);
+  const [currentNav, setCurrentNav] = useState('/portfolio');
+  const [totalWidth, setTotalWidth] = useState(
+    typeof window !== 'undefined' ? window.innerWidth : 1200
+  );
+  const [viewportHeight, setViewportHeight] = useState(
+    typeof window !== 'undefined' ? window.innerHeight : 800
+  );
+  const groundVisualHeight = 100;
 
   useEffect(() => {
     if (!activeItem) return;
@@ -73,10 +82,66 @@ export default function Portfolio() {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [activeItem]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const update = () => {
+      setTotalWidth(window.innerWidth);
+      setViewportHeight(window.innerHeight || viewportHeight);
+    };
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, [viewportHeight]);
+
+  const navigateToHome = useCallback((hash) => {
+    if (onNavigate) {
+      onNavigate('/');
+      requestAnimationFrame(() => {
+        if (hash) {
+          window.location.hash = hash;
+        }
+      });
+      return;
+    }
+    if (hash) {
+      window.location.href = `/${hash}`;
+      return;
+    }
+    window.location.href = '/';
+  }, [onNavigate]);
+
+  const handleNavClick = useCallback((href) => {
+    if (!href) return;
+    setCurrentNav(href);
+    if (href === '/portfolio') return;
+    if (href.startsWith('/')) {
+      if (onNavigate) {
+        onNavigate(href);
+        return;
+      }
+      window.location.href = href;
+      return;
+    }
+    navigateToHome(href);
+  }, [navigateToHome, onNavigate]);
+
   return (
-    <div className="portfolio-page" aria-label="Portfolio page">
+    <div
+      className="portfolio-page"
+      aria-label="Portfolio page"
+      style={{ '--ground-height': `${groundVisualHeight}px` }}
+    >
       <header className="portfolio-header">
-        <p className="eyebrow">Portfolio</p>
+        <div className="portfolio-header-top">
+          <p className="eyebrow">Portfolio</p>
+          <button
+            type="button"
+            className="portfolio-home"
+            onClick={() => navigateToHome()}
+          >
+            Return Home
+          </button>
+        </div>
         <h1>Collage of work, experiments, and visual studies.</h1>
       </header>
 
@@ -167,6 +232,14 @@ export default function Portfolio() {
           </div>
         </div>
       )}
+
+      <GroundNav
+        totalWidth={totalWidth}
+        groundHeight={groundVisualHeight}
+        viewportHeight={viewportHeight}
+        currentHash={currentNav}
+        onNavClick={handleNavClick}
+      />
     </div>
   );
 }
