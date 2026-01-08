@@ -7,7 +7,7 @@ export const recipeData = [
       category: 'Artisan',
       time: '24-48 hr fermentation',
       price: '$24',
-      image: '/api/placeholder/400/250',
+      image: 'https://images.unsplash.com/photo-1711805064484-a77096f599a6?auto=format&fit=crop&w=400&h=250&q=80',
       pdf: 'cards/architectural-00-semolina.pdf',
       description: 'Defined crumb, crisp base, supple interior for next-day service.',
       text: 'Designed for toppings and slicing, with a crisp fried base and a soft, structured crumb.',
