@@ -26,6 +26,32 @@ export const BulletinBoardContainer = styled.div`
     box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.2);
     pointer-events: none;
   }
+
+  @media (max-width: 900px) {
+    width: 160%;
+    height: 720px;
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+  }
+
+  @media (max-width: 768px) {
+    width: 100%;
+    height: auto;
+    left: 0;
+    transform: none;
+    padding: 1rem;
+    margin: 1.25rem 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.25rem;
+  }
+
+  @media (max-width: 640px) {
+    height: auto;
+    padding: 0.9rem;
+    margin: 1rem 0;
+  }
 `;
 
 export const BoardFrame = styled.div`
@@ -38,4 +64,12 @@ export const BoardFrame = styled.div`
   border-radius: 8px;
   pointer-events: none;
   box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5);
+
+  @media (max-width: 900px) {
+    border-width: 10px;
+  }
+
+  @media (max-width: 640px) {
+    border-width: 8px;
+  }
 `;

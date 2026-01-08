@@ -81,6 +81,27 @@ export const CardContainer = styled.div`
   
   /* Account for buttons extending beyond card boundaries */
   margin-left: 13px; /* Half the button width that extends left */
+
+  @media (max-width: 900px) {
+    width: ${props => props.$isExpanded ? 'min(90vw, 420px)' : 'min(86vw, 300px)'};
+    min-height: ${props => props.$isExpanded ? '340px' : '185px'};
+  }
+
+  @media (max-width: 768px) {
+    position: relative;
+    left: auto;
+    top: auto;
+    transform: none;
+    margin: 0 auto 1.25rem;
+    width: min(100%, 420px);
+    cursor: default;
+  }
+
+  @media (max-width: 640px) {
+    width: ${props => props.$isExpanded ? 'min(92vw, 360px)' : 'min(90vw, 280px)'};
+    height: ${props => props.$isExpanded ? 'auto' : '175px'};
+    min-height: ${props => props.$isExpanded ? '320px' : '175px'};
+  }
 `;
 
 export const RecipeCardWrapper = styled.div`
@@ -172,6 +193,15 @@ export const PinButton = styled.button`
       ? 'inset 0 4px 7px rgba(0, 0, 0, 0.8), 0 0 1px rgba(0, 0, 0, 0.5)' 
       : 'inset 0 2px 4px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.3)'};
   }
+
+  @media (max-width: 768px) {
+    display: none;
+  }
+
+  @media (max-width: 640px) {
+    width: 22px;
+    height: 22px;
+  }
 `;
 
 export const CardSide = styled.div`
@@ -217,6 +247,14 @@ export const CardSide = styled.div`
     background-color: rgba(166, 124, 82, 0.5);
     border-radius: 3px;
   }
+
+  @media (max-width: 768px) {
+    padding: 14px;
+  }
+
+  @media (max-width: 640px) {
+    padding: 12px;
+  }
 `;
 
 export const FlipIndicator = styled.div`
@@ -251,6 +289,13 @@ export const FlipIndicator = styled.div`
     width: 20px;
     height: 20px;
   }
+
+  @media (max-width: 640px) {
+    width: 32px;
+    height: 32px;
+    bottom: 6px;
+    right: 6px;
+  }
 `;
 
 export const ExpandButton = styled.button`
@@ -281,6 +326,26 @@ export const ExpandButton = styled.button`
   
   &:active {
     transform: translateY(-50%) scale(0.95);
+  }
+
+  @media (max-width: 768px) {
+    left: auto;
+    right: 12px;
+    top: 12px;
+    transform: none;
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+
+  @media (max-width: 640px) {
+    left: auto;
+    right: 10px;
+    width: 32px;
+    height: 32px;
+    top: 10px;
+    font-size: 14px;
+    transform: none;
   }
 `;
 
@@ -331,6 +396,27 @@ export const CommentsButton = styled.button`
   &:active {
     transform: translateY(-50%) scale(0.95);
   }
+
+  @media (max-width: 768px) {
+    position: absolute;
+    left: auto;
+    right: 12px;
+    top: 56px;
+    transform: none;
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+  }
+
+  @media (max-width: 640px) {
+    left: auto;
+    right: 10px;
+    width: 32px;
+    height: 32px;
+    top: 50px;
+    font-size: 16px;
+    transform: none;
+  }
 `;
 
 export const CommentsSection = styled.div`
@@ -348,6 +434,26 @@ export const CommentsSection = styled.div`
   min-height: 200px;
   max-height: 400px;
   pointer-events: all;
+
+  @media (max-width: 768px) {
+    top: calc(100% + 12px);
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    width: min(92vw, 360px);
+    min-height: 180px;
+    max-height: 320px;
+  }
+
+  @media (max-width: 640px) {
+    top: calc(100% + 12px);
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    width: min(88vw, 320px);
+    min-height: 180px;
+    max-height: 320px;
+  }
 `;
 
 export const ExpandedContent = styled.div`
@@ -390,12 +496,27 @@ export const ExpandedContent = styled.div`
     background-color: rgba(166, 124, 82, 0.5);
     border-radius: 3px;
   }
+
+  @media (max-width: 768px) {
+    padding: 16px;
+    max-height: none;
+    overflow-y: visible;
+  }
+
+  @media (max-width: 640px) {
+    padding: 14px;
+  }
 `;
 
 export const ExpandedSection = styled.div`
   margin-top: 16px;
   padding-top: 16px;
   border-top: 1px solid rgba(200, 180, 120, 0.3);
+
+  @media (max-width: 640px) {
+    margin-top: 12px;
+    padding-top: 12px;
+  }
   
   h4 {
     font-family: var(--font-display);

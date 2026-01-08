@@ -24,6 +24,11 @@ const CommentsContainer = styled.div`
     background-color: rgba(166, 124, 82, 0.5);
     border-radius: 3px;
   }
+
+  @media (max-width: 640px) {
+    padding: 10px;
+    max-height: 320px;
+  }
 `;
 
 const CommentsHeader = styled.h4`
@@ -31,6 +36,10 @@ const CommentsHeader = styled.h4`
   color: #59483b;
   margin: 0 0 8px 0;
   font-weight: bold;
+
+  @media (max-width: 640px) {
+    font-size: 13px;
+  }
 `;
 
 const FilterContainer = styled.div`
@@ -55,6 +64,11 @@ const FilterButton = styled.button`
     background: ${props => props.$active ? '#a67c37' : 'rgba(200, 180, 120, 0.2)'};
     border-color: #b38c42;
   }
+
+  @media (max-width: 640px) {
+    font-size: 10px;
+    padding: 3px 6px;
+  }
 `;
 
 const SearchInput = styled.input`
@@ -75,6 +89,11 @@ const SearchInput = styled.input`
   
   &::placeholder {
     color: #a09080;
+  }
+
+  @media (max-width: 640px) {
+    padding: 5px 6px;
+    font-size: 10px;
   }
 `;
 
@@ -119,6 +138,10 @@ const CommentText = styled.div`
   font-size: 12px;
   color: #59483b;
   line-height: 1.4;
+
+  @media (max-width: 640px) {
+    font-size: 11px;
+  }
 `;
 
 const CommentTime = styled.div`
@@ -163,6 +186,11 @@ const CommentInput = styled.textarea`
   &::placeholder {
     color: #a09080;
   }
+
+  @media (max-width: 640px) {
+    font-size: 11px;
+    min-height: 50px;
+  }
 `;
 
 const SubmitButton = styled.button`
@@ -190,6 +218,10 @@ const SubmitButton = styled.button`
   &:disabled {
     background: #ccc;
     cursor: not-allowed;
+  }
+
+  @media (max-width: 640px) {
+    font-size: 11px;
   }
 `;
 

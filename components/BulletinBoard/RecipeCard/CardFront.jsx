@@ -12,6 +12,14 @@ const CardTitle = styled.h3`
   font-weight: bold;
   letter-spacing: 0.02em;
   transform: ${props => props.$expanded ? 'none' : 'rotate(-0.5deg)'};
+
+  @media (max-width: 768px) {
+    transform: none;
+  }
+
+  @media (max-width: 640px) {
+    font-size: ${props => props.$expanded ? '18px' : '16px'};
+  }
 `;
 
 const CardMeta = styled.div`
@@ -20,6 +28,10 @@ const CardMeta = styled.div`
   margin-bottom: 13px;
   color: #8a7248;
   font-style: italic;
+
+  @media (max-width: 640px) {
+    font-size: ${props => props.$expanded ? '12px' : '11px'};
+  }
 `;
 
 const CardContent = styled.div`
@@ -37,6 +49,14 @@ const CardContent = styled.div`
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
   `}
+
+  @media (max-width: 768px) {
+    transform: none;
+  }
+
+  @media (max-width: 640px) {
+    font-size: ${props => props.$expanded ? '14px' : '13px'};
+  }
 `;
 
 const CardFront = ({ title, category, time, text, rating, onRatingChange, expanded = false }) => {

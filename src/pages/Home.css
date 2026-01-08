@@ -1,6 +1,7 @@
 .horizontal-shell {
   position: relative;
   height: 100vh;
+  min-height: 100svh;
   width: 100vw;
   overflow: hidden;
   background: radial-gradient(circle, #F8F0D0 0%, #E6D6AC 100%);
@@ -395,28 +396,160 @@ h2 {
   }
 }
 
+@media (max-width: 768px) {
+  .about-panel .panel-inner {
+    margin-left: 0;
+  }
+}
+
 @media (max-width: 640px) {
   .panel {
-    padding: 2.5rem 1.25rem;
+    padding: 2.25rem 1.2rem;
   }
 
   .hero-panel h1 {
-    font-size: clamp(3.4rem, 9vw, 5rem);
+    font-size: clamp(3rem, 10vw, 4.6rem);
   }
 
   .hero-panel .eyebrow {
-    font-size: 1.1rem;
+    font-size: 0.95rem;
+  }
+
+  .resume-button {
+    font-size: 0.8rem;
+    padding: 0.55rem 1rem;
   }
 
   .resume-modal {
-    width: min(92vw, 520px);
-    height: 88vh;
-    max-height: 88vh;
-    padding: 1.25rem;
+    width: min(94vw, 520px);
+    height: 86vh;
+    max-height: 86vh;
+    padding: 1.1rem;
     margin-right: 0;
+  }
+
+  .resume-overlay {
+    justify-content: center;
+    padding: 1.25rem;
+  }
+
+  .resume-header {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   .about-panel .panel-inner {
     margin-left: 0;
   }
+
+  .about-popup {
+    right: 1rem;
+    left: 1rem;
+    top: auto;
+    bottom: calc(var(--ground-nav-height) + 16px);
+    padding: 1.2rem 1.4rem;
+    border-radius: 14px;
+  }
+
+  .about-popup-body {
+    font-size: 1.1rem;
+  }
+
+  .cta {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+.mobile-nav {
+  display: none;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.mobile-nav a {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  padding: 0.4rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(90, 63, 36, 0.35);
+  background: rgba(255, 255, 255, 0.9);
+  color: #5a3f24;
+}
+
+.horizontal-shell.is-mobile {
+  height: auto;
+  min-height: 100%;
+  overflow: visible;
+}
+
+.horizontal-shell.is-mobile .scroll-track {
+  display: block;
+  height: auto;
+  overflow-x: hidden;
+  overflow-y: visible;
+  scrollbar-width: none;
+}
+
+.horizontal-shell.is-mobile .scroll-track::-webkit-scrollbar {
+  display: none;
+}
+
+.horizontal-shell.is-mobile .panel {
+  min-height: auto;
+  padding: 2rem 1.25rem 2.5rem;
+  scroll-snap-align: none;
+}
+
+.horizontal-shell.is-mobile .panel + .panel {
+  border-top: 1px solid rgba(90, 63, 36, 0.15);
+}
+
+.horizontal-shell.is-mobile .panel-inner {
+  max-width: 100%;
+  gap: 0.75rem;
+}
+
+.horizontal-shell.is-mobile .projects-panel {
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+.horizontal-shell.is-mobile .mobile-nav {
+  display: flex;
+}
+
+.horizontal-shell.is-mobile .contact-cta {
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+.horizontal-shell.is-mobile .mobile-project-actions {
+  margin-top: 0.75rem;
+}
+
+.horizontal-shell.is-mobile .about-popup {
+  position: static;
+  opacity: 1 !important;
+  transform: none !important;
+  pointer-events: auto;
+  margin-top: 1rem;
+  max-width: 100%;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
+}
+
+.horizontal-shell.is-mobile .about-popup-body {
+  margin-top: 0.6rem;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.horizontal-shell.is-mobile .about-popup-body:first-child {
+  margin-top: 0;
 }

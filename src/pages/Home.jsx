@@ -1,4 +1,6 @@
 import React, { useEffect, useRef, useCallback, useState } from 'react';
+import { navLinks } from '../data/navLinks';
+import useIsMobile from '../hooks/useIsMobile';
 import GroundNav from '../components/GroundNav';
 import PrairieGrass from '../components/PrairieGrass';
 import Sky from '../components/Sky';
@@ -16,6 +18,7 @@ const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 
 export default function Home({ onNavigate }) {
   const PANEL_COUNT = 4;
+  const isMobile = useIsMobile();
   const trackRef = useRef(null);
   const touchRef = useRef(null);
   const ranchWidthRef = useRef(null);
@@ -80,6 +83,7 @@ export default function Home({ onNavigate }) {
 
   // Update the shared ref whenever the track scrolls and clamp to max
   useEffect(() => {
+    if (isMobile) return;
     const track = trackRef.current;
     if (!track) return;
 
@@ -95,10 +99,11 @@ export default function Home({ onNavigate }) {
 
     track.addEventListener('scroll', onScroll, { passive: true });
     return () => track.removeEventListener('scroll', onScroll);
-  }, [getMaxScroll]);
+  }, [getMaxScroll, isMobile]);
 
   // Translate wheel movement into horizontal scroll on the track
   const handleWheel = useCallback((e) => {
+    if (isMobile) return;
     const track = trackRef.current;
     if (!track) return;
     if (track.scrollWidth <= track.clientWidth) return;
@@ -138,19 +143,21 @@ export default function Home({ onNavigate }) {
       animFrameRef.current = requestAnimationFrame(step);
     }
     e.preventDefault();
-  }, [getMaxScroll]);
+  }, [getMaxScroll, isMobile]);
 
   // Attach wheel listener with passive: false to allow preventDefault
   useEffect(() => {
+    if (isMobile) return;
     const track = trackRef.current;
     if (!track) return;
 
     track.addEventListener('wheel', handleWheel, { passive: false });
     return () => track.removeEventListener('wheel', handleWheel);
-  }, [handleWheel]);
+  }, [handleWheel, isMobile]);
 
   // Touch/pan: convert vertical or horizontal drags into horizontal scroll
   useEffect(() => {
+    if (isMobile) return;
     const track = trackRef.current;
     if (!track) return;
 
@@ -191,7 +198,7 @@ export default function Home({ onNavigate }) {
       track.removeEventListener('touchend', onTouchEnd);
       track.removeEventListener('touchcancel', onTouchEnd);
     };
-  }, [getMaxScroll]);
+  }, [getMaxScroll, isMobile]);
 
   // Track total width for synced ground/grass
   useEffect(() => {
@@ -208,7 +215,13 @@ export default function Home({ onNavigate }) {
   useEffect(() => {
     const track = trackRef.current;
     const target = contactPromptRef.current;
-    if (!track || !target) return;
+    if (!target) return;
+
+    if (isMobile || !track) {
+      target.style.setProperty('--cta-opacity', '1');
+      target.style.setProperty('--cta-offset', '0px');
+      return;
+    }
 
     let rafId = null;
 
@@ -247,13 +260,15 @@ export default function Home({ onNavigate }) {
       track.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', update);
     };
-  }, []);
+  }, [isMobile]);
 
   const scrollToTarget = useCallback((hashValue) => {
     if (typeof window === 'undefined') return;
     const hash = (hashValue || '').replace('#', '') || 'home';
     const track = trackRef.current;
     if (!track) return;
+    const behavior = isMobile ? 'auto' : 'smooth';
+    const inline = isMobile ? 'nearest' : 'center';
 
     if (hash === 'resume') {
       setResumeOpen(true);
@@ -269,7 +284,7 @@ export default function Home({ onNavigate }) {
       const targetLeft = worldCenter - (window.innerWidth / 2);
       const max = getMaxScroll();
       const clamped = Math.max(0, Math.min(targetLeft, max));
-      track.scrollTo({ left: clamped, behavior: 'smooth' });
+      track.scrollTo({ left: clamped, behavior });
       return true;
     };
 
@@ -285,9 +300,9 @@ export default function Home({ onNavigate }) {
 
     const target = document.getElementById(hash);
     if (target) {
-      target.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      target.scrollIntoView({ behavior, block: 'nearest', inline });
     }
-  }, [getMaxScroll, setResumeOpen]);
+  }, [getMaxScroll, isMobile, setResumeOpen]);
 
   const handleNavClick = useCallback((href) => {
     if (typeof window === 'undefined') return;
@@ -316,7 +331,13 @@ export default function Home({ onNavigate }) {
   useEffect(() => {
     const track = trackRef.current;
     const popup = aboutPopupRef.current;
-    if (!track || !popup) return;
+    if (!popup) return;
+
+    if (isMobile || !track) {
+      popup.style.setProperty('--about-popup-opacity', '1');
+      popup.style.setProperty('--about-popup-offset', '0px');
+      return;
+    }
 
     let rafId = null;
 
@@ -353,7 +374,7 @@ export default function Home({ onNavigate }) {
       track.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', update);
     };
-  }, [getMaxScroll]);
+  }, [getMaxScroll, isMobile]);
 
   // Scroll to the hashed section when nav updates
   useEffect(() => {
@@ -386,7 +407,7 @@ export default function Home({ onNavigate }) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [resumeOpen]);
 
-  const groundVisualHeight = 100;
+  const groundVisualHeight = isMobile ? 0 : 100;
   const handleSignClick = useCallback(() => {
     if (onNavigate) {
       onNavigate('/bulletin-board');
@@ -399,7 +420,7 @@ export default function Home({ onNavigate }) {
 
   return (
     <div
-      className="horizontal-shell"
+      className={`horizontal-shell${isMobile ? ' is-mobile' : ''}`}
       style={{
         '--panel-count': PANEL_COUNT,
         '--ground-nav-height': `${groundVisualHeight}px`,
@@ -409,6 +430,22 @@ export default function Home({ onNavigate }) {
       <div className="scroll-track" ref={trackRef}>
         <section className="panel hero-panel" id="home">
           <div className="panel-inner">
+            {isMobile && (
+              <nav className="mobile-nav" aria-label="Primary">
+                {navLinks.map((link) => (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      handleNavClick(link.href);
+                    }}
+                  >
+                    {link.label}
+                  </a>
+                ))}
+              </nav>
+            )}
             <p className="eyebrow">
               <span>Communications Specialist</span>
               <span className="eyebrow-divider" aria-hidden="true" />
@@ -443,8 +480,19 @@ export default function Home({ onNavigate }) {
           <div className="panel-inner compact">
             <div className="section-header">
               <h2 className="contact-cta" ref={contactPromptRef}>
-                Click Mailbox To Contact!
+                {isMobile ? 'Contact below for a quick reply.' : 'Click Mailbox To Contact!'}
               </h2>
+              {isMobile && (
+                <div className="mobile-project-actions">
+                  <button
+                    type="button"
+                    className="resume-button"
+                    onClick={handleSignClick}
+                  >
+                    Bulletin Board
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </section>
@@ -453,6 +501,24 @@ export default function Home({ onNavigate }) {
           <div className="panel-inner">
             <p className="eyebrow">Quiet space to tune the grass.</p>
             <h2>About</h2>
+            <div className="about-popup" ref={aboutPopupRef}>
+              <p className="about-popup-body">
+                Greetings! My name is Alex! I am a born and raised Central Illinoian with a passion
+                for storytelling. Be it an unpublished piece of literary fiction, or a memorable
+                social media post, I love crafting compelling narratives that speak about the human
+                condition.
+              </p>
+              <p className="about-popup-body">
+                I have experience managing the food for events with groups totaling 300+ people! No
+                matter the size or task, initiation and preparation, or mise en place, is everything;
+                I help your organization by writing shotlists, formalizing statistics and strategy, and
+                contributing myself to team efforts.
+              </p>
+              <p className="about-popup-body">
+                During my off hours I play guitar, enjoy video games, and read. My favorite collection:
+                Little House on the Prairie. Favorite food: Mac and Cheese.
+              </p>
+            </div>
           </div>
         </section>
 
@@ -466,51 +532,36 @@ export default function Home({ onNavigate }) {
 
       </div>
 
-      <Windmill trackRef={trackRef} />
-      <BugTrail trackRef={trackRef} />
-      <ContactTrail trackRef={trackRef} />
-      <WoodenSign trackRef={trackRef} onClick={handleSignClick} />
-      <Barrel trackRef={trackRef} />
-      <Mailbox trackRef={trackRef} />
-      <Ranch trackRef={trackRef} />
-      <PrairieGrass
-        spanCount={PANEL_COUNT}
-        scrollVelocityRef={velocityRef}
-        trackRef={trackRef}
-        scrollStateRef={scrollStateRef}
-        onWheel={handleWheel}
-      />
+      {!isMobile && (
+        <>
+          <Windmill trackRef={trackRef} />
+          <BugTrail trackRef={trackRef} />
+          <ContactTrail trackRef={trackRef} />
+          <WoodenSign trackRef={trackRef} onClick={handleSignClick} />
+          <Barrel trackRef={trackRef} />
+          <Mailbox trackRef={trackRef} />
+          <Ranch trackRef={trackRef} />
+          <PrairieGrass
+            spanCount={PANEL_COUNT}
+            scrollVelocityRef={velocityRef}
+            trackRef={trackRef}
+            scrollStateRef={scrollStateRef}
+            onWheel={handleWheel}
+          />
 
-      {/* GroundNav moved outside to enforce z-index layering (Sky < Grass < Ground) */}
-      <GroundNav
-        totalWidth={totalWidth}
-        groundHeight={groundVisualHeight}
-        viewportHeight={viewportHeight}
-        currentHash={currentHash}
-        onNavClick={handleNavClick}
-      />
+          {/* GroundNav moved outside to enforce z-index layering (Sky < Grass < Ground) */}
+          <GroundNav
+            totalWidth={totalWidth}
+            groundHeight={groundVisualHeight}
+            viewportHeight={viewportHeight}
+            currentHash={currentHash}
+            onNavClick={handleNavClick}
+          />
 
-      {/* Pass totalWidth to Sky to help it scale speeds if needed, though we hardcoded them */}
-      <Sky trackRef={trackRef} scrollStateRef={scrollStateRef} />
-
-      <div className="about-popup" ref={aboutPopupRef}>
-        <p className="about-popup-body">
-          Greetings! My name is Alex! I am a born and raised Central Illinoian with a passion
-          for storytelling. Be it an unpublished piece of literary fiction, or a memorable
-          social media post, I love crafting compelling narratives that speak about the human
-          condition.
-        </p>
-        <p className="about-popup-body">
-          I have experience managing the food for events with groups totaling 300+ people! No
-          matter the size or task, initiation and preparation, or mise en place, is everything;
-          I help your organization by writing shotlists, formalizing statistics and strategy, and
-          contributing myself to team efforts.
-        </p>
-        <p className="about-popup-body">
-          During my off hours I play guitar, enjoy video games, and read. My favorite collection:
-          Little House on the Prairie. Favorite food: Mac and Cheese.
-        </p>
-      </div>
+          {/* Pass totalWidth to Sky to help it scale speeds if needed, though we hardcoded them */}
+          <Sky trackRef={trackRef} scrollStateRef={scrollStateRef} />
+        </>
+      )}
 
       {resumeOpen && (
         <div

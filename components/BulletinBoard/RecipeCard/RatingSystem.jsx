@@ -8,6 +8,10 @@ const RatingContainer = styled.div`
   align-items: center;
   margin-top: 10px;
   gap: 3px;
+
+  @media (max-width: 640px) {
+    margin-top: 8px;
+  }
 `;
 
 const Star = styled.span`
@@ -19,6 +23,10 @@ const Star = styled.span`
   &:hover {
     color: ${props => !props.$filled ? '#c9a051' : '#b38c42'};
   }
+
+  @media (max-width: 640px) {
+    font-size: 14px;
+  }
 `;
 
 const RatingText = styled.span`
@@ -27,6 +35,10 @@ const RatingText = styled.span`
   color: #8a7248;
   margin-left: 8px;
   font-style: italic;
+
+  @media (max-width: 640px) {
+    font-size: 10px;
+  }
 `;
 
 const RatingSystem = ({ rating, onRate }) => {

@@ -8,6 +8,8 @@ const ControlBarContainer = styled.div`
   justify-content: center;
   gap: 15px;
   margin: 20px 0;
+  flex-wrap: wrap;
+  row-gap: 10px;
 `;
 
 const ActionButton = styled.button`
@@ -46,6 +48,11 @@ const ActionButton = styled.button`
   
   &:active {
     transform: translateY(0);
+  }
+
+  @media (max-width: 640px) {
+    font-size: 12px;
+    padding: 6px 12px;
   }
 `;
 

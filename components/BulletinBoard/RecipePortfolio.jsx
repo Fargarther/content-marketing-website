@@ -8,7 +8,9 @@ const PortfolioContainer = styled.div`
   bottom: 0;
   left: 0;
   right: 0;
-  height: ${props => props.$expanded ? '340px' : '80px'};
+  height: ${props => props.$expanded
+    ? 'var(--recipe-portfolio-expanded, 340px)'
+    : 'var(--recipe-portfolio-collapsed, 80px)'};
   background: #f5f0dc;
   background-image:
     repeating-linear-gradient(
@@ -112,6 +114,10 @@ const CategoryTabs = styled.div`
   gap: 0;
   align-items: flex-end;
   width: 100%;
+
+  @media (max-width: 640px) {
+    height: 44px;
+  }
 `;
 
 const CategoryTab = styled.button`
@@ -153,11 +159,16 @@ const CategoryTab = styled.button`
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, transparent 50%);
     pointer-events: none;
   }
+
+  @media (max-width: 640px) {
+    font-size: 11px;
+    height: ${props => props.$active ? '40px' : '36px'};
+  }
 `;
 
 const RecipeCardsContainer = styled.div`
   display: ${props => props.$expanded ? 'flex' : 'none'};
-  height: ${props => props.$expanded ? '260px' : '0'};
+  height: ${props => props.$expanded ? 'var(--recipe-portfolio-cards, 260px)' : '0'};
   overflow: hidden;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   background: rgba(255, 255, 255, 0.05);
@@ -174,6 +185,12 @@ const SearchFilterBar = styled.div`
   border-bottom: 1px solid rgba(210, 190, 150, 0.3);
   background: rgba(255, 254, 245, 0.35);
   flex-shrink: 0;
+
+  @media (max-width: 640px) {
+    padding: 0 14px;
+    height: 36px;
+    gap: 8px;
+  }
 `;
 
 const SearchInput = styled.input`
@@ -191,6 +208,12 @@ const SearchInput = styled.input`
     outline: none;
     border-color: #a67c52;
     box-shadow: 0 0 0 2px rgba(166, 124, 82, 0.1);
+  }
+
+  @media (max-width: 640px) {
+    max-width: none;
+    padding: 5px 10px;
+    font-size: 12px;
   }
 `;
 
@@ -210,6 +233,11 @@ const ClearButton = styled.button`
     border-color: #a67c52;
     color: #59483b;
   }
+
+  @media (max-width: 640px) {
+    padding: 3px 8px;
+    font-size: 10px;
+  }
 `;
 
 const ResultCount = styled.div`
@@ -217,6 +245,10 @@ const ResultCount = styled.div`
   font-family: var(--font-mono);
   font-size: 11px;
   color: rgba(90, 63, 36, 0.7);
+
+  @media (max-width: 640px) {
+    font-size: 10px;
+  }
 `;
 
 const FilterRow = styled.div`
@@ -228,6 +260,11 @@ const FilterRow = styled.div`
   border-bottom: 1px solid rgba(210, 190, 150, 0.25);
   flex-wrap: wrap;
   flex-shrink: 0;
+
+  @media (max-width: 640px) {
+    gap: 10px;
+    padding: 6px 14px 8px;
+  }
 `;
 
 const FilterGroup = styled.div`
@@ -238,12 +275,21 @@ const FilterGroup = styled.div`
   font-family: var(--font-mono);
   font-size: 11px;
   color: #8a7248;
+
+  @media (max-width: 640px) {
+    font-size: 10px;
+    gap: 6px;
+  }
 `;
 
 const FilterLabel = styled.span`
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.6px;
+
+  @media (max-width: 640px) {
+    letter-spacing: 0.4px;
+  }
 `;
 
 const FilterChip = styled.button`
@@ -260,6 +306,11 @@ const FilterChip = styled.button`
   &:hover {
     background: ${props => props.$active ? '#8c6a46' : 'rgba(166, 124, 82, 0.12)'};
     border-color: #a67c52;
+  }
+
+  @media (max-width: 640px) {
+    font-size: 10px;
+    padding: 2px 8px;
   }
 `;
 
@@ -279,6 +330,11 @@ const ClearFiltersButton = styled.button`
     background: #e76f51;
     color: #fff;
   }
+
+  @media (max-width: 640px) {
+    font-size: 10px;
+    padding: 2px 8px;
+  }
 `;
 
 const DeckStage = styled.div`
@@ -290,6 +346,11 @@ const DeckStage = styled.div`
   align-items: center;
   justify-content: center;
   padding-bottom: 12px;
+
+  @media (max-width: 640px) {
+    min-height: 140px;
+    padding-bottom: 8px;
+  }
 `;
 
 const DeckCard = styled.div`
@@ -326,6 +387,12 @@ const DeckCard = styled.div`
   &:active {
     cursor: grabbing;
   }
+
+  @media (max-width: 640px) {
+    width: 160px;
+    height: 96px;
+    padding: 8px 10px;
+  }
 `;
 
 const DeckTitle = styled.div`
@@ -334,6 +401,10 @@ const DeckTitle = styled.div`
   font-weight: 700;
   color: #59483b;
   text-align: center;
+
+  @media (max-width: 640px) {
+    font-size: 12px;
+  }
 `;
 
 const DeckMeta = styled.div`
@@ -341,6 +412,10 @@ const DeckMeta = styled.div`
   font-size: 11px;
   color: rgba(90, 63, 36, 0.7);
   text-align: center;
+
+  @media (max-width: 640px) {
+    font-size: 10px;
+  }
 `;
 
 const DeckTags = styled.div`
@@ -357,6 +432,10 @@ const DeckTag = styled.span`
   background: rgba(210, 190, 150, 0.25);
   padding: 2px 6px;
   border-radius: 10px;
+
+  @media (max-width: 640px) {
+    font-size: 8px;
+  }
 `;
 
 const EmptyMessage = styled.div`
@@ -366,6 +445,11 @@ const EmptyMessage = styled.div`
   font-style: italic;
   padding: 20px;
   text-align: center;
+
+  @media (max-width: 640px) {
+    font-size: 12px;
+    padding: 16px;
+  }
 `;
 
 const categoryColors = {

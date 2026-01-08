@@ -1,8 +1,10 @@
 import React from 'react';
 import BulletinBoardSection, { RecipePortfolio } from '../../components/BulletinBoard';
+import useIsMobile from '../hooks/useIsMobile';
 import './BulletinBoard.css';
 
 export default function BulletinBoardPage({ onNavigate }) {
+  const isMobile = useIsMobile();
   const handleBack = () => {
     if (onNavigate) {
       onNavigate('/');
@@ -31,7 +33,7 @@ export default function BulletinBoardPage({ onNavigate }) {
       <main className="bulletin-board-content">
         <BulletinBoardSection />
       </main>
-      <RecipePortfolio />
+      {!isMobile && <RecipePortfolio />}
     </div>
   );
 }

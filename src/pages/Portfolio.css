@@ -169,6 +169,16 @@
   }
 }
 
+@media (max-width: 768px) {
+  .collage-item {
+    transform: none;
+  }
+
+  .collage-item:hover {
+    transform: none;
+  }
+}
+
 @media (max-width: 640px) {
   .portfolio-page {
     padding: 2.5rem 1.5rem 4rem;
@@ -188,5 +198,34 @@
 
   .collage-item {
     transform: translateY(var(--lift, 0px));
+  }
+
+  .portfolio-lightbox {
+    padding: 1.25rem;
+  }
+
+  .portfolio-lightbox-inner {
+    width: min(94vw, 900px);
+    height: min(85vh, 720px);
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .portfolio-page {
+    padding: 2.2rem 1.1rem 4.5rem;
+  }
+
+  .portfolio-collage {
+    grid-auto-rows: 36px;
+    gap: 10px;
+  }
+
+  .portfolio-lightbox {
+    padding: 1rem;
+  }
+
+  .portfolio-lightbox-inner {
+    height: min(80vh, 560px);
   }
 }

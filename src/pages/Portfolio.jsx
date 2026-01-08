@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import useIsMobile from '../hooks/useIsMobile';
 import GroundNav from '../components/GroundNav';
 import './Portfolio.css';
 
@@ -61,6 +62,7 @@ const tiltPattern = [-1.2, 0.6, -0.4, 1, -0.8, 0.4, -0.6, 0.8, -1];
 const liftPattern = [0, -6, 4, -2, 6, -4, 2, -5, 3];
 
 export default function Portfolio({ onNavigate }) {
+  const isMobile = useIsMobile();
   const [activeItem, setActiveItem] = useState(null);
   const [currentNav, setCurrentNav] = useState('/portfolio');
   const [totalWidth, setTotalWidth] = useState(
@@ -69,7 +71,7 @@ export default function Portfolio({ onNavigate }) {
   const [viewportHeight, setViewportHeight] = useState(
     typeof window !== 'undefined' ? window.innerHeight : 800
   );
-  const groundVisualHeight = 100;
+  const groundVisualHeight = isMobile ? 0 : 100;
 
   useEffect(() => {
     if (!activeItem) return;
@@ -148,8 +150,8 @@ export default function Portfolio({ onNavigate }) {
       <div className="portfolio-collage">
         {collageItems.map((item, index) => {
           const span = spanPatterns[index % spanPatterns.length];
-          const tilt = tiltPattern[index % tiltPattern.length];
-          const lift = liftPattern[index % liftPattern.length];
+          const tilt = isMobile ? 0 : tiltPattern[index % tiltPattern.length];
+          const lift = isMobile ? 0 : liftPattern[index % liftPattern.length];
           return (
             <figure
               key={`${item.group}-${index}`}
@@ -176,9 +178,9 @@ export default function Portfolio({ onNavigate }) {
                 <video
                   className="collage-media"
                   src={item.src}
-                  autoPlay
+                  autoPlay={!isMobile}
                   muted
-                  loop
+                  loop={!isMobile}
                   playsInline
                   preload="metadata"
                   aria-label={item.label}
@@ -221,7 +223,7 @@ export default function Portfolio({ onNavigate }) {
                 <video
                   src={activeItem.src}
                   controls
-                  autoPlay
+                  autoPlay={!isMobile}
                   muted
                   playsInline
                 />
@@ -233,13 +235,15 @@ export default function Portfolio({ onNavigate }) {
         </div>
       )}
 
-      <GroundNav
-        totalWidth={totalWidth}
-        groundHeight={groundVisualHeight}
-        viewportHeight={viewportHeight}
-        currentHash={currentNav}
-        onNavClick={handleNavClick}
-      />
+      {!isMobile && (
+        <GroundNav
+          totalWidth={totalWidth}
+          groundHeight={groundVisualHeight}
+          viewportHeight={viewportHeight}
+          currentHash={currentNav}
+          onNavClick={handleNavClick}
+        />
+      )}
     </div>
   );
 }

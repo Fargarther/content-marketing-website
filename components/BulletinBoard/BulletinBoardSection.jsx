@@ -8,9 +8,11 @@ import ControlBar from './ControlBar';
 import InteractiveBulletinDecorations from './InteractiveBulletinDecorations';
 import useDragAndDrop from './hooks/useDragAndDrop';
 import useCardManagement from './hooks/useCardManagement';
+import useIsMobile from '../../src/hooks/useIsMobile';
 import { recipeData } from '../../src/data/recipes';
 import { getRandomPosition, getRotatedBoundingBox } from './utils/helpers';
 import { CARD_DIMENSIONS } from './utils/constants';
+import { recipeTrayCategories, recipeTrayData } from './utils/recipeTrayData';
 
 const clampValue = (value, min, max) => Math.min(Math.max(value, min), max);
 
@@ -28,6 +30,7 @@ const SpotlightSection = styled.section`
 `;
 
 function BulletinBoardSection() {
+  const isMobile = useIsMobile();
   const boardRef = useRef(null);
   const decorationsRef = useRef(null);
   const pinnedCardsRef = useRef(new Set());
@@ -127,6 +130,29 @@ function BulletinBoardSection() {
       });
     }, 600);
   }, [addRecipeFromData, setCardPositions]);
+
+  const mobileRecipeGroups = useMemo(() => {
+    const buckets = new Map();
+    recipeTrayCategories.forEach(category => {
+      buckets.set(category.key, []);
+    });
+
+    recipeTrayData.forEach(recipe => {
+      const key = (recipe.category || '').toLowerCase();
+      if (buckets.has(key)) {
+        buckets.get(key).push(recipe);
+      }
+    });
+
+    return recipeTrayCategories.map(category => ({
+      ...category,
+      recipes: buckets.get(category.key) || []
+    }));
+  }, []);
+
+  const handleMobileAdd = useCallback((recipe) => {
+    handlePortfolioDrag({ detail: { recipe } });
+  }, [handlePortfolioDrag]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -319,18 +345,20 @@ function BulletinBoardSection() {
       <BulletinBoard 
         ref={boardRef} 
         hasExpandedCard={hasExpandedCard}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
+        onDragOver={isMobile ? undefined : handleDragOver}
+        onDragLeave={isMobile ? undefined : handleDragLeave}
+        onDrop={isMobile ? undefined : handleDrop}
         style={{
-          border: isDragOver ? '3px dashed #a67c52' : 'none',
-          transition: 'border 0.2s'
+          border: !isMobile && isDragOver ? '3px dashed #a67c52' : 'none',
+          transition: !isMobile ? 'border 0.2s' : 'none'
         }}
       >
-        <InteractiveBulletinDecorations 
-          ref={decorationsRef}
-          boardRef={boardRef} 
-        />
+        {!isMobile && (
+          <InteractiveBulletinDecorations 
+            ref={decorationsRef}
+            boardRef={boardRef} 
+          />
+        )}
         {cards.map(card => (
           <RecipeCard
             key={card.id}
@@ -343,7 +371,7 @@ function BulletinBoardSection() {
             rating={ratings[card.id] || 0}
             comments={comments[card.id] || []}
             boardWidth={boardWidth}
-            onMouseDown={handlePinnedCardMouseDown}
+            onMouseDown={isMobile ? undefined : handlePinnedCardMouseDown}
             onRatingChange={handleRating}
             onAddComment={handleAddComment}
             onExpand={handleCardExpand}
@@ -352,6 +380,44 @@ function BulletinBoardSection() {
           />
         ))}
       </BulletinBoard>
+
+      {isMobile && (
+        <section className="mobile-recipe-tray" aria-label="Recipe tray">
+          <div className="mobile-recipe-tray-header">
+            <h3>Recipe Shelf</h3>
+            <p className="mobile-recipe-tray-hint">Tap Add to place a recipe on the board.</p>
+          </div>
+          {mobileRecipeGroups.map((group, index) => (
+            <details
+              key={group.key}
+              className="mobile-recipe-group"
+              open={index === 0}
+            >
+              <summary>{group.label}</summary>
+              <div className="mobile-recipe-list">
+                {group.recipes.map(recipe => (
+                  <article key={recipe.id} className="mobile-recipe-card">
+                    <div className="mobile-recipe-card-header">
+                      <div>
+                        <h4 className="mobile-recipe-card-title">{recipe.title}</h4>
+                        <p className="mobile-recipe-card-meta">{recipe.time}</p>
+                      </div>
+                      <button
+                        type="button"
+                        className="mobile-recipe-add"
+                        onClick={() => handleMobileAdd(recipe)}
+                      >
+                        Add
+                      </button>
+                    </div>
+                    <p className="mobile-recipe-card-text">{recipe.text}</p>
+                  </article>
+                ))}
+              </div>
+            </details>
+          ))}
+        </section>
+      )}
     </SpotlightSection>
   );
 }
