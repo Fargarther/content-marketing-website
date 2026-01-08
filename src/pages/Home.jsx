@@ -15,7 +15,7 @@ import './Home.css';
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 
 export default function Home({ onNavigate }) {
-  const PANEL_COUNT = 5;
+  const PANEL_COUNT = 4;
   const trackRef = useRef(null);
   const touchRef = useRef(null);
   const ranchWidthRef = useRef(null);
@@ -255,6 +255,11 @@ export default function Home({ onNavigate }) {
     const track = trackRef.current;
     if (!track) return;
 
+    if (hash === 'resume') {
+      setResumeOpen(true);
+      return;
+    }
+
     const centerOnElement = (element) => {
       if (!element) return false;
       const rect = element.getBoundingClientRect();
@@ -282,16 +287,30 @@ export default function Home({ onNavigate }) {
     if (target) {
       target.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
     }
-  }, [getMaxScroll]);
+  }, [getMaxScroll, setResumeOpen]);
 
   const handleNavClick = useCallback((href) => {
     if (typeof window === 'undefined') return;
     if (!href) return;
+    if (href.startsWith('/')) {
+      if (onNavigate) {
+        onNavigate(href);
+        return;
+      }
+      window.location.href = href;
+      return;
+    }
+    if (href === '#resume') {
+      window.history.replaceState(null, '', href);
+      setCurrentHash(href);
+      setResumeOpen(true);
+      return;
+    }
     const hash = href.startsWith('#') ? href : `#${href}`;
     window.history.replaceState(null, '', hash);
     setCurrentHash(hash);
     scrollToTarget(hash);
-  }, [scrollToTarget]);
+  }, [onNavigate, scrollToTarget, setResumeOpen]);
 
   // End-of-page about popup
   useEffect(() => {
@@ -412,7 +431,7 @@ export default function Home({ onNavigate }) {
               <button
                 type="button"
                 className="resume-button portfolio-button"
-                onClick={() => handleNavClick('#portfolio')}
+                onClick={() => handleNavClick('/portfolio')}
               >
                 Portfolio
               </button>
@@ -442,15 +461,6 @@ export default function Home({ onNavigate }) {
             <p className="eyebrow">Contact</p>
             <h2>Reach out when ready.</h2>
             <a className="cta" href="mailto:hello@contentstudio.test">Email</a>
-          </div>
-        </section>
-
-        <section className="panel portfolio-panel" id="portfolio">
-          <div className="panel-inner compact">
-            <div className="section-header">
-              <p className="eyebrow">Portfolio</p>
-              <h2>Selected work and case studies.</h2>
-            </div>
           </div>
         </section>
 
@@ -492,13 +502,13 @@ export default function Home({ onNavigate }) {
         </p>
         <p className="about-popup-body">
           I have experience managing the food for events with groups totaling 300+ people! No
-          matter the size or task, initiation and preperation, or mise en place, is everything;
-          I help your organizion by writing shotlists, formalizing statistics and strategy, and
+          matter the size or task, initiation and preparation, or mise en place, is everything;
+          I help your organization by writing shotlists, formalizing statistics and strategy, and
           contributing myself to team efforts.
         </p>
         <p className="about-popup-body">
-          During my off hours I play gutiar, enjoy video games, and read. My favorite collection:
-          Little House on the Prarrie. Favorte food: Mac and Cheese.
+          During my off hours I play guitar, enjoy video games, and read. My favorite collection:
+          Little House on the Prairie. Favorite food: Mac and Cheese.
         </p>
       </div>
 

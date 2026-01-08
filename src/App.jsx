@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import Home from './pages/Home';
 import BulletinBoardPage from './pages/BulletinBoard';
+import Portfolio from './pages/Portfolio';
 import './App.css';
 
 const App = () => {
@@ -26,13 +27,16 @@ const App = () => {
     setPath(nextPath);
   }, []);
 
+  let content = <Home onNavigate={handleNavigate} />;
+  if (path === '/bulletin-board') {
+    content = <BulletinBoardPage onNavigate={handleNavigate} />;
+  } else if (path === '/portfolio') {
+    content = <Portfolio onNavigate={handleNavigate} />;
+  }
+
   return (
     <div className="app">
-      {path === '/bulletin-board' ? (
-        <BulletinBoardPage onNavigate={handleNavigate} />
-      ) : (
-        <Home onNavigate={handleNavigate} />
-      )}
+      {content}
     </div>
   );
 };
