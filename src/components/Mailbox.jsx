@@ -6,9 +6,11 @@ import './Mailbox.css';
 export default function Mailbox({ trackRef }) {
   const containerRef = useRef(null);
   const hingeRef = useRef(null);
+  const rotationRef = useRef(0);
+  const targetRotationRef = useRef(0);
+  const rafRef = useRef(null);
   const [groundHeight, setGroundHeight] = useState(null);
   const [isHovering, setIsHovering] = useState(false);
-  const [rotation, setRotation] = useState(0);
 
   // Sync ground height for vertical positioning
   useEffect(() => {
@@ -50,29 +52,53 @@ export default function Mailbox({ trackRef }) {
     };
   }, [trackRef]);
 
+  const animateRotation = () => {
+    rafRef.current = null;
+    const current = rotationRef.current;
+    const target = targetRotationRef.current;
+    const next = current + (target - current) * 0.18;
+    rotationRef.current = next;
+
+    if (hingeRef.current) {
+      hingeRef.current.style.transform = `rotate(${next}deg)`;
+    }
+
+    if (Math.abs(target - next) > 0.1) {
+      rafRef.current = requestAnimationFrame(animateRotation);
+    }
+  };
+
+  const scheduleRotation = () => {
+    if (rafRef.current) return;
+    rafRef.current = requestAnimationFrame(animateRotation);
+  };
+
   const handleMouseMove = (e) => {
-    if (!hingeRef.current) return;
-
-    const hingeRect = hingeRef.current.getBoundingClientRect();
-    // Pivot point is at bottom-left of the hinge
-    const pivotX = hingeRect.left;
-    const pivotY = hingeRect.bottom;
-
-    // Calculate angle from pivot to mouse
-    const dx = e.clientX - pivotX;
-    const dy = e.clientY - pivotY;
-    let angle = Math.atan2(-dy, dx) * (180 / Math.PI);
-
-    // Clamp rotation between 0 and 90 degrees
-    angle = Math.max(0, Math.min(90, angle));
-
-    setRotation(angle);
+    const container = containerRef.current;
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    const x = Math.min(Math.max(e.clientX - rect.left, 0), rect.width);
+    const y = Math.min(Math.max(e.clientY - rect.top, 0), rect.height);
+    const xRatio = 1 - x / rect.width;
+    const yRatio = 1 - y / rect.height;
+    const influence = Math.min(1, xRatio * 0.7 + yRatio * 0.3);
+    const angle = Math.max(0, Math.min(90, influence * 90));
+    targetRotationRef.current = angle;
+    scheduleRotation();
   };
 
   const handleMouseLeave = () => {
     setIsHovering(false);
-    setRotation(0);
+    targetRotationRef.current = 0;
+    scheduleRotation();
   };
+
+  useEffect(() => {
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, []);
 
   const style = {};
   if (Number.isFinite(groundHeight)) {
@@ -84,7 +110,9 @@ export default function Mailbox({ trackRef }) {
       className={`mailbox-container ${isHovering ? 'is-hovering' : ''}`}
       ref={containerRef}
       style={style}
-      onMouseEnter={() => setIsHovering(true)}
+      onMouseEnter={() => {
+        setIsHovering(true);
+      }}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
     >
@@ -94,7 +122,6 @@ export default function Mailbox({ trackRef }) {
         src={hingeImg}
         alt=""
         className="mailbox-hinge"
-        style={{ transform: `rotate(${rotation}deg)` }}
         aria-hidden="true"
       />
     </div>

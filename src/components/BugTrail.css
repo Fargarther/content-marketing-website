@@ -68,16 +68,20 @@
 .bug-trail-label {
   position: absolute;
   top: 0;
-  left: 0;
+  left: var(--trail-label-left, 0px);
   width: var(--trail-label-width, 160px);
   height: var(--trail-label-height, 32px);
   display: flex;
   align-items: center;
   justify-content: flex-start;
   font-family: var(--font-display);
-  font-size: 1.2rem;
+  font-size: 3.6rem;
+  line-height: 1;
   letter-spacing: 0.02em;
   color: #3a2f1f;
+  opacity: var(--trail-label-opacity, 0);
+  transform: translateY(var(--trail-label-offset, 18px));
+  will-change: transform, opacity;
 }
 
 @media (max-width: 768px) {

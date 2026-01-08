@@ -77,7 +77,7 @@ export default function Sky({ trackRef, scrollStateRef }) {
             width: '100vw',
             height: '100vh',
             pointerEvents: 'none',
-            zIndex: -1,
+            zIndex: 0,
             overflow: 'hidden',
         }}>
             {clouds.map((cloud, index) => (
@@ -92,7 +92,7 @@ export default function Sky({ trackRef, scrollStateRef }) {
                         left: cloud.left,
                         width: cloud.width,
                         opacity: cloud.opacity,
-                        // filter: `blur(${cloud.blur})`, // Re-disabled for performance
+                        filter: 'none',
                         willChange: 'transform',
                         // Initial position will be set by first animation frame
                     }}

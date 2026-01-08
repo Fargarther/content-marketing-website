@@ -39,8 +39,13 @@ const createRidgePath = (width, groundHeight = 180, viewportHeight = 800) => {
   return `${move} ${curves} L ${width},${h} L 0,${h} Z`;
 };
 
-export default function GroundNav({ totalWidth, groundHeight, viewportHeight }) {
-  const [currentHash, setCurrentHash] = useState(window.location.hash || '#home');
+export default function GroundNav({
+  totalWidth,
+  groundHeight,
+  viewportHeight,
+  currentHash = '#home',
+  onNavClick
+}) {
   const [pathWidth, setPathWidth] = useState(() => Math.max(totalWidth || window.innerWidth || 1200, 800));
   const [ridgePath, setRidgePath] = useState(() =>
     createRidgePath(
@@ -49,16 +54,6 @@ export default function GroundNav({ totalWidth, groundHeight, viewportHeight }) 
       viewportHeight || window.innerHeight || 800
     )
   );
-
-  // Listen for hash changes
-  useEffect(() => {
-    const handleHashChange = () => {
-      setCurrentHash(window.location.hash || '#home');
-    };
-
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
-  }, []);
 
   // Update ridge path when width changes
   useEffect(() => {
@@ -90,6 +85,11 @@ export default function GroundNav({ totalWidth, groundHeight, viewportHeight }) 
                 <li key={index}>
                   <a
                     href={link.href}
+                    onClick={(event) => {
+                      if (!onNavClick) return;
+                      event.preventDefault();
+                      onNavClick(link.href);
+                    }}
                     aria-current={isCurrent ? "page" : undefined}
                   >
                     {link.label}

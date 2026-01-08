@@ -62,11 +62,11 @@ export default function BugTrail({ trackRef, text = DEFAULT_TEXT }) {
     const left = signX - width;
     const top = (isMobile ? 90 : 150) + 100;
     const labelWidth = Math.round(clamp(
-      text.length * (isMobile ? 12 : 14),
-      isMobile ? 90 : 110,
-      isMobile ? 180 : 220
+      text.length * (isMobile ? 24 : 42),
+      isMobile ? 140 : 240,
+      isMobile ? 260 : 380
     ));
-    const labelHeight = isMobile ? 26 : 32;
+    const labelHeight = isMobile ? 54 : 72;
     const targetLeft = isMobile ? 16 : 40;
     const endScroll = signX - width - targetLeft;
     const scrollRange = viewportWidth * (isMobile ? 0.7 : 0.9);
@@ -79,6 +79,7 @@ export default function BugTrail({ trackRef, text = DEFAULT_TEXT }) {
       top,
       labelWidth,
       labelHeight,
+      labelLeft: isMobile ? 160 : 190,
       startScroll,
       endScroll,
       endDrop,
@@ -92,6 +93,7 @@ export default function BugTrail({ trackRef, text = DEFAULT_TEXT }) {
       containerRef.current.style.setProperty('--trail-height', `${height}px`);
       containerRef.current.style.setProperty('--trail-label-width', `${labelWidth}px`);
       containerRef.current.style.setProperty('--trail-label-height', `${labelHeight}px`);
+      containerRef.current.style.setProperty('--trail-label-left', `${layoutRef.current.labelLeft}px`);
     }
 
     const pathD = buildPath(width, baseHeight, endDrop, labelWidth, labelHeight, isMobile);
@@ -139,6 +141,10 @@ export default function BugTrail({ trackRef, text = DEFAULT_TEXT }) {
     if (containerRef.current) {
       containerRef.current.style.setProperty('--trail-scroll-offset', `${-scrollLeft}px`);
       containerRef.current.style.setProperty('--trail-progress', progress.toFixed(3));
+      const labelProgress = clamp((progress - 0.1) / 0.4, 0, 1);
+      const labelOffset = (1 - labelProgress) * 18;
+      containerRef.current.style.setProperty('--trail-label-opacity', labelProgress.toFixed(3));
+      containerRef.current.style.setProperty('--trail-label-offset', `${labelOffset.toFixed(1)}px`);
     }
 
     if (length > 0) {

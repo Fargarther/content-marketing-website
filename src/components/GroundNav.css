@@ -11,7 +11,7 @@
   width: 100vw;
   height: var(--ground-height, 120px);
   z-index: 1105;                 /* ABOVE the grass (yours was 1001) */
-  pointer-events: none;          /* overall container lets clicks through */
+  pointer-events: auto;
 }
 
 .ground-ridge {

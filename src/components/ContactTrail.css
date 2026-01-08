@@ -1,0 +1,43 @@
+.contact-trail {
+  position: fixed;
+  left: var(--contact-trail-left, 3300px);
+  top: var(--contact-trail-top, 220px);
+  width: var(--contact-trail-width, 520px);
+  height: var(--contact-trail-height, 260px);
+  transform: translateX(var(--contact-trail-scroll-offset, 0px));
+  pointer-events: none;
+  z-index: 4;
+}
+
+.contact-trail-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+}
+
+.contact-trail-dots {
+  fill: none;
+  stroke: #3a2f1f;
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  stroke-dasharray: 2 12;
+}
+
+.contact-trail-reveal {
+  fill: none;
+  stroke: #ffffff;
+  stroke-width: 6;
+  stroke-linecap: round;
+}
+
+@media (max-width: 768px) {
+  .contact-trail-dots {
+    stroke-width: 3;
+    stroke-dasharray: 2 9;
+  }
+
+  .contact-trail-reveal {
+    stroke-width: 5;
+  }
+}

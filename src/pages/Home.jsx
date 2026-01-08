@@ -5,15 +5,24 @@ import Sky from '../components/Sky';
 import Windmill from '../components/Windmill';
 import WoodenSign from '../components/WoodenSign';
 import BugTrail from '../components/BugTrail';
+import ContactTrail from '../components/ContactTrail';
 import Mailbox from '../components/Mailbox';
 import Ranch from '../components/Ranch';
 import './Home.css';
 
+const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+
 export default function Home({ onNavigate }) {
-  const PANEL_COUNT = 5;
+  const PANEL_COUNT = 4;
   const trackRef = useRef(null);
   const touchRef = useRef(null);
+  const ranchWidthRef = useRef(null);
+  const contactPromptRef = useRef(null);
+  const aboutPopupRef = useRef(null);
   const [resumeOpen, setResumeOpen] = useState(false);
+  const [currentHash, setCurrentHash] = useState(
+    typeof window !== 'undefined' ? window.location.hash || '#home' : '#home'
+  );
   const [totalWidth, setTotalWidth] = useState(
     typeof window !== 'undefined' ? window.innerWidth * PANEL_COUNT : 0
   );
@@ -27,20 +36,64 @@ export default function Home({ onNavigate }) {
   // Format: { current: 0 } -> we pass this object reference to children
   const scrollStateRef = useRef({ scrollLeft: 0 });
 
-  // Update the shared ref whenever the track scrolls
-  // We use a passive listener attached to the ref callback or effect
+  // Calculate max scroll based on ranch position (site ends at ranch)
+  const getMaxScroll = useCallback(() => {
+    const track = trackRef.current;
+    if (!track) return 0;
+
+    const vw = window.innerWidth;
+    const isMobile = vw <= 768;
+
+    // Ranch position and width (matching Ranch.css values)
+    const ranchX = isMobile ? 2250 : 4650;
+    const ranchWidth = ranchWidthRef.current || (isMobile
+      ? Math.min(1000, Math.max(600, vw * 1.5))
+      : Math.min(1800, Math.max(1200, vw * 0.9)));
+
+    // Max scroll = ranch end position - viewport width
+    const ranchEnd = ranchX + ranchWidth;
+    const maxByRanch = ranchEnd - vw;
+
+    // Also respect the natural scroll limit
+    const maxByContent = track.scrollWidth - track.clientWidth;
+
+    return Math.min(maxByRanch, maxByContent);
+  }, []);
+
+  // Cache ranch width so scroll limit aligns with the actual rendered size
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+
+    const updateRanchWidth = () => {
+      const ranch = document.querySelector('.ranch-container');
+      if (ranch) {
+        ranchWidthRef.current = Math.round(ranch.getBoundingClientRect().width);
+      }
+    };
+
+    updateRanchWidth();
+    window.addEventListener('resize', updateRanchWidth);
+    return () => window.removeEventListener('resize', updateRanchWidth);
+  }, []);
+
+  // Update the shared ref whenever the track scrolls and clamp to max
   useEffect(() => {
     const track = trackRef.current;
     if (!track) return;
 
     const onScroll = () => {
+      // Clamp scroll position to ranch end
+      const max = getMaxScroll();
+      if (track.scrollLeft > max) {
+        track.scrollLeft = max;
+      }
       // Update the shared value
       scrollStateRef.current.scrollLeft = track.scrollLeft;
     };
 
     track.addEventListener('scroll', onScroll, { passive: true });
     return () => track.removeEventListener('scroll', onScroll);
-  }, []);
+  }, [getMaxScroll]);
 
   // Translate wheel movement into horizontal scroll on the track
   const handleWheel = useCallback((e) => {
@@ -51,20 +104,21 @@ export default function Home({ onNavigate }) {
 
     const delta = Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
     if (delta === 0) return;
-    const max = track.scrollWidth - track.clientWidth;
+    const max = getMaxScroll();
     // Kick a simple inertial scroll
     velocityRef.current += delta * 0.35;
 
     const step = () => {
       const t = trackRef.current;
       if (!t) return;
+      const currentMax = getMaxScroll();
       let next = t.scrollLeft + velocityRef.current;
       // clamp edges
       if (next < 0) {
         next = 0;
         velocityRef.current = 0;
-      } else if (next > max) {
-        next = max;
+      } else if (next > currentMax) {
+        next = currentMax;
         velocityRef.current = 0;
       }
       t.scrollLeft = next;
@@ -82,7 +136,7 @@ export default function Home({ onNavigate }) {
       animFrameRef.current = requestAnimationFrame(step);
     }
     e.preventDefault();
-  }, []);
+  }, [getMaxScroll]);
 
   // Attach wheel listener with passive: false to allow preventDefault
   useEffect(() => {
@@ -110,7 +164,14 @@ export default function Home({ onNavigate }) {
       const dx = t.clientX - touchRef.current.x;
       const dy = t.clientY - touchRef.current.y;
       const primary = Math.abs(dx) >= Math.abs(dy) ? dx : dy;
-      track.scrollLeft -= primary;
+      let next = track.scrollLeft - primary;
+
+      // Clamp to max scroll (site ends at ranch)
+      const max = getMaxScroll();
+      if (next < 0) next = 0;
+      if (next > max) next = max;
+
+      track.scrollLeft = next;
       touchRef.current = { x: t.clientX, y: t.clientY };
       e.preventDefault();
     };
@@ -128,7 +189,7 @@ export default function Home({ onNavigate }) {
       track.removeEventListener('touchend', onTouchEnd);
       track.removeEventListener('touchcancel', onTouchEnd);
     };
-  }, []);
+  }, [getMaxScroll]);
 
   // Track total width for synced ground/grass
   useEffect(() => {
@@ -141,20 +202,150 @@ export default function Home({ onNavigate }) {
     return () => window.removeEventListener('resize', update);
   }, [PANEL_COUNT, viewportHeight]);
 
-  // Scroll to the hashed section when nav updates
+  // Scroll reveal for the contact callout in the projects panel
   useEffect(() => {
-    const scrollToHash = () => {
-      const hash = window.location.hash.replace('#', '') || 'home';
-      const target = document.getElementById(hash);
-      if (target && trackRef.current) {
-        target.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
-      }
+    const track = trackRef.current;
+    const target = contactPromptRef.current;
+    if (!track || !target) return;
+
+    let rafId = null;
+
+    const update = () => {
+      const scrollLeft = track.scrollLeft || 0;
+      const vw = window.innerWidth || 1024;
+      const rect = target.getBoundingClientRect();
+      const trackRect = track.getBoundingClientRect();
+      const targetLeft = rect.left - trackRect.left + scrollLeft;
+      const start = targetLeft - vw * 0.7;
+      const end = targetLeft - vw * 0.3;
+      const progress = clamp(
+        (scrollLeft - start) / Math.max(1, end - start),
+        0,
+        1
+      );
+      const offset = (1 - progress) * 18;
+      target.style.setProperty('--cta-opacity', progress.toFixed(3));
+      target.style.setProperty('--cta-offset', `${offset.toFixed(1)}px`);
     };
 
-    scrollToHash();
-    window.addEventListener('hashchange', scrollToHash);
-    return () => window.removeEventListener('hashchange', scrollToHash);
+    const onScroll = () => {
+      if (rafId) return;
+      rafId = requestAnimationFrame(() => {
+        rafId = null;
+        update();
+      });
+    };
+
+    update();
+    track.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', update);
+
+    return () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      track.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', update);
+    };
   }, []);
+
+  const scrollToTarget = useCallback((hashValue) => {
+    if (typeof window === 'undefined') return;
+    const hash = (hashValue || '').replace('#', '') || 'home';
+    const track = trackRef.current;
+    if (!track) return;
+
+    const centerOnElement = (element) => {
+      if (!element) return false;
+      const rect = element.getBoundingClientRect();
+      const trackRect = track.getBoundingClientRect();
+      const scrollLeft = track.scrollLeft || 0;
+      const worldCenter = scrollLeft + (rect.left - trackRect.left) + rect.width / 2;
+      const targetLeft = worldCenter - (window.innerWidth / 2);
+      const max = getMaxScroll();
+      const clamped = Math.max(0, Math.min(targetLeft, max));
+      track.scrollTo({ left: clamped, behavior: 'smooth' });
+      return true;
+    };
+
+    if (hash === 'recipes') {
+      const sign = document.querySelector('.wooden-sign-container');
+      if (centerOnElement(sign)) return;
+    }
+
+    if (hash === 'contact') {
+      const mailbox = document.querySelector('.mailbox-container');
+      if (centerOnElement(mailbox)) return;
+    }
+
+    const target = document.getElementById(hash);
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
+  }, [getMaxScroll]);
+
+  const handleNavClick = useCallback((href) => {
+    if (typeof window === 'undefined') return;
+    if (!href) return;
+    const hash = href.startsWith('#') ? href : `#${href}`;
+    window.history.replaceState(null, '', hash);
+    setCurrentHash(hash);
+    scrollToTarget(hash);
+  }, [scrollToTarget]);
+
+  // End-of-page about popup
+  useEffect(() => {
+    const track = trackRef.current;
+    const popup = aboutPopupRef.current;
+    if (!track || !popup) return;
+
+    let rafId = null;
+
+    const update = () => {
+      const scrollLeft = track.scrollLeft || 0;
+      const vw = window.innerWidth || 1024;
+      const max = getMaxScroll();
+      const start = Math.max(0, max - vw * 0.45);
+      const end = Math.max(start + 1, max - vw * 0.1);
+      const progress = clamp(
+        (scrollLeft - start) / (end - start),
+        0,
+        1
+      );
+      const offset = (1 - progress) * 26;
+      popup.style.setProperty('--about-popup-opacity', progress.toFixed(3));
+      popup.style.setProperty('--about-popup-offset', `${offset.toFixed(1)}px`);
+    };
+
+    const onScroll = () => {
+      if (rafId) return;
+      rafId = requestAnimationFrame(() => {
+        rafId = null;
+        update();
+      });
+    };
+
+    update();
+    track.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', update);
+
+    return () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      track.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', update);
+    };
+  }, [getMaxScroll]);
+
+  // Scroll to the hashed section when nav updates
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash || '#home';
+      setCurrentHash(hash);
+      scrollToTarget(hash);
+    };
+
+    handleHashChange();
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, [scrollToTarget]);
 
   // Cleanup animation on unmount
   useEffect(() => {
@@ -197,7 +388,11 @@ export default function Home({ onNavigate }) {
       <div className="scroll-track" ref={trackRef}>
         <section className="panel hero-panel" id="home">
           <div className="panel-inner">
-            <p className="eyebrow">Communications Specialist</p>
+            <p className="eyebrow">
+              <span>Communications Specialist</span>
+              <span className="eyebrow-divider" aria-hidden="true" />
+              <span>Storyteller</span>
+            </p>
             <h1>
               Alex Benson
             </h1>
@@ -216,19 +411,20 @@ export default function Home({ onNavigate }) {
           </div>
         </section>
 
-        <section className="panel projects-panel" id="blog">
+        <section className="panel projects-panel" id="recipes">
           <div className="panel-inner compact">
             <div className="section-header">
-              <p className="eyebrow">Selected Work</p>
-              <h2>In progress.</h2>
+              <h2 className="contact-cta" ref={contactPromptRef}>
+                Click Mailbox To Contact!
+              </h2>
             </div>
           </div>
         </section>
 
         <section className="panel about-panel" id="about">
           <div className="panel-inner">
-            <p className="eyebrow">About</p>
-            <h2>Quiet space to tune the grass.</h2>
+            <p className="eyebrow">Quiet space to tune the grass.</p>
+            <h2>About</h2>
           </div>
         </section>
 
@@ -240,12 +436,11 @@ export default function Home({ onNavigate }) {
           </div>
         </section>
 
-        <section className="panel spacer-panel" style={{ pointerEvents: 'none' }} />
-
       </div>
 
       <Windmill trackRef={trackRef} />
       <BugTrail trackRef={trackRef} />
+      <ContactTrail trackRef={trackRef} />
       <WoodenSign trackRef={trackRef} onClick={handleSignClick} />
       <Mailbox trackRef={trackRef} />
       <Ranch trackRef={trackRef} />
@@ -262,11 +457,31 @@ export default function Home({ onNavigate }) {
         totalWidth={totalWidth}
         groundHeight={groundVisualHeight}
         viewportHeight={viewportHeight}
-        trackRef={trackRef}
+        currentHash={currentHash}
+        onNavClick={handleNavClick}
       />
 
       {/* Pass totalWidth to Sky to help it scale speeds if needed, though we hardcoded them */}
       <Sky trackRef={trackRef} scrollStateRef={scrollStateRef} />
+
+      <div className="about-popup" ref={aboutPopupRef}>
+        <p className="about-popup-body">
+          Greetings! My name is Alex! I am a born and raised Central Illinoian with a passion
+          for storytelling. Be it an unpublished piece of literary fiction, or a memorable
+          social media post, I love crafting compelling narratives that speak about the human
+          condition.
+        </p>
+        <p className="about-popup-body">
+          I have experience managing the food for events with groups totaling 300+ people! No
+          matter the size or task, initiation and preperation, or mise en place, is everything;
+          I help your organizion by writing shotlists, formalizing statistics and strategy, and
+          contributing myself to team efforts.
+        </p>
+        <p className="about-popup-body">
+          During my off hours I play gutiar, enjoy video games, and read. My favorite collection:
+          Little House on the Prarrie. Favorte food: Mac and Cheese.
+        </p>
+      </div>
 
       {resumeOpen && (
         <div
