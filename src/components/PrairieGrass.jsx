@@ -19,7 +19,7 @@ const CHUNK_SIZE = 2000;
 const isChromeBrowser = typeof navigator !== "undefined" && /Chrome/.test(navigator.userAgent) && !/Edg/.test(navigator.userAgent);
 const isFirefoxBrowser = typeof navigator !== "undefined" && /Firefox/.test(navigator.userAgent);
 const PERF_TIER = isFirefoxBrowser ? "medium" : "high";
-const DENSITY_MULT = PERF_TIER === "high" ? 1 : 2;
+const DENSITY_MULT = PERF_TIER === "high" ? 1 : 4;
 const DPR_CAP = PERF_TIER === "high" ? 1.5 : 1;
 
 // Progressive rendering constants
@@ -400,6 +400,12 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1, scrollVelocityRef, tra
     const BREEZE = BREEZE_LEVELS[breeze] ?? BREEZE_LEVELS.medium;
 
     const drawFrame = (ts) => {
+      // Frame throttle for non-Chrome
+      if (PERF_TIER !== "high") {
+        if (!drawFrame._lastDraw) drawFrame._lastDraw = 0;
+        if (ts - drawFrame._lastDraw < 33) { animationRef.current = requestAnimationFrame(drawFrame); return; }
+        drawFrame._lastDraw = ts;
+      }
       if (!lastTimeRef.current) lastTimeRef.current = ts;
       const dt = (ts - lastTimeRef.current) / 1000;
       lastTimeRef.current = ts;
