@@ -19,7 +19,7 @@ const CHUNK_SIZE = 2000;
 const isChromeBrowser = typeof navigator !== "undefined" && /Chrome/.test(navigator.userAgent) && !/Edg/.test(navigator.userAgent);
 const isFirefoxBrowser = typeof navigator !== "undefined" && /Firefox/.test(navigator.userAgent);
 const PERF_TIER = isFirefoxBrowser ? "medium" : "high";
-const DENSITY_MULT = PERF_TIER === "high" ? 1 : 4;
+const DENSITY_MULT = PERF_TIER === "high" ? 1 : 2;
 const DPR_CAP = PERF_TIER === "high" ? 1.5 : 1;
 
 // Progressive rendering constants
