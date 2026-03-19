@@ -554,7 +554,7 @@ h2 {
   margin-top: 0;
 }
 
-@media (min-width: 769px) and (max-width: 3839px) {
+@media (min-width: 769px) and (max-width: 3479px) {
   .contact-cta {
     display: none;
   }
