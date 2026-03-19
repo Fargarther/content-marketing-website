@@ -105,7 +105,7 @@
 }
 
 @media (max-width: 3839px) {
-  .bug-trail-container {
+  .bug-trail {
     display: none;
   }
 }

@@ -43,7 +43,7 @@
 }
 
 @media (max-width: 3839px) {
-  .contact-trail-container {
+  .contact-trail {
     display: none;
   }
 }
