@@ -20,7 +20,7 @@ const isChromeBrowser = typeof navigator !== "undefined" && /Chrome/.test(naviga
 const isFirefoxBrowser = typeof navigator !== "undefined" && /Firefox/.test(navigator.userAgent);
 const PERF_TIER = isFirefoxBrowser ? "medium" : "high";
 const DENSITY_MULT = 1;
-const DPR_CAP = PERF_TIER === "high" ? 1.5 : 1;
+const DPR_CAP = 1.5;
 
 // Progressive rendering constants
 const PLACEHOLDER_ALPHA = 0.55;
