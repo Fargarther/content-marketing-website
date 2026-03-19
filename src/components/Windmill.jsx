@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import windmillBase from '../assets/windmill_base.png';
-import windmillBlades from '../assets/windmill_blades.png';
+import windmillBase from '../assets/windmill_base.webp';
+import windmillBlades from '../assets/windmill_blades.webp';
 import './Windmill.css';
 
 export default function Windmill({ trackRef } = {}) {

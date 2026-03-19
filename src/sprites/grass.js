@@ -2,32 +2,32 @@
 // This ensures all images are properly bundled and available with hashed URLs
 
 // Import all blade and bud PNGs as URLs (eager loading for immediate availability)
-const grassFiles = import.meta.glob('../assets/grass/{blades,buds}/*.png', {
+const grassFiles = import.meta.glob('../assets/grass/{blades,buds}/*.webp', {
   eager: true,
   query: '?url',
   import: 'default'
 });
 
-// Build a map keyed by base filename (e.g., 'blade_green_01.png')
+// Build a map keyed by base filename (e.g., 'blade_green_01.webp')
 const SPRITES = {};
 
 // Process all imported files
 Object.entries(grassFiles).forEach(([path, url]) => {
   // Extract the filename from the path
-  const filename = path.split('/').pop(); // e.g., 'blade_green_01.png'
+  const filename = path.split('/').pop(); // e.g., 'blade_green_01.webp'
   
   if (filename) {
     SPRITES[filename] = url;
     
     // Also store without extension for convenience
-    const nameWithoutExt = filename.replace('.png', '');
+    const nameWithoutExt = filename.replace('.webp', '');
     SPRITES[nameWithoutExt] = url;
   }
 });
 
 /**
  * Get sprite URL by filename or base name
- * @param {string} name - Filename like 'blade_green_01.png' or 'blade_green_01'
+ * @param {string} name - Filename like 'blade_green_01.webp' or 'blade_green_01'
  * @returns {string | undefined} - The bundled URL or undefined if not found
  */
 export function spriteUrl(name) {
@@ -43,14 +43,14 @@ export function spriteUrl(name) {
   // Try exact match first
   let url = SPRITES[cleanedName];
   
-  // If not found and doesn't have extension, try with .png
+  // If not found and doesn't have extension, try with .webp
   if (!url && !cleanedName.includes('.')) {
-    url = SPRITES[cleanedName + '.png'];
+    url = SPRITES[cleanedName + '.webp'];
   }
   
   // If still not found, try without extension
   if (!url && cleanedName.includes('.')) {
-    url = SPRITES[cleanedName.replace('.png', '')];
+    url = SPRITES[cleanedName.replace('.webp', '')];
   }
   
   if (!url) {
@@ -105,7 +105,7 @@ export function spriteKeys() {
 export function hasSprite(name) {
   if (!name) return false;
   const cleanedName = name.replace(/^blade_blade_/, 'blade_');
-  return !!(SPRITES[cleanedName] || SPRITES[cleanedName + '.png'] || SPRITES[cleanedName.replace('.png', '')]);
+  return !!(SPRITES[cleanedName] || SPRITES[cleanedName + '.webp'] || SPRITES[cleanedName.replace('.webp', '')]);
 }
 
 /**

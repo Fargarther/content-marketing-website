@@ -1,9 +1,9 @@
 import React, { useEffect, useRef } from 'react';
-import cloud1 from '../assets/cloud_wc_1.png';
-import cloud2 from '../assets/cloud_wc_2.png';
-import cloud3 from '../assets/cloud_wc_3.png';
-import cloud4 from '../assets/cloud_wc_4.png';
-import cloud5 from '../assets/cloud_wc_5.png';
+import cloud1 from '../assets/cloud_wc_1.webp';
+import cloud2 from '../assets/cloud_wc_2.webp';
+import cloud3 from '../assets/cloud_wc_3.webp';
+import cloud4 from '../assets/cloud_wc_4.webp';
+import cloud5 from '../assets/cloud_wc_5.webp';
 
 export default function Sky({ trackRef, scrollStateRef }) {
     const cloudRefs = useRef([]);

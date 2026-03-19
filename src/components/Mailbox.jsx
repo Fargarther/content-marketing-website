@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import mailboxImg from '../assets/Mailbox.png';
-import hingeImg from '../assets/Mailbox_hinge.png';
+import mailboxImg from '../assets/Mailbox.webp';
+import hingeImg from '../assets/Mailbox_hinge.webp';
 import './Mailbox.css';
 
 export default function Mailbox({ trackRef }) {
