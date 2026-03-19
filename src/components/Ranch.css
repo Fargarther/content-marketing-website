@@ -20,13 +20,7 @@
 @media (max-width: 768px) {
   .ranch-container {
     width: clamp(600px, 150vw, 1000px);
-    left: var(--ranch-x-mobile, 292.97vw);
+    left: var(--ranch-x-mobile, 2250px);
     bottom: calc(var(--ranch-ground-height, var(--ground-height, 120px)) - 313px);
-  }
-}
-
-@media (max-width: 3839px) and (min-width: 769px) {
-  .ranch-container {
-    left: 121.1vw;
   }
 }

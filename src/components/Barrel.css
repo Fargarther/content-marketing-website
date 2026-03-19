@@ -18,14 +18,8 @@
 
 @media (max-width: 768px) {
   .barrel-container {
-    left: var(--barrel-x-mobile, 171.9vw);
+    left: var(--barrel-x-mobile, 1320px);
     bottom: calc(var(--barrel-ground-height, var(--ground-height, 120px)) - 60px);
     width: clamp(90px, 18vw, 140px);
-  }
-}
-
-@media (max-width: 3839px) and (min-width: 769px) {
-  .barrel-container {
-    left: 74.5vw;
   }
 }

@@ -43,14 +43,8 @@
 @media (max-width: 768px) {
     .wooden-sign-container {
         width: clamp(360px, 84vw, 480px);
-        left: var(--sign-x-mobile, 156.25vw);
+        left: var(--sign-x-mobile, 1200px);
         bottom: calc(var(--sign-ground-height, var(--ground-height, 120px)) - 126px);
         /* Adjust for mobile layout */
     }
-}
-
-@media (max-width: 3839px) and (min-width: 769px) {
-  .wooden-sign-container {
-    left: 67.7vw;
-  }
 }

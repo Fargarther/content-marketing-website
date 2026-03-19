@@ -36,7 +36,7 @@
 @media (max-width: 768px) {
   .mailbox-container {
     width: clamp(160px, 36vw, 240px);
-    left: var(--mailbox-x-mobile, 234.4vw);
+    left: var(--mailbox-x-mobile, 1800px);
     bottom: calc(var(--mailbox-ground-height, var(--ground-height, 120px)) - 28px);
   }
 
@@ -44,11 +44,5 @@
     left: calc(-10% + 146px);
     top: calc(18% - 100px);
     width: 20%;
-  }
-}
-
-@media (max-width: 3839px) and (min-width: 769px) {
-  .mailbox-container {
-    left: 99vw;
   }
 }
