@@ -1,6 +1,6 @@
 .bug-trail {
   position: fixed;
-  left: var(--trail-left, 31.25vw);
+  left: var(--trail-left, 1200px);
   top: var(--trail-top, 120px);
   width: var(--trail-width, 1400px);
   height: var(--trail-height, 420px);

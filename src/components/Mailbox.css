@@ -1,7 +1,7 @@
 .mailbox-container {
   position: fixed;
   /* Position near end of site - around contact panel (panel 4 of 5) */
-  left: var(--mailbox-x, 99vw);
+  left: var(--mailbox-x, 3800px);
   bottom: calc(var(--mailbox-ground-height, var(--ground-height, 120px)) - 40px);
   width: clamp(240px, 20vw, 360px);
   z-index: 5;
@@ -44,5 +44,11 @@
     left: calc(-10% + 146px);
     top: calc(18% - 100px);
     width: 20%;
+  }
+}
+
+@media (max-width: 3839px) and (min-width: 769px) {
+  .mailbox-container {
+    left: 99vw;
   }
 }

@@ -1,6 +1,6 @@
 .barrel-container {
   position: fixed;
-  left: var(--barrel-x, 74.5vw);
+  left: var(--barrel-x, 2860px);
   bottom: calc(var(--barrel-ground-height, var(--ground-height, 120px)) - 70px);
   width: clamp(120px, 10vw, 190px);
   z-index: 6;
@@ -21,5 +21,11 @@
     left: var(--barrel-x-mobile, 171.9vw);
     bottom: calc(var(--barrel-ground-height, var(--ground-height, 120px)) - 60px);
     width: clamp(90px, 18vw, 140px);
+  }
+}
+
+@media (max-width: 3839px) and (min-width: 769px) {
+  .barrel-container {
+    left: 74.5vw;
   }
 }
