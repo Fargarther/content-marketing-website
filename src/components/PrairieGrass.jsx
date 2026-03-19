@@ -15,12 +15,6 @@ const NOISE_AMP = 0.008;
 // This allows us to quickly query "which bucket of blades is visible?"
 const CHUNK_SIZE = 2000;
 
-// Performance tier detection
-const isChromeBrowser = typeof navigator !== "undefined" && /Chrome/.test(navigator.userAgent) && !/Edg/.test(navigator.userAgent);
-const isFirefoxBrowser = typeof navigator !== "undefined" && /Firefox/.test(navigator.userAgent);
-const PERF_TIER = isFirefoxBrowser ? "medium" : "high";
-const DENSITY_MULT = 1;
-const DPR_CAP = 1.5;
 
 // Progressive rendering constants
 const PLACEHOLDER_ALPHA = 0.55;
@@ -218,7 +212,7 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1, scrollVelocityRef, tra
     const updateCanvasSize = () => {
       const W = window.innerWidth; // Fixed viewport width
       const H = 260;
-      const dpr = Math.min(window.devicePixelRatio || 1, DPR_CAP);
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
 
       const sizeCanvas = (targetCanvas, targetCtx) => {
         targetCanvas.width = W * dpr;
@@ -278,9 +272,9 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1, scrollVelocityRef, tra
       // Note: Density logic relies on loop. Since we're iterating world width, apply density normally.
 
       const layers = [
-        { density: 70 * DENSITY_MULT, opacity: 0.5, zIndex: 0, speedFactor: 0.6 }, // Was 45
-        { density: 50 * DENSITY_MULT, opacity: 0.85, zIndex: 1, speedFactor: 1.0 }, // Was 30
-        { density: 35 * DENSITY_MULT, opacity: 1.0, zIndex: 2, speedFactor: 1.4 }  // Was 18
+        { density: 70, opacity: 0.5, zIndex: 0, speedFactor: 0.6 }, // Was 45
+        { density: 50, opacity: 0.85, zIndex: 1, speedFactor: 1.0 }, // Was 30
+        { density: 35, opacity: 1.0, zIndex: 2, speedFactor: 1.4 }  // Was 18
       ];
 
       let totalBladesCreated = 0;
@@ -400,12 +394,6 @@ const PrairieGrass = ({ breeze = 'medium', spanCount = 1, scrollVelocityRef, tra
     const BREEZE = BREEZE_LEVELS[breeze] ?? BREEZE_LEVELS.medium;
 
     const drawFrame = (ts) => {
-      // Frame throttle for non-Chrome
-      if (PERF_TIER !== "high") {
-        if (!drawFrame._lastDraw) drawFrame._lastDraw = 0;
-        if (ts - drawFrame._lastDraw < 33) { animationRef.current = requestAnimationFrame(drawFrame); return; }
-        drawFrame._lastDraw = ts;
-      }
       if (!lastTimeRef.current) lastTimeRef.current = ts;
       const dt = (ts - lastTimeRef.current) / 1000;
       lastTimeRef.current = ts;
