@@ -1,6 +1,6 @@
 .bug-trail {
   position: fixed;
-  left: var(--trail-left, 1200px);
+  left: var(--trail-left, 31.25vw);
   top: var(--trail-top, 120px);
   width: var(--trail-width, 1400px);
   height: var(--trail-height, 420px);
@@ -101,5 +101,11 @@
 
   .bug-trail-label {
     font-size: 1rem;
+  }
+}
+
+@media (max-width: 3839px) {
+  .bug-trail-container {
+    display: none;
   }
 }

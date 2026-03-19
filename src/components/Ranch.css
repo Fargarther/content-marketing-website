@@ -1,7 +1,7 @@
 .ranch-container {
   position: fixed;
   /* Position at the very end of the site (panel 5 area) */
-  left: var(--ranch-x, 4650px);
+  left: var(--ranch-x, 121.1vw);
   bottom: calc(var(--ranch-ground-height, var(--ground-height, 120px)) - 430px);
   width: clamp(1200px, 90vw, 1800px);
   z-index: 3;
@@ -20,7 +20,7 @@
 @media (max-width: 768px) {
   .ranch-container {
     width: clamp(600px, 150vw, 1000px);
-    left: var(--ranch-x-mobile, 2250px);
+    left: var(--ranch-x-mobile, 292.97vw);
     bottom: calc(var(--ranch-ground-height, var(--ground-height, 120px)) - 313px);
   }
 }

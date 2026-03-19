@@ -50,7 +50,7 @@ export default function Home({ onNavigate }) {
     const isMobile = vw <= 768;
 
     // Ranch position and width (matching Ranch.css values)
-    const ranchX = isMobile ? 2250 : 4650;
+    const ranchX = isMobile ? 2250 : Math.round(vw * 1.211);
     const ranchWidth = ranchWidthRef.current || (isMobile
       ? Math.min(1000, Math.max(600, vw * 1.5))
       : Math.min(1800, Math.max(1200, vw * 0.9)));

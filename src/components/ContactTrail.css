@@ -1,6 +1,6 @@
 .contact-trail {
   position: fixed;
-  left: var(--contact-trail-left, 3300px);
+  left: var(--contact-trail-left, 85.9vw);
   top: var(--contact-trail-top, 220px);
   width: var(--contact-trail-width, 520px);
   height: var(--contact-trail-height, 260px);
@@ -39,5 +39,11 @@
 
   .contact-trail-reveal {
     stroke-width: 5;
+  }
+}
+
+@media (max-width: 3839px) {
+  .contact-trail-container {
+    display: none;
   }
 }

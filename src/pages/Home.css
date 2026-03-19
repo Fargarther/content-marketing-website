@@ -553,3 +553,9 @@ h2 {
 .horizontal-shell.is-mobile .about-popup-body:first-child {
   margin-top: 0;
 }
+
+@media (min-width: 769px) and (max-width: 3839px) {
+  .contact-cta {
+    display: none;
+  }
+}
